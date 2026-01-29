@@ -10,7 +10,7 @@ import * as path from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
 import { promptInput, promptMultilineInput, confirm, selectOption } from '../prompt/index.js';
 import { success, info } from '../utils/ui.js';
-import { slugify } from '../utils/slug.js';
+import { summarizeTaskName } from '../task/summarize.js';
 import { createLogger } from '../utils/debug.js';
 import { listWorkflows } from '../config/workflowLoader.js';
 import { getCurrentWorkflow } from '../config/paths.js';
@@ -19,10 +19,11 @@ import type { TaskFileData } from '../task/schema.js';
 const log = createLogger('add-task');
 
 /**
- * Generate a unique task filename
+ * Generate a unique task filename with AI-summarized slug
  */
-function generateFilename(tasksDir: string, taskContent: string): string {
-  const slug = slugify(taskContent);
+async function generateFilename(tasksDir: string, taskContent: string, cwd: string): Promise<string> {
+  info('Generating task filename...');
+  const slug = await summarizeTaskName(taskContent, { cwd });
   const base = slug || 'task';
   let filename = `${base}.yaml`;
   let counter = 1;
@@ -112,7 +113,7 @@ export async function addTask(cwd: string, args: string[]): Promise<void> {
 
   // Write YAML file (use first line for filename to keep it short)
   const firstLine = taskContent.split('\n')[0] || taskContent;
-  const filename = generateFilename(tasksDir, firstLine);
+  const filename = await generateFilename(tasksDir, firstLine, cwd);
   const filePath = path.join(tasksDir, filename);
   const yamlContent = stringifyYaml(taskData);
   fs.writeFileSync(filePath, yamlContent, 'utf-8');

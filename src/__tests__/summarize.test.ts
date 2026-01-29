@@ -4,8 +4,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../claude/client.js', () => ({
-  callClaude: vi.fn(),
+vi.mock('../providers/index.js', () => ({
+  getProvider: vi.fn(),
+}));
+
+vi.mock('../config/globalConfig.js', () => ({
+  loadGlobalConfig: vi.fn(),
 }));
 
 vi.mock('../utils/debug.js', () => ({
@@ -16,19 +20,36 @@ vi.mock('../utils/debug.js', () => ({
   }),
 }));
 
-import { callClaude } from '../claude/client.js';
+import { getProvider } from '../providers/index.js';
+import { loadGlobalConfig } from '../config/globalConfig.js';
 import { summarizeTaskName } from '../task/summarize.js';
 
-const mockCallClaude = vi.mocked(callClaude);
+const mockGetProvider = vi.mocked(getProvider);
+const mockLoadGlobalConfig = vi.mocked(loadGlobalConfig);
+
+const mockProviderCall = vi.fn();
+const mockProvider = {
+  call: mockProviderCall,
+  callCustom: vi.fn(),
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockGetProvider.mockReturnValue(mockProvider);
+  mockLoadGlobalConfig.mockReturnValue({
+    language: 'ja',
+    trustedDirectories: [],
+    defaultWorkflow: 'default',
+    logLevel: 'info',
+    provider: 'claude',
+    model: 'haiku',
+  });
 });
 
 describe('summarizeTaskName', () => {
   it('should return AI-generated slug for Japanese task name', async () => {
     // Given: AI returns a slug for Japanese input
-    mockCallClaude.mockResolvedValue({
+    mockProviderCall.mockResolvedValue({
       agent: 'summarizer',
       status: 'done',
       content: 'add-auth',
@@ -40,13 +61,13 @@ describe('summarizeTaskName', () => {
 
     // Then
     expect(result).toBe('add-auth');
-    expect(mockCallClaude).toHaveBeenCalledWith(
+    expect(mockGetProvider).toHaveBeenCalledWith('claude');
+    expect(mockProviderCall).toHaveBeenCalledWith(
       'summarizer',
-      'Summarize this task: "認証機能を追加する"',
+      '認証機能を追加する',
       expect.objectContaining({
         cwd: '/project',
         model: 'haiku',
-        maxTurns: 1,
         allowedTools: [],
       })
     );
@@ -54,7 +75,7 @@ describe('summarizeTaskName', () => {
 
   it('should return AI-generated slug for English task name', async () => {
     // Given
-    mockCallClaude.mockResolvedValue({
+    mockProviderCall.mockResolvedValue({
       agent: 'summarizer',
       status: 'done',
       content: 'fix-login-bug',
@@ -70,7 +91,7 @@ describe('summarizeTaskName', () => {
 
   it('should clean up AI response with extra characters', async () => {
     // Given: AI response has extra whitespace or formatting
-    mockCallClaude.mockResolvedValue({
+    mockProviderCall.mockResolvedValue({
       agent: 'summarizer',
       status: 'done',
       content: '  Add-User-Auth!  \n',
@@ -84,9 +105,9 @@ describe('summarizeTaskName', () => {
     expect(result).toBe('add-user-auth');
   });
 
-  it('should truncate long slugs to 30 characters', async () => {
+  it('should truncate long slugs to 30 characters without trailing hyphen', async () => {
     // Given: AI returns a long slug
-    mockCallClaude.mockResolvedValue({
+    mockProviderCall.mockResolvedValue({
       agent: 'summarizer',
       status: 'done',
       content: 'this-is-a-very-long-slug-that-exceeds-thirty-characters',
@@ -98,12 +119,13 @@ describe('summarizeTaskName', () => {
 
     // Then
     expect(result.length).toBeLessThanOrEqual(30);
-    expect(result).toBe('this-is-a-very-long-slug-that-');
+    expect(result).toBe('this-is-a-very-long-slug-that');
+    expect(result).not.toMatch(/-$/); // No trailing hyphen
   });
 
   it('should return "task" as fallback for empty AI response', async () => {
     // Given: AI returns empty string
-    mockCallClaude.mockResolvedValue({
+    mockProviderCall.mockResolvedValue({
       agent: 'summarizer',
       status: 'done',
       content: '',
@@ -117,9 +139,9 @@ describe('summarizeTaskName', () => {
     expect(result).toBe('task');
   });
 
-  it('should use custom model if specified', async () => {
+  it('should use custom model if specified in options', async () => {
     // Given
-    mockCallClaude.mockResolvedValue({
+    mockProviderCall.mockResolvedValue({
       agent: 'summarizer',
       status: 'done',
       content: 'custom-task',
@@ -130,7 +152,7 @@ describe('summarizeTaskName', () => {
     await summarizeTaskName('test', { cwd: '/project', model: 'sonnet' });
 
     // Then
-    expect(mockCallClaude).toHaveBeenCalledWith(
+    expect(mockProviderCall).toHaveBeenCalledWith(
       'summarizer',
       expect.any(String),
       expect.objectContaining({
@@ -139,9 +161,40 @@ describe('summarizeTaskName', () => {
     );
   });
 
+  it('should use provider from config.yaml', async () => {
+    // Given: config has codex provider
+    mockLoadGlobalConfig.mockReturnValue({
+      language: 'ja',
+      trustedDirectories: [],
+      defaultWorkflow: 'default',
+      logLevel: 'info',
+      provider: 'codex',
+      model: 'gpt-4',
+    });
+    mockProviderCall.mockResolvedValue({
+      agent: 'summarizer',
+      status: 'done',
+      content: 'codex-task',
+      timestamp: new Date(),
+    });
+
+    // When
+    await summarizeTaskName('test', { cwd: '/project' });
+
+    // Then
+    expect(mockGetProvider).toHaveBeenCalledWith('codex');
+    expect(mockProviderCall).toHaveBeenCalledWith(
+      'summarizer',
+      expect.any(String),
+      expect.objectContaining({
+        model: 'gpt-4',
+      })
+    );
+  });
+
   it('should remove consecutive hyphens', async () => {
     // Given: AI response has consecutive hyphens
-    mockCallClaude.mockResolvedValue({
+    mockProviderCall.mockResolvedValue({
       agent: 'summarizer',
       status: 'done',
       content: 'fix---multiple---hyphens',
@@ -157,7 +210,7 @@ describe('summarizeTaskName', () => {
 
   it('should remove leading and trailing hyphens', async () => {
     // Given: AI response has leading/trailing hyphens
-    mockCallClaude.mockResolvedValue({
+    mockProviderCall.mockResolvedValue({
       agent: 'summarizer',
       status: 'done',
       content: '-leading-trailing-',
@@ -169,5 +222,50 @@ describe('summarizeTaskName', () => {
 
     // Then
     expect(result).toBe('leading-trailing');
+  });
+
+  it('should throw error when config load fails', async () => {
+    // Given: config loading throws error
+    mockLoadGlobalConfig.mockImplementation(() => {
+      throw new Error('Config not found');
+    });
+
+    // When/Then
+    await expect(summarizeTaskName('test', { cwd: '/project' })).rejects.toThrow('Config not found');
+  });
+
+  it('should use romanization when useLLM is false', async () => {
+    // When: useLLM is explicitly false
+    const result = await summarizeTaskName('認証機能を追加する', { cwd: '/project', useLLM: false });
+
+    // Then: should not call provider, should return romaji
+    expect(mockProviderCall).not.toHaveBeenCalled();
+    expect(result).toMatch(/^[a-z0-9-]+$/);
+    expect(result.length).toBeLessThanOrEqual(30);
+  });
+
+  it('should handle mixed Japanese/English with romanization', async () => {
+    // When
+    const result = await summarizeTaskName('Add 認証機能', { cwd: '/project', useLLM: false });
+
+    // Then
+    expect(result).toMatch(/^[a-z0-9-]+$/);
+    expect(result).not.toMatch(/^-|-$/); // No leading/trailing hyphens
+  });
+
+  it('should use LLM by default', async () => {
+    // Given
+    mockProviderCall.mockResolvedValue({
+      agent: 'summarizer',
+      status: 'done',
+      content: 'add-auth',
+      timestamp: new Date(),
+    });
+
+    // When: useLLM not specified (defaults to true)
+    await summarizeTaskName('test', { cwd: '/project' });
+
+    // Then: should call provider
+    expect(mockProviderCall).toHaveBeenCalled();
   });
 });

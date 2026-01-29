@@ -6,6 +6,7 @@ import { loadWorkflow, loadGlobalConfig } from '../config/index.js';
 import { TaskRunner, type TaskInfo } from '../task/index.js';
 import { createWorktree } from '../task/worktree.js';
 import { autoCommitWorktree } from '../task/autoCommit.js';
+import { summarizeTaskName } from '../task/summarize.js';
 import {
   header,
   info,
@@ -73,7 +74,7 @@ export async function executeAndCompleteTask(
   const executionLog: string[] = [];
 
   try {
-    const { execCwd, execWorkflow, isWorktree } = resolveTaskExecution(task, cwd, workflowName);
+    const { execCwd, execWorkflow, isWorktree } = await resolveTaskExecution(task, cwd, workflowName);
 
     // cwd is always the project root; pass it as projectCwd so reports/sessions go there
     const taskSuccess = await executeTask(task.content, execCwd, execWorkflow, cwd);
@@ -179,12 +180,13 @@ export async function runAllTasks(
 /**
  * Resolve execution directory and workflow from task data.
  * If the task has worktree settings, create a worktree and use it as cwd.
+ * Task name is summarized to English by AI for use in branch/worktree names.
  */
-export function resolveTaskExecution(
+export async function resolveTaskExecution(
   task: TaskInfo,
   defaultCwd: string,
   defaultWorkflow: string
-): { execCwd: string; execWorkflow: string; isWorktree: boolean } {
+): Promise<{ execCwd: string; execWorkflow: string; isWorktree: boolean }> {
   const data = task.data;
 
   // No structured data: use defaults
@@ -197,10 +199,14 @@ export function resolveTaskExecution(
 
   // Handle worktree
   if (data.worktree) {
+    // Summarize task content to English slug using AI
+    info('Generating branch name...');
+    const taskSlug = await summarizeTaskName(task.content, { cwd: defaultCwd });
+
     const result = createWorktree(defaultCwd, {
       worktree: data.worktree,
       branch: data.branch,
-      taskSlug: task.name,
+      taskSlug,
     });
     execCwd = result.path;
     isWorktree = true;
