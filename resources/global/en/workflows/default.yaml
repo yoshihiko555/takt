@@ -25,6 +25,7 @@ steps:
       - Read
       - Glob
       - Grep
+      - Write
       - Bash
       - WebSearch
       - WebFetch
@@ -236,6 +237,7 @@ steps:
       - Read
       - Glob
       - Grep
+      - Write
       - WebSearch
       - WebFetch
     status_rules_prompt: |
@@ -429,6 +431,7 @@ steps:
       - Read
       - Glob
       - Grep
+      - Write
       - WebSearch
       - WebFetch
     status_rules_prompt: |
@@ -602,6 +605,7 @@ steps:
       - Read
       - Glob
       - Grep
+      - Write
       - WebSearch
       - WebFetch
     status_rules_prompt: |
@@ -838,6 +842,7 @@ steps:
       - Read
       - Glob
       - Grep
+      - Write
       - Bash
       - WebSearch
       - WebFetch
