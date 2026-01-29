@@ -40,8 +40,11 @@ import { createSharedClone } from './task/clone.js';
 import { autoCommitAndPush } from './task/autoCommit.js';
 import { summarizeTaskName } from './task/summarize.js';
 import { DEFAULT_WORKFLOW_NAME } from './constants.js';
+import { checkForUpdates } from './utils/updateNotifier.js';
 
 const log = createLogger('cli');
+
+checkForUpdates();
 
 export interface WorktreeConfirmationResult {
   execCwd: string;
