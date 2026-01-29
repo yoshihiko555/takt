@@ -33,7 +33,20 @@ Identify the scope of changes:
 - Dependencies
 - Impact on tests
 
-### 3. Implementation Approach
+### 3. Fact-Checking (Source of Truth Verification)
+
+Always verify information used in your analysis against the source of truth:
+
+| Information Type | Source of Truth |
+|-----------------|-----------------|
+| Code behavior | Actual source code |
+| Config values / names | Actual config files / definition files |
+| APIs / commands | Actual implementation code |
+| Documentation claims | Cross-check with actual codebase |
+
+**Don't guess.** Always verify names, values, and behaviors against actual code.
+
+### 4. Implementation Approach
 
 Determine the implementation direction:
 

@@ -42,20 +42,58 @@ takt /list-tasks
 takt /switch
 ```
 
+### What happens when you run a task
+
+When you run `takt "Add a login feature"`, TAKT guides you through an interactive flow:
+
+**1. Workflow selection**
+
+```
+Select workflow:
+  (↑↓ to move, Enter to select)
+
+  ❯ default (current) (default)
+    expert
+    expert-cqrs
+    magi
+    research
+    simple
+    Cancel
+```
+
+**2. Isolated clone** (optional)
+
+```
+? Create worktree? (y/N)
+```
+
+Choose `y` to run in a `git clone --shared` isolated environment, keeping your working directory clean.
+
+**3. Execution** — The selected workflow orchestrates multiple agents to complete the task.
+
+### Recommended workflows
+
+| Workflow | Best for |
+|----------|----------|
+| `default` | Full development tasks. Used for TAKT's own development. Multi-stage review with fix loops. |
+| `simple` | Lightweight tasks like README updates or small fixes. Reviews without fix loops. |
+| `expert-review` / `expert-cqrs` | Web development projects. Multi-expert review (CQRS, Frontend, Security, QA). |
+| `research` | Research and investigation. Autonomous research without asking questions. |
+| `magi` | Fun deliberation. Three AI personas analyze and vote (Evangelion-inspired). |
+
 ## Commands
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `takt "task"` | | Execute task with current workflow (continues session) |
-| `takt -r "task"` | | Execute task, resuming previous session |
+| `takt "task"` | | Execute task with current workflow (session auto-continued) |
 | `takt /run-tasks` | `/run` | Run all pending tasks from `.takt/tasks/` |
 | `takt /watch` | | Watch `.takt/tasks/` and auto-execute tasks (stays resident) |
 | `takt /add-task` | `/add` | Add a new task interactively (YAML format, multiline supported) |
 | `takt /list-tasks` | `/list` | List task branches (try merge, merge & cleanup, or delete) |
-| `takt /switch` | | Switch workflow interactively |
+| `takt /switch` | `/sw` | Switch workflow interactively |
 | `takt /clear` | | Clear agent conversation sessions |
 | `takt /refresh-builtin` | | Update builtin agents/workflows to latest version |
-| `takt /config` | | Display current configuration |
+| `takt /config` | | Configure permission mode |
 | `takt /help` | | Show help |
 
 ## Workflows
@@ -112,6 +150,7 @@ TAKT ships with several built-in workflows:
 | `simple` | Simplified version of default: plan → implement → architect review → AI review → supervisor. No intermediate fix steps. |
 | `research` | Research workflow: planner → digger → supervisor. Autonomously researches topics without asking questions. |
 | `expert-review` | Comprehensive review with domain experts: CQRS+ES, Frontend, AI, Security, QA reviews with fix loops. |
+| `expert-cqrs` | Expert review focused on CQRS+ES, Frontend, AI, Security, and QA. Plan → implement → multi-expert review → supervise. |
 | `magi` | Deliberation system inspired by Evangelion. Three AI personas (MELCHIOR, BALTHASAR, CASPER) analyze and vote. |
 
 Switch between workflows with `takt /switch`.
@@ -186,6 +225,7 @@ Available Codex models:
 ├── tasks/               # Pending task files (.yaml, .md)
 ├── completed/           # Completed tasks with reports
 ├── worktree-meta/       # Metadata for task branches
+├── worktree-sessions/   # Per-clone agent session storage
 ├── reports/             # Execution reports (auto-generated)
 └── logs/                # Session logs (incremental)
     ├── latest.json      # Pointer to current/latest session
@@ -216,20 +256,6 @@ trusted_directories:
 
 
 ## Practical Usage Guide
-
-### Resuming Sessions with `-r`
-
-When TAKT prompts for additional input during execution (e.g., "Please provide more details"), use the `-r` flag to continue the conversation:
-
-```bash
-# First run - agent might ask for clarification
-takt "Fix the login bug"
-
-# Resume the same session to provide the requested information
-takt -r "The bug occurs when the password contains special characters"
-```
-
-The `-r` flag preserves the agent's conversation history, allowing for natural back-and-forth interaction.
 
 ### Interactive Workflow
 
@@ -396,7 +422,7 @@ TAKT writes session logs incrementally to `.takt/logs/`. Logs are saved at workf
 - `.takt/logs/previous.json` - Pointer to the previous session
 - `.takt/logs/{sessionId}.json` - Full session log with step history
 
-Agents can read `previous.json` to pick up context from a prior run (e.g., when resuming with `takt "続けて"`).
+Agents can read `previous.json` to pick up context from a prior run. Session continuity is automatic — simply run `takt "task"` to continue where the previous session left off.
 
 ### Workflow Variables
 

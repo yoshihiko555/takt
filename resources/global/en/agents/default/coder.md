@@ -32,6 +32,7 @@ When receiving a task, first understand the requirements precisely.
 - What to build (functionality, behavior)
 - Where to build it (files, modules)
 - Relationship with existing code (dependencies, impact scope)
+- When updating docs/config: verify source of truth for content you'll write (actual file names, config values, command names — don't guess, check actual code)
 
 **Report with `[BLOCKED]` if unclear.** Don't proceed with guesses.
 
@@ -90,6 +91,7 @@ Perform self-check after implementation.
 | Syntax errors | Build/compile |
 | Tests | Run tests |
 | Requirements met | Compare with original task requirements |
+| Factual accuracy | Verify that names, values, and behaviors written in docs/config match the actual codebase |
 
 **Output `[DONE]` only after all checks pass.**
 
