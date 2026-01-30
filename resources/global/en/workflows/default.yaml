@@ -32,10 +32,6 @@ steps:
     agent: ~/.takt/agents/default/planner.md
     report:
       name: 00-plan.md
-      order: |
-        **Report output:** Output to the `Report File` specified above.
-        - If file does not exist: Create new file
-        - If file exists: Append with `## Iteration {step_iteration}` section
       format: |
         ```markdown
         # Task Plan
@@ -116,10 +112,6 @@ steps:
       Follow the plan from the plan step and implement.
       Refer to the plan report (00-plan.md) and proceed with implementation.
 
-      **Report output:** Output to the `Report Files` specified above.
-      - If file does not exist: Create new file
-      - If file exists: Append with `## Iteration {step_iteration}` section
-
       **Scope report format (create at implementation start):**
       ```markdown
       # Change Scope Declaration
@@ -155,10 +147,6 @@ steps:
     agent: ~/.takt/agents/default/ai-antipattern-reviewer.md
     report:
       name: 03-ai-review.md
-      order: |
-        **Report output:** Output to the `Report File` specified above.
-        - If file does not exist: Create new file
-        - If file exists: Append with `## Iteration {step_iteration}` section
       format: |
         ```markdown
         # AI-Generated Code Review
@@ -239,10 +227,6 @@ steps:
     agent: ~/.takt/agents/default/architecture-reviewer.md
     report:
       name: 04-architect-review.md
-      order: |
-        **Report output:** Output to the `Report File` specified above.
-        - If file does not exist: Create new file
-        - If file exists: Append with `## Iteration {step_iteration}` section
       format: |
         ```markdown
         # Architecture Review
@@ -353,10 +337,6 @@ steps:
     agent: ~/.takt/agents/default/security-reviewer.md
     report:
       name: 05-security-review.md
-      order: |
-        **Report output:** Output to the `Report File` specified above.
-        - If file does not exist: Create new file
-        - If file exists: Append with `## Iteration {step_iteration}` section
       format: |
         ```markdown
         # Security Review
@@ -460,10 +440,6 @@ steps:
 
       **Review Reports:** Read all reports in Report Directory and
       check for any unaddressed improvement suggestions.
-
-      **Report output:** Output to the `Report Files` specified above.
-      - If file does not exist: Create new file
-      - If file exists: Append with `## Iteration {step_iteration}` section
 
       **Validation report format:**
       ```markdown

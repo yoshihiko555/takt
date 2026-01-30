@@ -269,6 +269,44 @@ const SECTION_STRINGS = {
   },
 } as const;
 
+/** Localized strings for auto-generated report output instructions */
+const REPORT_OUTPUT_STRINGS = {
+  en: {
+    singleHeading: '**Report output:** Output to the `Report File` specified above.',
+    multiHeading: '**Report output:** Output to the `Report Files` specified above.',
+    createRule: '- If file does not exist: Create new file',
+    appendRule: '- If file exists: Append with `## Iteration {step_iteration}` section',
+  },
+  ja: {
+    singleHeading: '**レポート出力:** `Report File` に出力してください。',
+    multiHeading: '**レポート出力:** Report Files に出力してください。',
+    createRule: '- ファイルが存在しない場合: 新規作成',
+    appendRule: '- ファイルが存在する場合: `## Iteration {step_iteration}` セクションを追記',
+  },
+} as const;
+
+/**
+ * Generate report output instructions from step.report config.
+ * Returns undefined if step has no report or no reportDir.
+ *
+ * This replaces the manual `order:` fields and instruction_template
+ * report output blocks that were previously hand-written in each YAML.
+ */
+function renderReportOutputInstruction(
+  step: WorkflowStep,
+  context: InstructionContext,
+  language: Language,
+): string | undefined {
+  if (!step.report || !context.reportDir) return undefined;
+
+  const s = REPORT_OUTPUT_STRINGS[language];
+  const isMulti = Array.isArray(step.report);
+  const heading = isMulti ? s.multiHeading : s.singleHeading;
+  const appendRule = s.appendRule.replace('{step_iteration}', String(context.stepIteration));
+
+  return [heading, s.createRule, appendRule].join('\n');
+}
+
 /**
  * Render the Workflow Context section.
  */
@@ -428,10 +466,17 @@ export function buildInstruction(
     sections.push(`${s.additionalUserInputs}\n${escapeTemplateChars(userInputsStr)}`);
   }
 
-  // 6a. Report order (prepended before instruction_template, from ReportObjectConfig)
+  // 6a. Report output instruction (auto-generated from step.report)
+  // If ReportObjectConfig has an explicit `order:`, use that (backward compat).
+  // Otherwise, auto-generate from the report declaration.
   if (step.report && isReportObjectConfig(step.report) && step.report.order) {
     const processedOrder = replaceTemplatePlaceholders(step.report.order.trimEnd(), step, context);
     sections.push(processedOrder);
+  } else {
+    const reportInstruction = renderReportOutputInstruction(step, context, language);
+    if (reportInstruction) {
+      sections.push(reportInstruction);
+    }
   }
 
   // 6b. Instructions header + instruction_template content

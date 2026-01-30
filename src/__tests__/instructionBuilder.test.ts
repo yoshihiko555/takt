@@ -626,7 +626,7 @@ describe('instruction-builder', () => {
       expect(result).not.toContain('{report:00-plan.md}');
     });
 
-    it('should not inject order/format when report is a simple string', () => {
+    it('should auto-inject report output instruction when report is a simple string', () => {
       const step = createMinimalStep('Do work');
       step.report = '00-plan.md';
       const context = createMinimalContext({
@@ -636,17 +636,16 @@ describe('instruction-builder', () => {
 
       const result = buildInstruction(step, context);
 
-      // Should contain instructions normally
-      expect(result).toContain('## Instructions');
-      expect(result).toContain('Do work');
-      // The instruction should appear right after Additional User Inputs, not after any order section
-      const additionalIdx = result.indexOf('## Additional User Inputs');
+      // Auto-generated report output instruction should be injected before ## Instructions
+      expect(result).toContain('**Report output:** Output to the `Report File` specified above.');
+      expect(result).toContain('- If file does not exist: Create new file');
+      const reportIdx = result.indexOf('**Report output:**');
       const instructionsIdx = result.indexOf('## Instructions');
-      expect(additionalIdx).toBeGreaterThan(-1);
-      expect(instructionsIdx).toBeGreaterThan(additionalIdx);
+      expect(reportIdx).toBeGreaterThan(-1);
+      expect(instructionsIdx).toBeGreaterThan(reportIdx);
     });
 
-    it('should not inject order/format when report is ReportConfig[]', () => {
+    it('should auto-inject report output instruction when report is ReportConfig[]', () => {
       const step = createMinimalStep('Do work');
       step.report = [
         { label: 'Scope', path: '01-scope.md' },
@@ -658,9 +657,9 @@ describe('instruction-builder', () => {
 
       const result = buildInstruction(step, context);
 
-      // Just verify normal behavior without extra sections
-      expect(result).toContain('## Instructions');
-      expect(result).toContain('Do work');
+      // Auto-generated multi-file report output instruction
+      expect(result).toContain('**Report output:** Output to the `Report Files` specified above.');
+      expect(result).toContain('- If file does not exist: Create new file');
     });
 
     it('should replace {report:filename} in instruction_template too', () => {
@@ -691,6 +690,90 @@ describe('instruction-builder', () => {
       const result = buildInstruction(step, context);
 
       expect(result).toContain('Append ## Iteration 3 section');
+    });
+
+    it('should auto-inject Japanese report output instruction for ja language', () => {
+      const step = createMinimalStep('作業する');
+      step.report = { name: '00-plan.md' };
+      const context = createMinimalContext({
+        reportDir: '20260129-test',
+        language: 'ja',
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('**レポート出力:** `Report File` に出力してください。');
+      expect(result).toContain('- ファイルが存在しない場合: 新規作成');
+      expect(result).toContain('- ファイルが存在する場合: `## Iteration 1` セクションを追記');
+    });
+
+    it('should auto-inject Japanese multi-file report output instruction', () => {
+      const step = createMinimalStep('作業する');
+      step.report = [{ label: 'Scope', path: '01-scope.md' }];
+      const context = createMinimalContext({
+        reportDir: '20260129-test',
+        language: 'ja',
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('**レポート出力:** Report Files に出力してください。');
+    });
+
+    it('should replace {step_iteration} in auto-generated report output instruction', () => {
+      const step = createMinimalStep('Do work');
+      step.report = '00-plan.md';
+      const context = createMinimalContext({
+        reportDir: '20260129-test',
+        stepIteration: 5,
+        language: 'en',
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('Append with `## Iteration 5` section');
+    });
+
+    it('should prefer explicit order over auto-generated report instruction', () => {
+      const step = createMinimalStep('Do work');
+      step.report = {
+        name: '00-plan.md',
+        order: 'Custom order instruction',
+      };
+      const context = createMinimalContext({
+        reportDir: '20260129-test',
+        language: 'en',
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('Custom order instruction');
+      expect(result).not.toContain('**Report output:**');
+    });
+
+    it('should auto-inject report output for ReportObjectConfig without order', () => {
+      const step = createMinimalStep('Do work');
+      step.report = { name: '00-plan.md', format: '# Plan' };
+      const context = createMinimalContext({
+        reportDir: '20260129-test',
+        language: 'en',
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('**Report output:** Output to the `Report File` specified above.');
+    });
+
+    it('should NOT inject report output when no reportDir', () => {
+      const step = createMinimalStep('Do work');
+      step.report = '00-plan.md';
+      const context = createMinimalContext({
+        language: 'en',
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).not.toContain('**Report output:**');
     });
   });
 
