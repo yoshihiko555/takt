@@ -110,70 +110,68 @@ describe('instruction-builder', () => {
   });
 
   describe('report_dir replacement', () => {
-    it('should replace {report_dir} in paths keeping them relative', () => {
+    it('should replace {report_dir} with absolute path', () => {
       const step = createMinimalStep(
-        '- Report Directory: .takt/reports/{report_dir}/'
+        '- Report Directory: {report_dir}/'
       );
       const context = createMinimalContext({
         cwd: '/project',
-        reportDir: '20260128-test-report',
+        reportDir: '/project/.takt/reports/20260128-test-report',
       });
 
       const result = buildInstruction(step, context);
 
       expect(result).toContain(
-        '- Report Directory: .takt/reports/20260128-test-report/'
+        '- Report Directory: /project/.takt/reports/20260128-test-report/'
       );
     });
 
-    it('should not leak projectCwd absolute path into instruction', () => {
+    it('should use absolute reportDir path in worktree mode', () => {
       const step = createMinimalStep(
-        '- Report: .takt/reports/{report_dir}/00-plan.md'
+        '- Report: {report_dir}/00-plan.md'
       );
       const context = createMinimalContext({
         cwd: '/clone/my-task',
         projectCwd: '/project',
-        reportDir: '20260128-worktree-report',
+        reportDir: '/project/.takt/reports/20260128-worktree-report',
       });
 
       const result = buildInstruction(step, context);
 
-      // Path should be relative, not absolute with projectCwd
+      // reportDir is now absolute, pointing to projectCwd
       expect(result).toContain(
-        '- Report: .takt/reports/20260128-worktree-report/00-plan.md'
+        '- Report: /project/.takt/reports/20260128-worktree-report/00-plan.md'
       );
-      expect(result).not.toContain('/project/.takt/reports/');
       expect(result).toContain('Working Directory: /clone/my-task');
     });
 
-    it('should replace multiple {report_dir} occurrences', () => {
+    it('should replace multiple {report_dir} occurrences with absolute path', () => {
       const step = createMinimalStep(
-        '- Scope: .takt/reports/{report_dir}/01-scope.md\n- Decisions: .takt/reports/{report_dir}/02-decisions.md'
+        '- Scope: {report_dir}/01-scope.md\n- Decisions: {report_dir}/02-decisions.md'
       );
       const context = createMinimalContext({
         projectCwd: '/project',
         cwd: '/worktree',
-        reportDir: '20260128-multi',
+        reportDir: '/project/.takt/reports/20260128-multi',
       });
 
       const result = buildInstruction(step, context);
 
-      expect(result).toContain('.takt/reports/20260128-multi/01-scope.md');
-      expect(result).toContain('.takt/reports/20260128-multi/02-decisions.md');
-      expect(result).not.toContain('/project/.takt/reports/');
+      expect(result).toContain('/project/.takt/reports/20260128-multi/01-scope.md');
+      expect(result).toContain('/project/.takt/reports/20260128-multi/02-decisions.md');
     });
 
-    it('should replace standalone {report_dir} with directory name only', () => {
+    it('should replace standalone {report_dir} with absolute path', () => {
       const step = createMinimalStep(
         'Report dir name: {report_dir}'
       );
       const context = createMinimalContext({
-        reportDir: '20260128-standalone',
+        reportDir: '/project/.takt/reports/20260128-standalone',
       });
 
       const result = buildInstruction(step, context);
 
-      expect(result).toContain('Report dir name: 20260128-standalone');
+      expect(result).toContain('Report dir name: /project/.takt/reports/20260128-standalone');
     });
   });
 
@@ -423,7 +421,7 @@ describe('instruction-builder', () => {
       step.name = 'plan';
       step.report = '00-plan.md';
       const context = createMinimalContext({
-        reportDir: '20260129-test',
+        reportDir: '/project/.takt/reports/20260129-test',
         language: 'en',
       });
 
@@ -441,7 +439,7 @@ describe('instruction-builder', () => {
         { label: 'Decisions', path: '02-decisions.md' },
       ];
       const context = createMinimalContext({
-        reportDir: '20260129-test',
+        reportDir: '/project/.takt/reports/20260129-test',
         language: 'en',
       });
 
@@ -455,7 +453,7 @@ describe('instruction-builder', () => {
       const step = createMinimalStep('Do work');
       step.report = { name: '00-plan.md' };
       const context = createMinimalContext({
-        reportDir: '20260129-test',
+        reportDir: '/project/.takt/reports/20260129-test',
         language: 'en',
       });
 
@@ -483,7 +481,7 @@ describe('instruction-builder', () => {
       const step = createMinimalStep('Do work');
       step.report = '00-plan.md';
       const context = createMinimalContext({
-        reportDir: '20260129-test',
+        reportDir: '/project/.takt/reports/20260129-test',
         language: 'en',
       });
 
@@ -498,7 +496,7 @@ describe('instruction-builder', () => {
       const step = createMinimalStep('Do work');
       step.report = { name: '00-plan.md', format: '**Format:**\n# Plan' };
       const context = createMinimalContext({
-        reportDir: '20260129-test',
+        reportDir: '/project/.takt/reports/20260129-test',
         language: 'en',
       });
 
@@ -514,7 +512,7 @@ describe('instruction-builder', () => {
         order: 'Custom order instruction',
       };
       const context = createMinimalContext({
-        reportDir: '20260129-test',
+        reportDir: '/project/.takt/reports/20260129-test',
         language: 'en',
       });
 
@@ -526,13 +524,13 @@ describe('instruction-builder', () => {
     it('should still replace {report:filename} in instruction_template', () => {
       const step = createMinimalStep('Write to {report:00-plan.md}');
       const context = createMinimalContext({
-        reportDir: '20260129-test',
+        reportDir: '/project/.takt/reports/20260129-test',
         language: 'en',
       });
 
       const result = buildInstruction(step, context);
 
-      expect(result).toContain('Write to 20260129-test/00-plan.md');
+      expect(result).toContain('Write to /project/.takt/reports/20260129-test/00-plan.md');
       expect(result).not.toContain('{report:00-plan.md}');
     });
   });
@@ -541,7 +539,7 @@ describe('instruction-builder', () => {
     function createReportContext(overrides: Partial<ReportInstructionContext> = {}): ReportInstructionContext {
       return {
         cwd: '/project',
-        reportDir: '20260129-test',
+        reportDir: '/project/.takt/reports/20260129-test',
         stepIteration: 1,
         language: 'en',
         ...overrides,
@@ -582,12 +580,12 @@ describe('instruction-builder', () => {
     it('should include report directory and file for string report', () => {
       const step = createMinimalStep('Do work');
       step.report = '00-plan.md';
-      const ctx = createReportContext({ reportDir: '20260130-test' });
+      const ctx = createReportContext({ reportDir: '/project/.takt/reports/20260130-test' });
 
       const result = buildReportInstruction(step, ctx);
 
-      expect(result).toContain('- Report Directory: 20260130-test/');
-      expect(result).toContain('- Report File: 20260130-test/00-plan.md');
+      expect(result).toContain('- Report Directory: /project/.takt/reports/20260130-test/');
+      expect(result).toContain('- Report File: /project/.takt/reports/20260130-test/00-plan.md');
     });
 
     it('should include report files for ReportConfig[] report', () => {
@@ -600,10 +598,10 @@ describe('instruction-builder', () => {
 
       const result = buildReportInstruction(step, ctx);
 
-      expect(result).toContain('- Report Directory: 20260129-test/');
+      expect(result).toContain('- Report Directory: /project/.takt/reports/20260129-test/');
       expect(result).toContain('- Report Files:');
-      expect(result).toContain('  - Scope: 20260129-test/01-scope.md');
-      expect(result).toContain('  - Decisions: 20260129-test/02-decisions.md');
+      expect(result).toContain('  - Scope: /project/.takt/reports/20260129-test/01-scope.md');
+      expect(result).toContain('  - Decisions: /project/.takt/reports/20260129-test/02-decisions.md');
     });
 
     it('should include report file for ReportObjectConfig report', () => {
@@ -613,7 +611,7 @@ describe('instruction-builder', () => {
 
       const result = buildReportInstruction(step, ctx);
 
-      expect(result).toContain('- Report File: 20260129-test/00-plan.md');
+      expect(result).toContain('- Report File: /project/.takt/reports/20260129-test/00-plan.md');
     });
 
     it('should include auto-generated report output instruction', () => {
@@ -638,7 +636,7 @@ describe('instruction-builder', () => {
 
       const result = buildReportInstruction(step, ctx);
 
-      expect(result).toContain('Output to 20260129-test/00-plan.md file.');
+      expect(result).toContain('Output to /project/.takt/reports/20260129-test/00-plan.md file.');
       expect(result).not.toContain('**Report output:**');
     });
 
