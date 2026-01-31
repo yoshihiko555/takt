@@ -27,6 +27,16 @@ provider: claude
 # OpenAI API key (optional, overridden by TAKT_OPENAI_API_KEY env var)
 # openai_api_key: ""
 
+# Pipeline execution settings (optional)
+# Customize branch naming, commit messages, and PR body for pipeline mode (--task).
+# pipeline:
+#   default_branch_prefix: "takt/"
+#   commit_message_template: "feat: {title} (#{issue})"
+#   pr_body_template: |
+#     ## Summary
+#     {issue_body}
+#     Closes #{issue}
+
 # Debug settings (optional)
 # debug:
 #   enabled: false

@@ -12,3 +12,4 @@ export { switchWorkflow } from './workflow.js';
 export { switchConfig, getCurrentPermissionMode, setPermissionMode, type PermissionMode } from './config.js';
 export { listTasks } from './listTasks.js';
 export { interactiveMode } from './interactive.js';
+export { executePipeline, type PipelineExecutionOptions } from './pipelineExecution.js';

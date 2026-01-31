@@ -76,16 +76,32 @@ export async function promptProviderSelection(): Promise<'claude' | 'codex'> {
   return result;
 }
 
+/** Options for global directory initialization */
+export interface InitGlobalDirsOptions {
+  /** Skip interactive prompts (CI/non-TTY environments) */
+  nonInteractive?: boolean;
+}
+
 /**
  * Initialize global takt directory structure with language selection.
  * On first run, creates config.yaml from language template.
  * Agents/workflows are NOT copied — they are loaded via builtin fallback.
+ *
+ * In non-interactive mode (pipeline mode or no TTY), skips prompts
+ * and uses default values so takt works in pipeline/CI environments without config.yaml.
  */
-export async function initGlobalDirs(): Promise<void> {
+export async function initGlobalDirs(options?: InitGlobalDirsOptions): Promise<void> {
   ensureDir(getGlobalConfigDir());
   ensureDir(getGlobalLogsDir());
 
   if (needsLanguageSetup()) {
+    const isInteractive = !options?.nonInteractive && process.stdin.isTTY === true;
+
+    if (!isInteractive) {
+      // Pipeline / non-interactive: skip prompts, use defaults via loadGlobalConfig() fallback
+      return;
+    }
+
     const lang = await promptLanguageSelection();
     const provider = await promptProviderSelection();
 

@@ -20,31 +20,23 @@ npm install -g takt
 ## クイックスタート
 
 ```bash
-# タスクを実行（ワークフロー選択プロンプトが表示されます）
-takt "ログイン機能を追加して"
+# タスクを実行（ワークフロー選択・worktree・PR作成を対話的に案内）
+takt ログイン機能を追加して
 
-# GitHub Issueをタスクとして実行
-takt "#6"
+# GitHub Issueをタスクとして実行（どちらも同じ）
+takt '#6'
+takt --issue 6
 
-# AI会話でタスクを追加
-takt add
+# 対話モードでAIとタスク要件を詰めてから実行
+takt
 
-# 保留中のタスクをすべて実行
-takt run
-
-# タスクを監視して自動実行
-takt watch
-
-# タスクブランチ一覧（マージ・削除）
-takt list
-
-# ワークフローを切り替え
-takt switch
+# パイプライン実行（非対話・スクリプト/CI向け）
+takt --task "バグを修正して" --auto-pr
 ```
 
 ### タスク実行の流れ
 
-`takt "ログイン機能を追加して"` を実行すると、以下の対話フローが表示されます:
+`takt ログイン機能を追加して` を実行すると、以下の対話フローが表示されます:
 
 **1. ワークフロー選択**
 
@@ -71,6 +63,14 @@ Select workflow:
 
 **3. 実行** — 選択したワークフローが複数のエージェントを連携させてタスクを完了します。
 
+**4. PR作成**（worktree実行後）
+
+```
+? Create pull request? (y/N)
+```
+
+`--auto-pr` を指定している場合は確認なしで自動作成されます。
+
 ### おすすめワークフロー
 
 | ワークフロー | おすすめ用途 |
@@ -83,11 +83,54 @@ Select workflow:
 
 ## コマンド一覧
 
+### 対話モード（デフォルト）
+
+日常の開発で使う基本モード。ワークフロー選択、worktree作成、PR作成を対話的に確認します。
+
+```bash
+# タスクを実行
+takt ログイン機能を追加して
+
+# GitHub Issueをタスクとして実行（どちらも同じ）
+takt '#6'
+takt --issue 6
+
+# 対話モードでAIとタスク要件を詰めてから実行
+takt
+
+# タスクを実行してPRを自動作成（確認プロンプトをスキップ）
+takt '#6' --auto-pr
+```
+
+`--auto-pr` を指定しない場合、worktreeでの実行成功後に「PR作成する？」と確認されます。
+
+### パイプラインモード（`--task`）
+
+`--task` を指定すると非対話のパイプラインモードに入ります。ブランチ作成 → ワークフロー実行 → commit & push を自動で行います。スクリプトやCI連携に適しています。
+
+```bash
+# タスクをパイプライン実行
+takt --task "バグを修正"
+
+# パイプライン実行 + PR自動作成
+takt --task "バグを修正" --auto-pr
+
+# Issue情報を紐付け
+takt --task "バグを修正" --issue 99 --auto-pr
+
+# ワークフロー・ブランチ指定
+takt --task "バグを修正" -w magi -b feat/fix-bug
+
+# リポジトリ指定（PR作成時）
+takt --task "バグを修正" --auto-pr --repo owner/repo
+```
+
+パイプラインモードでは `--auto-pr` を指定しない限りPRは作成されません。
+
+### サブコマンド
+
 | コマンド | 説明 |
 |---------|------|
-| `takt "タスク"` | 現在のワークフローでタスクを実行（セッション自動継続） |
-| `takt "#N"` | GitHub Issue #Nをタスクとして実行 |
-| `takt` | 対話式タスク入力モード |
 | `takt run` | `.takt/tasks/` の保留中タスクをすべて実行 |
 | `takt watch` | `.takt/tasks/` を監視してタスクを自動実行（常駐プロセス） |
 | `takt add` | AI会話で新しいタスクを追加 |
@@ -97,6 +140,17 @@ Select workflow:
 | `takt eject` | ビルトインのワークフロー/エージェントを`~/.takt/`にコピーしてカスタマイズ |
 | `takt config` | パーミッションモードを設定 |
 | `takt --help` | ヘルプを表示 |
+
+### オプション
+
+| オプション | 説明 |
+|-----------|------|
+| `-t, --task <text>` | タスク内容 — **パイプライン（非対話）モードのトリガー** |
+| `-i, --issue <N>` | GitHub Issue番号（対話モードでは `#N` と同じ） |
+| `-w, --workflow <name>` | ワークフロー指定 |
+| `-b, --branch <name>` | ブランチ名指定（省略時は自動生成） |
+| `--auto-pr` | PR作成（対話: 確認スキップ、パイプライン: PR有効化） |
+| `--repo <owner/repo>` | リポジトリ指定（PR作成時） |
 
 ## ワークフロー
 
@@ -282,7 +336,26 @@ provider: claude         # デフォルトプロバイダー: claude または c
 model: sonnet            # デフォルトモデル（オプション）
 trusted_directories:
   - /path/to/trusted/dir
+
+# パイプライン実行設定（オプション）
+# ブランチ名、コミットメッセージ、PRの本文をカスタマイズできます。
+# pipeline:
+#   default_branch_prefix: "takt/"
+#   commit_message_template: "feat: {title} (#{issue})"
+#   pr_body_template: |
+#     ## Summary
+#     {issue_body}
+#     Closes #{issue}
 ```
+
+**パイプラインテンプレート変数:**
+
+| 変数 | 使用可能箇所 | 説明 |
+|------|-------------|------|
+| `{title}` | コミットメッセージ | Issueタイトル |
+| `{issue}` | コミットメッセージ、PR本文 | Issue番号 |
+| `{issue_body}` | PR本文 | Issue本文 |
+| `{report}` | PR本文 | ワークフロー実行レポート |
 
 **モデル解決の優先順位:**
 1. ワークフローステップの `model`（最優先）

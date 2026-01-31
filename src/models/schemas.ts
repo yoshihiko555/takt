@@ -159,6 +159,13 @@ export const DebugConfigSchema = z.object({
 /** Language setting schema */
 export const LanguageSchema = z.enum(['en', 'ja']);
 
+/** Pipeline execution config schema */
+export const PipelineConfigSchema = z.object({
+  default_branch_prefix: z.string().optional(),
+  commit_message_template: z.string().optional(),
+  pr_body_template: z.string().optional(),
+});
+
 /** Global config schema */
 export const GlobalConfigSchema = z.object({
   language: LanguageSchema.optional().default(DEFAULT_LANGUAGE),
@@ -176,6 +183,8 @@ export const GlobalConfigSchema = z.object({
   anthropic_api_key: z.string().optional(),
   /** OpenAI API key for Codex SDK (overridden by TAKT_OPENAI_API_KEY env var) */
   openai_api_key: z.string().optional(),
+  /** Pipeline execution settings */
+  pipeline: PipelineConfigSchema.optional(),
 });
 
 /** Project config schema */

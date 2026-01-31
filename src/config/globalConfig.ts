@@ -12,14 +12,22 @@ import type { GlobalConfig, DebugConfig, Language } from '../models/types.js';
 import { getGlobalConfigPath, getProjectConfigPath } from './paths.js';
 import { DEFAULT_LANGUAGE } from '../constants.js';
 
+/** Create default global configuration (fresh instance each call) */
+function createDefaultGlobalConfig(): GlobalConfig {
+  return {
+    language: DEFAULT_LANGUAGE,
+    trustedDirectories: [],
+    defaultWorkflow: 'default',
+    logLevel: 'info',
+    provider: 'claude',
+  };
+}
+
 /** Load global configuration */
 export function loadGlobalConfig(): GlobalConfig {
   const configPath = getGlobalConfigPath();
   if (!existsSync(configPath)) {
-    throw new Error(
-      `Global config not found: ${configPath}\n` +
-      'Run takt once to initialize the configuration.'
-    );
+    return createDefaultGlobalConfig();
   }
   const content = readFileSync(configPath, 'utf-8');
   const raw = parseYaml(content);
@@ -39,6 +47,11 @@ export function loadGlobalConfig(): GlobalConfig {
     disabledBuiltins: parsed.disabled_builtins,
     anthropicApiKey: parsed.anthropic_api_key,
     openaiApiKey: parsed.openai_api_key,
+    pipeline: parsed.pipeline ? {
+      defaultBranchPrefix: parsed.pipeline.default_branch_prefix,
+      commitMessageTemplate: parsed.pipeline.commit_message_template,
+      prBodyTemplate: parsed.pipeline.pr_body_template,
+    } : undefined,
   };
 }
 
@@ -72,6 +85,15 @@ export function saveGlobalConfig(config: GlobalConfig): void {
   }
   if (config.openaiApiKey) {
     raw.openai_api_key = config.openaiApiKey;
+  }
+  if (config.pipeline) {
+    const pipelineRaw: Record<string, unknown> = {};
+    if (config.pipeline.defaultBranchPrefix) pipelineRaw.default_branch_prefix = config.pipeline.defaultBranchPrefix;
+    if (config.pipeline.commitMessageTemplate) pipelineRaw.commit_message_template = config.pipeline.commitMessageTemplate;
+    if (config.pipeline.prBodyTemplate) pipelineRaw.pr_body_template = config.pipeline.prBodyTemplate;
+    if (Object.keys(pipelineRaw).length > 0) {
+      raw.pipeline = pipelineRaw;
+    }
   }
   writeFileSync(configPath, stringifyYaml(raw), 'utf-8');
 }

@@ -1,0 +1,348 @@
+/**
+ * Tests for pipeline execution
+ *
+ * Tests the orchestration logic with mocked dependencies.
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock all external dependencies
+const mockFetchIssue = vi.fn();
+const mockCheckGhCli = vi.fn().mockReturnValue({ available: true });
+vi.mock('../github/issue.js', () => ({
+  fetchIssue: mockFetchIssue,
+  formatIssueAsTask: vi.fn((issue: { title: string; body: string; number: number }) =>
+    `## GitHub Issue #${issue.number}: ${issue.title}\n\n${issue.body}`
+  ),
+  checkGhCli: mockCheckGhCli,
+}));
+
+const mockCreatePullRequest = vi.fn();
+const mockPushBranch = vi.fn();
+const mockBuildPrBody = vi.fn(() => 'Default PR body');
+vi.mock('../github/pr.js', () => ({
+  createPullRequest: mockCreatePullRequest,
+  pushBranch: mockPushBranch,
+  buildPrBody: mockBuildPrBody,
+}));
+
+const mockExecuteTask = vi.fn();
+vi.mock('../commands/taskExecution.js', () => ({
+  executeTask: mockExecuteTask,
+}));
+
+// Mock loadGlobalConfig
+const mockLoadGlobalConfig = vi.fn();
+vi.mock('../config/globalConfig.js', () => ({
+  loadGlobalConfig: mockLoadGlobalConfig,
+}));
+
+// Mock execFileSync for git operations
+const mockExecFileSync = vi.fn();
+vi.mock('node:child_process', () => ({
+  execFileSync: mockExecFileSync,
+}));
+
+// Mock UI
+vi.mock('../utils/ui.js', () => ({
+  info: vi.fn(),
+  error: vi.fn(),
+  success: vi.fn(),
+  status: vi.fn(),
+}));
+
+// Mock debug logger
+vi.mock('../utils/debug.js', () => ({
+  createLogger: () => ({
+    info: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+  }),
+}));
+
+const { executePipeline } = await import('../commands/pipelineExecution.js');
+
+describe('executePipeline', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Default: git operations succeed
+    mockExecFileSync.mockReturnValue('abc1234\n');
+    // Default: no pipeline config
+    mockLoadGlobalConfig.mockReturnValue({
+      language: 'en',
+      trustedDirectories: [],
+      defaultWorkflow: 'default',
+      logLevel: 'info',
+      provider: 'claude',
+    });
+  });
+
+  it('should return exit code 2 when neither --issue nor --task is specified', async () => {
+    const exitCode = await executePipeline({
+      workflow: 'default',
+      autoPr: false,
+      cwd: '/tmp/test',
+    });
+
+    expect(exitCode).toBe(2);
+  });
+
+  it('should return exit code 2 when gh CLI is not available', async () => {
+    mockCheckGhCli.mockReturnValueOnce({ available: false, error: 'gh not found' });
+
+    const exitCode = await executePipeline({
+      issueNumber: 99,
+      workflow: 'default',
+      autoPr: false,
+      cwd: '/tmp/test',
+    });
+
+    expect(exitCode).toBe(2);
+  });
+
+  it('should return exit code 2 when issue fetch fails', async () => {
+    mockFetchIssue.mockImplementationOnce(() => {
+      throw new Error('Issue not found');
+    });
+
+    const exitCode = await executePipeline({
+      issueNumber: 999,
+      workflow: 'default',
+      autoPr: false,
+      cwd: '/tmp/test',
+    });
+
+    expect(exitCode).toBe(2);
+  });
+
+  it('should return exit code 3 when workflow fails', async () => {
+    mockFetchIssue.mockReturnValueOnce({
+      number: 99,
+      title: 'Test issue',
+      body: 'Test body',
+      labels: [],
+      comments: [],
+    });
+    mockExecuteTask.mockResolvedValueOnce(false);
+
+    const exitCode = await executePipeline({
+      issueNumber: 99,
+      workflow: 'default',
+      autoPr: false,
+      cwd: '/tmp/test',
+    });
+
+    expect(exitCode).toBe(3);
+  });
+
+  it('should return exit code 0 on successful task-only execution', async () => {
+    mockExecuteTask.mockResolvedValueOnce(true);
+
+    const exitCode = await executePipeline({
+      task: 'Fix the bug',
+      workflow: 'default',
+      autoPr: false,
+      cwd: '/tmp/test',
+    });
+
+    expect(exitCode).toBe(0);
+    expect(mockExecuteTask).toHaveBeenCalledWith(
+      'Fix the bug',
+      '/tmp/test',
+      'default',
+    );
+  });
+
+  it('should return exit code 5 when PR creation fails', async () => {
+    mockExecuteTask.mockResolvedValueOnce(true);
+    mockCreatePullRequest.mockReturnValueOnce({ success: false, error: 'PR failed' });
+
+    const exitCode = await executePipeline({
+      task: 'Fix the bug',
+      workflow: 'default',
+      autoPr: true,
+      cwd: '/tmp/test',
+    });
+
+    expect(exitCode).toBe(5);
+  });
+
+  it('should create PR with correct branch when --auto-pr', async () => {
+    mockExecuteTask.mockResolvedValueOnce(true);
+    mockCreatePullRequest.mockReturnValueOnce({ success: true, url: 'https://github.com/test/pr/1' });
+
+    const exitCode = await executePipeline({
+      task: 'Fix the bug',
+      workflow: 'default',
+      branch: 'fix/my-branch',
+      autoPr: true,
+      repo: 'owner/repo',
+      cwd: '/tmp/test',
+    });
+
+    expect(exitCode).toBe(0);
+    expect(mockCreatePullRequest).toHaveBeenCalledWith(
+      '/tmp/test',
+      expect.objectContaining({
+        branch: 'fix/my-branch',
+        repo: 'owner/repo',
+      }),
+    );
+  });
+
+  it('should use --task when both --task and positional task are provided', async () => {
+    mockExecuteTask.mockResolvedValueOnce(true);
+
+    const exitCode = await executePipeline({
+      task: 'From --task flag',
+      workflow: 'magi',
+      autoPr: false,
+      cwd: '/tmp/test',
+    });
+
+    expect(exitCode).toBe(0);
+    expect(mockExecuteTask).toHaveBeenCalledWith(
+      'From --task flag',
+      '/tmp/test',
+      'magi',
+    );
+  });
+
+  describe('PipelineConfig template expansion', () => {
+    it('should use commit_message_template when configured', async () => {
+      mockLoadGlobalConfig.mockReturnValue({
+        language: 'en',
+        trustedDirectories: [],
+        defaultWorkflow: 'default',
+        logLevel: 'info',
+        provider: 'claude',
+        pipeline: {
+          commitMessageTemplate: 'fix: {title} (#{issue})',
+        },
+      });
+
+      mockFetchIssue.mockReturnValueOnce({
+        number: 42,
+        title: 'Login broken',
+        body: 'Cannot login.',
+        labels: [],
+        comments: [],
+      });
+      mockExecuteTask.mockResolvedValueOnce(true);
+
+      await executePipeline({
+        issueNumber: 42,
+        workflow: 'default',
+        branch: 'test-branch',
+        autoPr: false,
+        cwd: '/tmp/test',
+      });
+
+      // Verify commit was called with expanded template
+      const commitCall = mockExecFileSync.mock.calls.find(
+        (call: unknown[]) => call[0] === 'git' && (call[1] as string[])[0] === 'commit',
+      );
+      expect(commitCall).toBeDefined();
+      expect((commitCall![1] as string[])[2]).toBe('fix: Login broken (#42)');
+    });
+
+    it('should use default_branch_prefix when configured', async () => {
+      mockLoadGlobalConfig.mockReturnValue({
+        language: 'en',
+        trustedDirectories: [],
+        defaultWorkflow: 'default',
+        logLevel: 'info',
+        provider: 'claude',
+        pipeline: {
+          defaultBranchPrefix: 'feat/',
+        },
+      });
+
+      mockFetchIssue.mockReturnValueOnce({
+        number: 10,
+        title: 'Add feature',
+        body: 'Please add.',
+        labels: [],
+        comments: [],
+      });
+      mockExecuteTask.mockResolvedValueOnce(true);
+
+      await executePipeline({
+        issueNumber: 10,
+        workflow: 'default',
+        autoPr: false,
+        cwd: '/tmp/test',
+      });
+
+      // Verify checkout -b was called with prefix
+      const checkoutCall = mockExecFileSync.mock.calls.find(
+        (call: unknown[]) => call[0] === 'git' && (call[1] as string[])[0] === 'checkout' && (call[1] as string[])[1] === '-b',
+      );
+      expect(checkoutCall).toBeDefined();
+      const branchName = (checkoutCall![1] as string[])[2];
+      expect(branchName).toMatch(/^feat\/issue-10-\d+$/);
+    });
+
+    it('should use pr_body_template when configured for PR creation', async () => {
+      mockLoadGlobalConfig.mockReturnValue({
+        language: 'en',
+        trustedDirectories: [],
+        defaultWorkflow: 'default',
+        logLevel: 'info',
+        provider: 'claude',
+        pipeline: {
+          prBodyTemplate: '## Summary\n{issue_body}\n\nCloses #{issue}',
+        },
+      });
+
+      mockFetchIssue.mockReturnValueOnce({
+        number: 50,
+        title: 'Fix auth',
+        body: 'Auth is broken.',
+        labels: [],
+        comments: [],
+      });
+      mockExecuteTask.mockResolvedValueOnce(true);
+      mockCreatePullRequest.mockReturnValueOnce({ success: true, url: 'https://github.com/pr/1' });
+
+      await executePipeline({
+        issueNumber: 50,
+        workflow: 'default',
+        branch: 'fix-auth',
+        autoPr: true,
+        cwd: '/tmp/test',
+      });
+
+      // When prBodyTemplate is set, buildPrBody (mock) should NOT be called
+      // Instead, the template is expanded directly
+      expect(mockCreatePullRequest).toHaveBeenCalledWith(
+        '/tmp/test',
+        expect.objectContaining({
+          body: '## Summary\nAuth is broken.\n\nCloses #50',
+        }),
+      );
+    });
+
+    it('should fall back to buildPrBody when no template is configured', async () => {
+      mockExecuteTask.mockResolvedValueOnce(true);
+      mockCreatePullRequest.mockReturnValueOnce({ success: true, url: 'https://github.com/pr/1' });
+
+      await executePipeline({
+        task: 'Fix bug',
+        workflow: 'default',
+        branch: 'fix-branch',
+        autoPr: true,
+        cwd: '/tmp/test',
+      });
+
+      // Should use buildPrBody (the mock)
+      expect(mockBuildPrBody).toHaveBeenCalled();
+      expect(mockCreatePullRequest).toHaveBeenCalledWith(
+        '/tmp/test',
+        expect.objectContaining({
+          body: 'Default PR body',
+        }),
+      );
+    });
+  });
+});

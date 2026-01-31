@@ -5,7 +5,7 @@
  * for workflow execution or task creation.
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { createLogger } from '../utils/debug.js';
 
 const log = createLogger('github');
@@ -31,11 +31,11 @@ export interface GhCliStatus {
  */
 export function checkGhCli(): GhCliStatus {
   try {
-    execSync('gh auth status', { stdio: 'pipe' });
+    execFileSync('gh', ['auth', 'status'], { stdio: 'pipe' });
     return { available: true };
   } catch {
     try {
-      execSync('gh --version', { stdio: 'pipe' });
+      execFileSync('gh', ['--version'], { stdio: 'pipe' });
       return {
         available: false,
         error: 'gh CLI is installed but not authenticated. Run `gh auth login` first.',
@@ -56,8 +56,9 @@ export function checkGhCli(): GhCliStatus {
 export function fetchIssue(issueNumber: number): GitHubIssue {
   log.debug('Fetching issue', { issueNumber });
 
-  const raw = execSync(
-    `gh issue view ${issueNumber} --json number,title,body,labels,comments`,
+  const raw = execFileSync(
+    'gh',
+    ['issue', 'view', String(issueNumber), '--json', 'number,title,body,labels,comments'],
     { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] },
   );
 

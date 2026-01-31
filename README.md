@@ -24,26 +24,18 @@ npm install -g takt
 ## Quick Start
 
 ```bash
-# Run a task (will prompt for workflow selection and optional isolated clone)
+# Run a task (prompts for workflow selection, worktree, and PR creation)
 takt "Add a login feature"
 
-# Run a GitHub issue as a task
-takt "#6"
+# Run a GitHub issue as a task (both are equivalent)
+takt '#6'
+takt --issue 6
 
-# Add a task via AI conversation
-takt add
+# Interactive mode — refine task requirements with AI, then execute
+takt
 
-# Run all pending tasks
-takt run
-
-# Watch for tasks and auto-execute
-takt watch
-
-# List task branches (merge or delete)
-takt list
-
-# Switch workflow
-takt switch
+# Pipeline mode (non-interactive, for scripts and CI)
+takt --task "fix the auth bug" --auto-pr
 ```
 
 ### What happens when you run a task
@@ -75,6 +67,14 @@ Choose `y` to run in a `git clone --shared` isolated environment, keeping your w
 
 **3. Execution** — The selected workflow orchestrates multiple agents to complete the task.
 
+**4. PR creation** (after worktree execution)
+
+```
+? Create pull request? (y/N)
+```
+
+If `--auto-pr` is specified, the PR is created automatically without asking.
+
 ### Recommended workflows
 
 | Workflow | Best for |
@@ -87,11 +87,54 @@ Choose `y` to run in a `git clone --shared` isolated environment, keeping your w
 
 ## Commands
 
+### Interactive Mode (default)
+
+The standard mode for everyday development. Workflow selection, worktree creation, and PR creation are handled interactively.
+
+```bash
+# Run a task
+takt "Add a login feature"
+
+# Run a GitHub issue as a task (both are equivalent)
+takt '#6'
+takt --issue 6
+
+# Interactive mode — refine task requirements with AI before executing
+takt
+
+# Run a task and automatically create a PR (skip the confirmation prompt)
+takt '#6' --auto-pr
+```
+
+When `--auto-pr` is not specified, you will be asked whether to create a PR after a successful worktree execution.
+
+### Pipeline Mode (`--task`)
+
+Specifying `--task` enters pipeline mode — fully non-interactive, suitable for scripts and CI integration. TAKT automatically creates a branch, runs the workflow, commits, and pushes.
+
+```bash
+# Run a task in pipeline mode
+takt --task "fix the auth bug"
+
+# Pipeline mode + automatic PR creation
+takt --task "fix the auth bug" --auto-pr
+
+# Attach GitHub issue context
+takt --task "fix the auth bug" --issue 99 --auto-pr
+
+# Specify workflow and branch
+takt --task "fix the auth bug" -w magi -b feat/fix-auth
+
+# Specify repository (for PR creation)
+takt --task "fix the auth bug" --auto-pr --repo owner/repo
+```
+
+In pipeline mode, PRs are **not** created unless `--auto-pr` is explicitly specified.
+
+### Subcommands
+
 | Command | Description |
 |---------|-------------|
-| `takt "task"` | Execute task with current workflow (session auto-continued) |
-| `takt "#N"` | Execute GitHub issue #N as a task |
-| `takt` | Interactive task input mode |
 | `takt run` | Run all pending tasks from `.takt/tasks/` |
 | `takt watch` | Watch `.takt/tasks/` and auto-execute tasks (stays resident) |
 | `takt add` | Add a new task via AI conversation |
@@ -101,6 +144,17 @@ Choose `y` to run in a `git clone --shared` isolated environment, keeping your w
 | `takt eject` | Copy builtin workflow/agents to `~/.takt/` for customization |
 | `takt config` | Configure permission mode |
 | `takt --help` | Show help |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-t, --task <text>` | Task content — **triggers pipeline (non-interactive) mode** |
+| `-i, --issue <N>` | GitHub issue number (equivalent to `#N` in interactive mode) |
+| `-w, --workflow <name>` | Workflow to use |
+| `-b, --branch <name>` | Branch name (auto-generated if omitted) |
+| `--auto-pr` | Create PR after execution (interactive: skip confirmation, pipeline: enable PR) |
+| `--repo <owner/repo>` | Repository for PR creation |
 
 ## Workflows
 
@@ -286,7 +340,26 @@ provider: claude         # Default provider: claude or codex
 model: sonnet            # Default model (optional)
 trusted_directories:
   - /path/to/trusted/dir
+
+# Pipeline execution settings (optional)
+# Customize branch naming, commit messages, and PR body for pipeline mode.
+# pipeline:
+#   default_branch_prefix: "takt/"
+#   commit_message_template: "feat: {title} (#{issue})"
+#   pr_body_template: |
+#     ## Summary
+#     {issue_body}
+#     Closes #{issue}
 ```
+
+**Pipeline template variables:**
+
+| Variable | Available in | Description |
+|----------|-------------|-------------|
+| `{title}` | commit message | Issue title |
+| `{issue}` | commit message, PR body | Issue number |
+| `{issue_body}` | PR body | Issue body text |
+| `{report}` | PR body | Workflow execution report |
 
 **Model Resolution Priority:**
 1. Workflow step `model` (highest priority)
@@ -299,12 +372,13 @@ trusted_directories:
 
 ### Interactive Workflow
 
-When running `takt "task"`, you are prompted to:
+When running `takt "Add a feature"`, you are prompted to:
 
 1. **Select a workflow** - Choose from available workflows (arrow keys, ESC to cancel)
-2. **Create an isolated clone** (optional) - Optionally run the task in a `git clone --shared` for isolation
+2. **Create an isolated clone** (optional) - Run the task in a `git clone --shared` for isolation
+3. **Create a pull request** (after worktree execution) - Create a PR from the task branch
 
-This interactive flow ensures each task runs with the right workflow and isolation level.
+If `--auto-pr` is specified, the PR confirmation is skipped and the PR is created automatically.
 
 ### Adding Custom Workflows
 

@@ -5,11 +5,16 @@
  *
  * Usage:
  *   takt {task}       - Execute task with current workflow (continues session)
+ *   takt #99          - Execute task from GitHub issue
  *   takt run          - Run all pending tasks from .takt/tasks/
  *   takt switch       - Switch workflow interactively
  *   takt clear        - Clear agent conversation sessions (reset to initial state)
  *   takt --help       - Show help
  *   takt config       - Select permission mode interactively
+ *
+ * Pipeline (non-interactive):
+ *   takt --task "fix bug" -w magi --auto-pr
+ *   takt --task "fix bug" --issue 99 --auto-pr
  */
 
 import { createRequire } from 'node:module';
@@ -34,6 +39,7 @@ import {
   watchTasks,
   listTasks,
   interactiveMode,
+  executePipeline,
 } from './commands/index.js';
 import { listWorkflows } from './config/workflowLoader.js';
 import { selectOptionWithDefault, confirm } from './prompt/index.js';
@@ -43,6 +49,7 @@ import { summarizeTaskName } from './task/summarize.js';
 import { DEFAULT_WORKFLOW_NAME } from './constants.js';
 import { checkForUpdates } from './utils/updateNotifier.js';
 import { resolveIssueTask, isIssueReference } from './github/issue.js';
+import { createPullRequest, buildPrBody } from './github/pr.js';
 
 const require = createRequire(import.meta.url);
 const { version: cliVersion } = require('../package.json') as { version: string };
@@ -53,6 +60,9 @@ checkForUpdates();
 
 /** Resolved cwd shared across commands via preAction hook */
 let resolvedCwd = '';
+
+/** Whether pipeline mode is active (--task specified, set in preAction) */
+let pipelineMode = false;
 
 export interface WorktreeConfirmationResult {
   execCwd: string;
@@ -95,7 +105,11 @@ async function selectWorkflow(cwd: string): Promise<string | null> {
  * Execute a task with workflow selection, optional worktree, and auto-commit.
  * Shared by direct task execution and interactive mode.
  */
-async function selectAndExecuteTask(cwd: string, task: string): Promise<void> {
+async function selectAndExecuteTask(
+  cwd: string,
+  task: string,
+  options?: { autoPr?: boolean; repo?: string },
+): Promise<void> {
   const selectedWorkflow = await selectWorkflow(cwd);
 
   if (selectedWorkflow === null) {
@@ -103,7 +117,7 @@ async function selectAndExecuteTask(cwd: string, task: string): Promise<void> {
     return;
   }
 
-  const { execCwd, isWorktree } = await confirmAndCreateWorktree(cwd, task);
+  const { execCwd, isWorktree, branch } = await confirmAndCreateWorktree(cwd, task);
 
   log.info('Starting task execution', { workflow: selectedWorkflow, worktree: isWorktree });
   const taskSuccess = await executeTask(task, execCwd, selectedWorkflow, cwd);
@@ -114,6 +128,26 @@ async function selectAndExecuteTask(cwd: string, task: string): Promise<void> {
       success(`Auto-committed & pushed: ${commitResult.commitHash}`);
     } else if (!commitResult.success) {
       error(`Auto-commit failed: ${commitResult.message}`);
+    }
+
+    // PR creation: --auto-pr → create automatically, otherwise ask
+    if (commitResult.success && commitResult.commitHash && branch) {
+      const shouldCreatePr = options?.autoPr === true || await confirm('Create pull request?', false);
+      if (shouldCreatePr) {
+        info('Creating pull request...');
+        const prBody = buildPrBody(undefined, `Workflow \`${selectedWorkflow}\` completed successfully.`);
+        const prResult = createPullRequest(execCwd, {
+          branch,
+          title: task.length > 100 ? `${task.slice(0, 97)}...` : task,
+          body: prBody,
+          repo: options?.repo,
+        });
+        if (prResult.success) {
+          success(`PR created: ${prResult.url}`);
+        } else {
+          error(`PR creation failed: ${prResult.error}`);
+        }
+      }
     }
   }
 
@@ -157,11 +191,24 @@ program
   .description('TAKT: Task Agent Koordination Tool')
   .version(cliVersion);
 
+// --- Global options ---
+program
+  .option('-i, --issue <number>', 'GitHub issue number (equivalent to #N)', (val: string) => parseInt(val, 10))
+  .option('-w, --workflow <name>', 'Workflow to use')
+  .option('-b, --branch <name>', 'Branch name (auto-generated if omitted)')
+  .option('--auto-pr', 'Create PR after successful execution')
+  .option('--repo <owner/repo>', 'Repository (defaults to current)')
+  .option('-t, --task <string>', 'Task content (triggers pipeline/non-interactive mode)');
+
 // Common initialization for all commands
 program.hook('preAction', async () => {
   resolvedCwd = resolve(process.cwd());
 
-  await initGlobalDirs();
+  // Pipeline mode: triggered by --task (non-interactive)
+  const rootOpts = program.opts();
+  pipelineMode = rootOpts.task !== undefined;
+
+  await initGlobalDirs({ nonInteractive: pipelineMode });
   initProjectDirs(resolvedCwd);
 
   const verbose = isVerboseMode(resolvedCwd);
@@ -181,7 +228,7 @@ program.hook('preAction', async () => {
     setLogLevel(config.logLevel);
   }
 
-  log.info('TAKT CLI starting', { version: cliVersion, cwd: resolvedCwd, verbose });
+  log.info('TAKT CLI starting', { version: cliVersion, cwd: resolvedCwd, verbose, pipelineMode });
 });
 
 // --- Subcommands ---
@@ -248,7 +295,7 @@ program
     await switchConfig(resolvedCwd, key);
   });
 
-// --- Default action: task execution or interactive mode ---
+// --- Default action: task execution, interactive mode, or pipeline ---
 
 /**
  * Check if the input is a task description (should execute directly)
@@ -265,9 +312,50 @@ function isDirectTask(input: string): boolean {
   return false;
 }
 
+
 program
   .argument('[task]', 'Task to execute (or GitHub issue reference like "#6")')
   .action(async (task?: string) => {
+    const opts = program.opts();
+
+    // --- Pipeline mode (non-interactive): triggered by --task ---
+    if (pipelineMode) {
+      const exitCode = await executePipeline({
+        issueNumber: opts.issue as number | undefined,
+        task: opts.task as string,
+        workflow: (opts.workflow as string | undefined) ?? DEFAULT_WORKFLOW_NAME,
+        branch: opts.branch as string | undefined,
+        autoPr: opts.autoPr === true,
+        repo: opts.repo as string | undefined,
+        cwd: resolvedCwd,
+      });
+
+      if (exitCode !== 0) {
+        process.exit(exitCode);
+      }
+      return;
+    }
+
+    // --- Normal (interactive) mode ---
+
+    const prOptions = {
+      autoPr: opts.autoPr === true,
+      repo: opts.repo as string | undefined,
+    };
+
+    // Resolve --issue N to task text (same as #N)
+    const issueFromOption = opts.issue as number | undefined;
+    if (issueFromOption) {
+      try {
+        const resolvedTask = resolveIssueTask(`#${issueFromOption}`);
+        await selectAndExecuteTask(resolvedCwd, resolvedTask, prOptions);
+      } catch (e) {
+        error(e instanceof Error ? e.message : String(e));
+        process.exit(1);
+      }
+      return;
+    }
+
     if (task && isDirectTask(task)) {
       // Resolve #N issue references to task text
       let resolvedTask: string = task;
@@ -281,7 +369,7 @@ program
         }
       }
 
-      await selectAndExecuteTask(resolvedCwd, resolvedTask);
+      await selectAndExecuteTask(resolvedCwd, resolvedTask, prOptions);
       return;
     }
 
@@ -292,7 +380,7 @@ program
       return;
     }
 
-    await selectAndExecuteTask(resolvedCwd, result.task);
+    await selectAndExecuteTask(resolvedCwd, result.task, prOptions);
   });
 
 program.parse();

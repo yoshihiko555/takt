@@ -178,6 +178,16 @@ export interface DebugConfig {
 /** Language setting for takt */
 export type Language = 'en' | 'ja';
 
+/** Pipeline execution configuration */
+export interface PipelineConfig {
+  /** Branch name prefix for pipeline-created branches (default: "takt/") */
+  defaultBranchPrefix?: string;
+  /** Commit message template. Variables: {title}, {issue} */
+  commitMessageTemplate?: string;
+  /** PR body template. Variables: {issue_body}, {report}, {issue} */
+  prBodyTemplate?: string;
+}
+
 /** Global configuration for takt */
 export interface GlobalConfig {
   language: Language;
@@ -195,6 +205,8 @@ export interface GlobalConfig {
   anthropicApiKey?: string;
   /** OpenAI API key for Codex SDK (overridden by TAKT_OPENAI_API_KEY env var) */
   openaiApiKey?: string;
+  /** Pipeline execution settings */
+  pipeline?: PipelineConfig;
 }
 
 /** Project-level configuration */
