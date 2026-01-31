@@ -108,6 +108,24 @@ function cloneAndIsolate(projectDir: string, clonePath: string): void {
     cwd: clonePath,
     stdio: 'pipe',
   });
+
+  // Propagate local git user config from source repo to clone
+  for (const key of ['user.name', 'user.email']) {
+    try {
+      const value = execFileSync('git', ['config', '--local', key], {
+        cwd: projectDir,
+        stdio: 'pipe',
+      }).toString().trim();
+      if (value) {
+        execFileSync('git', ['config', key, value], {
+          cwd: clonePath,
+          stdio: 'pipe',
+        });
+      }
+    } catch {
+      // not set locally — skip
+    }
+  }
 }
 
 /**
