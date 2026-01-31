@@ -11,3 +11,4 @@ export const EXIT_ISSUE_FETCH_FAILED = 2;
 export const EXIT_WORKFLOW_FAILED = 3;
 export const EXIT_GIT_OPERATION_FAILED = 4;
 export const EXIT_PR_CREATION_FAILED = 5;
+export const EXIT_SIGINT = 130; // 128 + SIGINT(2), UNIX convention

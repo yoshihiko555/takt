@@ -37,6 +37,7 @@ import {
 import { createLogger } from '../utils/debug.js';
 import { notifySuccess, notifyError } from '../utils/notification.js';
 import { selectOption, promptInput } from '../prompt/index.js';
+import { EXIT_SIGINT } from '../exitCodes.js';
 
 const log = createLogger('workflow');
 
@@ -321,10 +322,30 @@ export async function executeWorkflow(
     notifyError('TAKT', `中断: ${reason}`);
   });
 
-  const finalState = await engine.run();
-
-  return {
-    success: finalState.status === 'completed',
-    reason: abortReason,
+  // SIGINT handler: 1st Ctrl+C = graceful abort, 2nd = force exit
+  let sigintCount = 0;
+  const onSigInt = () => {
+    sigintCount++;
+    if (sigintCount === 1) {
+      console.log();
+      warn('Ctrl+C: ワークフローを中断しています...');
+      engine.abort();
+    } else {
+      console.log();
+      error('Ctrl+C: 強制終了します');
+      process.exit(EXIT_SIGINT);
+    }
   };
+  process.on('SIGINT', onSigInt);
+
+  try {
+    const finalState = await engine.run();
+
+    return {
+      success: finalState.status === 'completed',
+      reason: abortReason,
+    };
+  } finally {
+    process.removeListener('SIGINT', onSigInt);
+  }
 }

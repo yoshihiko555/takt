@@ -29,6 +29,7 @@ import {
 } from './state-manager.js';
 import { generateReportDir } from '../utils/session.js';
 import { createLogger } from '../utils/debug.js';
+import { interruptAllQueries } from '../claude/query-manager.js';
 
 const log = createLogger('engine');
 
@@ -54,6 +55,7 @@ export class WorkflowEngine extends EventEmitter {
   private loopDetector: LoopDetector;
   private language: WorkflowEngineOptions['language'];
   private reportDir: string;
+  private abortRequested = false;
 
   constructor(config: WorkflowConfig, cwd: string, task: string, options: WorkflowEngineOptions = {}) {
     super();
@@ -143,6 +145,19 @@ export class WorkflowEngine extends EventEmitter {
   /** Get project root directory (where .takt/ lives) */
   getProjectCwd(): string {
     return this.projectCwd;
+  }
+
+  /** Request graceful abort: interrupt running queries and stop after current step */
+  abort(): void {
+    if (this.abortRequested) return;
+    this.abortRequested = true;
+    log.info('Abort requested');
+    interruptAllQueries();
+  }
+
+  /** Check if abort has been requested */
+  isAbortRequested(): boolean {
+    return this.abortRequested;
   }
 
   /** Build instruction from template */
@@ -439,6 +454,12 @@ export class WorkflowEngine extends EventEmitter {
   /** Run the workflow to completion */
   async run(): Promise<WorkflowState> {
     while (this.state.status === 'running') {
+      if (this.abortRequested) {
+        this.state.status = 'aborted';
+        this.emit('workflow:abort', this.state, 'Workflow interrupted by user (SIGINT)');
+        break;
+      }
+
       if (this.state.iteration >= this.config.maxIterations) {
         this.emit('iteration:limit', this.state.iteration, this.config.maxIterations);
 
@@ -528,9 +549,13 @@ export class WorkflowEngine extends EventEmitter {
 
         this.state.currentStep = nextStep;
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         this.state.status = 'aborted';
-        this.emit('workflow:abort', this.state, ERROR_MESSAGES.STEP_EXECUTION_FAILED(message));
+        if (this.abortRequested) {
+          this.emit('workflow:abort', this.state, 'Workflow interrupted by user (SIGINT)');
+        } else {
+          const message = error instanceof Error ? error.message : String(error);
+          this.emit('workflow:abort', this.state, ERROR_MESSAGES.STEP_EXECUTION_FAILED(message));
+        }
         break;
       }
     }

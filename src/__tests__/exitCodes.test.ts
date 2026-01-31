@@ -10,6 +10,7 @@ import {
   EXIT_WORKFLOW_FAILED,
   EXIT_GIT_OPERATION_FAILED,
   EXIT_PR_CREATION_FAILED,
+  EXIT_SIGINT,
 } from '../exitCodes.js';
 
 describe('exit codes', () => {
@@ -21,6 +22,7 @@ describe('exit codes', () => {
       EXIT_WORKFLOW_FAILED,
       EXIT_GIT_OPERATION_FAILED,
       EXIT_PR_CREATION_FAILED,
+      EXIT_SIGINT,
     ];
     const unique = new Set(codes);
     expect(unique.size).toBe(codes.length);
@@ -33,5 +35,6 @@ describe('exit codes', () => {
     expect(EXIT_WORKFLOW_FAILED).toBe(3);
     expect(EXIT_GIT_OPERATION_FAILED).toBe(4);
     expect(EXIT_PR_CREATION_FAILED).toBe(5);
+    expect(EXIT_SIGINT).toBe(130);
   });
 });
