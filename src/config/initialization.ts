@@ -14,7 +14,6 @@ import { selectOptionWithDefault } from '../prompt/index.js';
 import {
   getGlobalConfigDir,
   getGlobalConfigPath,
-  getGlobalLogsDir,
   getProjectConfigDir,
   ensureDir,
 } from './paths.js';
@@ -92,7 +91,6 @@ export interface InitGlobalDirsOptions {
  */
 export async function initGlobalDirs(options?: InitGlobalDirsOptions): Promise<void> {
   ensureDir(getGlobalConfigDir());
-  ensureDir(getGlobalLogsDir());
 
   if (needsLanguageSetup()) {
     const isInteractive = !options?.nonInteractive && process.stdin.isTTY === true;

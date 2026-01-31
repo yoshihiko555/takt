@@ -4,8 +4,6 @@
 
 **T**ask **A**gent **K**oordination **T**ool - Multi-agent orchestration system for Claude Code and OpenAI Codex.
 
-> **Note**: This project is developed at my own pace. See [Disclaimer](#disclaimer) for details.
-
 TAKT is built with TAKT (dogfooding).
 
 ## Requirements
@@ -603,17 +601,9 @@ engine.on('step:complete', (step, response) => {
 await engine.run();
 ```
 
-## Disclaimer
+## Contributing
 
-This project is a personal project developed at my own pace.
-
-- **Response times**: I may not be able to respond to issues immediately
-- **Development style**: This project is primarily developed using "vibe coding" (AI-assisted development) - **use at your own risk**
-- **Pull requests**:
-  - Small, focused PRs (bug fixes, typos, docs) are welcome
-  - Large PRs, especially AI-generated bulk changes, are difficult to review
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
 
 ## Docker Support
 

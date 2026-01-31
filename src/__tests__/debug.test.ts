@@ -41,9 +41,38 @@ describe('debug logging', () => {
     });
 
     it('should enable debug when enabled is true', () => {
-      initDebugLogger({ enabled: true }, '/tmp');
+      const projectDir = join(tmpdir(), 'takt-test-debug-enable-' + Date.now());
+      mkdirSync(projectDir, { recursive: true });
+
+      try {
+        initDebugLogger({ enabled: true }, projectDir);
+        expect(isDebugEnabled()).toBe(true);
+        expect(getDebugLogFile()).not.toBeNull();
+      } finally {
+        rmSync(projectDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should write debug log to project .takt/logs/ directory', () => {
+      const projectDir = join(tmpdir(), 'takt-test-debug-project-' + Date.now());
+      mkdirSync(projectDir, { recursive: true });
+
+      try {
+        initDebugLogger({ enabled: true }, projectDir);
+        const logFile = getDebugLogFile();
+        expect(logFile).not.toBeNull();
+        expect(logFile!).toContain(join(projectDir, '.takt', 'logs'));
+        expect(logFile!).toMatch(/debug-.*\.log$/);
+        expect(existsSync(logFile!)).toBe(true);
+      } finally {
+        rmSync(projectDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should not create log file when projectDir is not provided', () => {
+      initDebugLogger({ enabled: true });
       expect(isDebugEnabled()).toBe(true);
-      expect(getDebugLogFile()).not.toBeNull();
+      expect(getDebugLogFile()).toBeNull();
     });
 
     it('should use custom log file when provided', () => {
@@ -64,12 +93,19 @@ describe('debug logging', () => {
     });
 
     it('should only initialize once', () => {
-      initDebugLogger({ enabled: true }, '/tmp');
-      const firstFile = getDebugLogFile();
+      const projectDir = join(tmpdir(), 'takt-test-debug-once-' + Date.now());
+      mkdirSync(projectDir, { recursive: true });
 
-      initDebugLogger({ enabled: false }, '/tmp');
-      expect(isDebugEnabled()).toBe(true);
-      expect(getDebugLogFile()).toBe(firstFile);
+      try {
+        initDebugLogger({ enabled: true }, projectDir);
+        const firstFile = getDebugLogFile();
+
+        initDebugLogger({ enabled: false }, projectDir);
+        expect(isDebugEnabled()).toBe(true);
+        expect(getDebugLogFile()).toBe(firstFile);
+      } finally {
+        rmSync(projectDir, { recursive: true, force: true });
+      }
     });
   });
 

@@ -6,7 +6,6 @@
 
 import { existsSync, appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { homedir } from 'node:os';
 import type { DebugConfig } from '../models/types.js';
 
 /** Debug logger state */
@@ -17,10 +16,10 @@ let initialized = false;
 /** Verbose console output state */
 let verboseConsoleEnabled = false;
 
-/** Get default debug log file path */
-function getDefaultLogFile(): string {
+/** Get default debug log file path (requires projectDir) */
+function getDefaultLogFile(projectDir: string): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  return join(homedir(), '.takt', 'logs', `debug-${timestamp}.log`);
+  return join(projectDir, '.takt', 'logs', `debug-${timestamp}.log`);
 }
 
 /** Initialize debug logger from config */
@@ -34,27 +33,29 @@ export function initDebugLogger(config?: DebugConfig, projectDir?: string): void
   if (debugEnabled) {
     if (config?.logFile) {
       debugLogFile = config.logFile;
-    } else {
-      debugLogFile = getDefaultLogFile();
+    } else if (projectDir) {
+      debugLogFile = getDefaultLogFile(projectDir);
     }
 
-    // Ensure log directory exists
-    const logDir = dirname(debugLogFile);
-    if (!existsSync(logDir)) {
-      mkdirSync(logDir, { recursive: true });
+    if (debugLogFile) {
+      // Ensure log directory exists
+      const logDir = dirname(debugLogFile);
+      if (!existsSync(logDir)) {
+        mkdirSync(logDir, { recursive: true });
+      }
+
+      // Write initial log header
+      const header = [
+        '='.repeat(60),
+        `TAKT Debug Log`,
+        `Started: ${new Date().toISOString()}`,
+        `Project: ${projectDir || 'N/A'}`,
+        '='.repeat(60),
+        '',
+      ].join('\n');
+
+      writeFileSync(debugLogFile, header, 'utf-8');
     }
-
-    // Write initial log header
-    const header = [
-      '='.repeat(60),
-      `TAKT Debug Log`,
-      `Started: ${new Date().toISOString()}`,
-      `Project: ${projectDir || 'N/A'}`,
-      '='.repeat(60),
-      '',
-    ].join('\n');
-
-    writeFileSync(debugLogFile, header, 'utf-8');
   }
 
   initialized = true;
