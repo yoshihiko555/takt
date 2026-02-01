@@ -31,6 +31,7 @@ jobs:
         if: always()
         uses: slackapi/slack-github-action@v2.0.0
         with:
+          webhook-type: incoming-webhook
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
             {
