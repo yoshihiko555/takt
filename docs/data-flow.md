@@ -30,7 +30,7 @@ TAKTのデータフローは以下の7つの主要なレイヤーで構成され
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ 1. CLI Layer (cli.ts)                                           │
+│ 1. CLI Layer (src/app/cli/index.ts)                             │
 │   ユーザー入力 → 引数パース → コマンド振り分け                       │
 └────────────────────────────┬────────────────────────────────────┘
                              │
@@ -304,7 +304,7 @@ TAKTのデータフローは以下の7つの主要なレイヤーで構成され
 
 ## 各レイヤーの詳細
 
-### 1. CLI Layer (`src/cli.ts`)
+### 1. CLI Layer (`src/app/cli/index.ts`)
 
 **役割**: ユーザー入力の受付とコマンド振り分け
 
@@ -327,7 +327,7 @@ TAKTのデータフローは以下の7つの主要なレイヤーで構成され
 
 ---
 
-### 2. Interactive Layer (`src/commands/interactive/interactive.ts`)
+### 2. Interactive Layer (`src/features/interactive/interactive.ts`)
 
 **役割**: タスクの対話的な明確化
 
@@ -360,7 +360,7 @@ TAKTのデータフローは以下の7つの主要なレイヤーで構成され
 
 ---
 
-### 3. Execution Orchestration Layer (`src/commands/execution/selectAndExecute.ts`)
+### 3. Execution Orchestration Layer (`src/features/tasks/execute/selectAndExecute.ts`)
 
 **役割**: ワークフロー選択とworktree管理
 
@@ -398,7 +398,7 @@ TAKTのデータフローは以下の7つの主要なレイヤーで構成され
 
 ### 4. Workflow Execution Layer
 
-#### 4.1 Task Execution (`src/commands/execution/taskExecution.ts`)
+#### 4.1 Task Execution (`src/features/tasks/execute/taskExecution.ts`)
 
 **役割**: ワークフロー読み込みと実行の橋渡し
 
@@ -417,7 +417,7 @@ TAKTのデータフローは以下の7つの主要なレイヤーで構成され
 **データ出力**:
 - `boolean` (成功/失敗)
 
-#### 4.2 Workflow Execution (`src/commands/execution/workflowExecution.ts`)
+#### 4.2 Workflow Execution (`src/features/tasks/execute/workflowExecution.ts`)
 
 **役割**: セッション管理、イベント購読、ログ記録
 
@@ -471,7 +471,7 @@ TAKTのデータフローは以下の7つの主要なレイヤーで構成され
 
 ---
 
-### 5. Engine Layer (`src/workflow/engine/WorkflowEngine.ts`)
+### 5. Engine Layer (`src/core/workflow/engine/WorkflowEngine.ts`)
 
 **役割**: ステートマシンによるワークフロー実行制御
 
@@ -553,7 +553,7 @@ TAKTのデータフローは以下の7つの主要なレイヤーで構成され
 
 ### 6. Instruction Building & Step Execution Layer
 
-#### 6.1 Step Execution (`src/workflow/engine/StepExecutor.ts`)
+#### 6.1 Step Execution (`src/core/workflow/engine/StepExecutor.ts`)
 
 **役割**: 3フェーズモデルによるステップ実行
 
@@ -604,7 +604,7 @@ const match = await detectMatchedRule(step, response.content, tagContent, {...})
 - `InstructionBuilder` を使用してインストラクション文字列を生成
 - コンテキスト情報を渡す
 
-#### 6.2 Instruction Building (`src/workflow/instruction/InstructionBuilder.ts`)
+#### 6.2 Instruction Building (`src/core/workflow/instruction/InstructionBuilder.ts`)
 
 **役割**: Phase 1用のインストラクション文字列生成
 
@@ -691,7 +691,7 @@ const match = await detectMatchedRule(step, response.content, tagContent, {...})
   - `error?: string`
   - `timestamp: Date`
 
-#### 7.2 Provider (`src/providers/`)
+#### 7.2 Provider (`src/infra/providers/`)
 
 **役割**: AIプロバイダー(Claude, Codex)とのSDK通信
 
@@ -881,7 +881,7 @@ new WorkflowEngine(workflowConfig, cwd, task, {
 
 ### 1. 会話履歴 → タスク文字列
 
-**場所**: `src/commands/interactive/interactive.ts`
+**場所**: `src/features/interactive/interactive.ts`
 
 ```typescript
 function buildTaskFromHistory(history: ConversationMessage[]): string {
@@ -897,7 +897,7 @@ function buildTaskFromHistory(history: ConversationMessage[]): string {
 
 ### 2. タスク → ブランチスラグ (AI生成)
 
-**場所**: `src/task/summarize.ts` (呼び出し: `selectAndExecute.ts`, `taskExecution.ts`)
+**場所**: `src/infra/task/summarize.ts` (呼び出し: `selectAndExecute.ts`, `taskExecution.ts`)
 
 ```typescript
 await summarizeTaskName(task, { cwd })
@@ -914,7 +914,7 @@ await summarizeTaskName(task, { cwd })
 
 ### 3. ワークフロー設定 → WorkflowState
 
-**場所**: `src/workflow/state-manager.ts`
+**場所**: `src/core/workflow/engine/state-manager.ts`
 
 ```typescript
 function createInitialState(
@@ -939,7 +939,7 @@ function createInitialState(
 
 ### 4. コンテキスト → インストラクション文字列
 
-**場所**: `src/workflow/instruction/InstructionBuilder.ts`
+**場所**: `src/core/workflow/instruction/InstructionBuilder.ts`
 
 **入力**:
 - `step: WorkflowStep`
@@ -958,7 +958,7 @@ function createInitialState(
 
 ### 5. AgentResponse → ルールマッチ
 
-**場所**: `src/workflow/evaluation/RuleEvaluator.ts`
+**場所**: `src/core/workflow/evaluation/RuleEvaluator.ts`
 
 **入力**:
 - `step: WorkflowStep`
@@ -979,7 +979,7 @@ function createInitialState(
 
 ### 6. ルールマッチ → 次ステップ名
 
-**場所**: `src/workflow/transitions.ts`
+**場所**: `src/core/workflow/engine/transitions.ts`
 
 ```typescript
 function determineNextStepByRules(
@@ -997,7 +997,7 @@ function determineNextStepByRules(
 
 ### 7. Provider Response → AgentResponse
 
-**場所**: `src/providers/claude.ts`, `src/providers/codex.ts`
+**場所**: `src/infra/providers/claude.ts`, `src/infra/providers/codex.ts`
 
 **入力**: SDKレスポンス (`ClaudeResult`)
 

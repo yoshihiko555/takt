@@ -14,7 +14,7 @@ import { mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-import { GlobalConfigSchema } from '../models/schemas.js';
+import { GlobalConfigSchema } from '../core/models/index.js';
 
 // Mock paths module to redirect config to temp directory
 const testId = randomUUID();
@@ -22,7 +22,7 @@ const testDir = join(tmpdir(), `takt-api-key-test-${testId}`);
 const taktDir = join(testDir, '.takt');
 const configPath = join(taktDir, 'config.yaml');
 
-vi.mock('../config/paths.js', async (importOriginal) => {
+vi.mock('../infra/config/paths.js', async (importOriginal) => {
   const original = await importOriginal() as Record<string, unknown>;
   return {
     ...original,
@@ -32,7 +32,7 @@ vi.mock('../config/paths.js', async (importOriginal) => {
 });
 
 // Import after mocking
-const { loadGlobalConfig, saveGlobalConfig, resolveAnthropicApiKey, resolveOpenaiApiKey, invalidateGlobalConfigCache } = await import('../config/global/globalConfig.js');
+const { loadGlobalConfig, saveGlobalConfig, resolveAnthropicApiKey, resolveOpenaiApiKey, invalidateGlobalConfigCache } = await import('../infra/config/global/globalConfig.js');
 
 describe('GlobalConfigSchema API key fields', () => {
   it('should accept config without API keys', () => {

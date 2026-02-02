@@ -16,23 +16,23 @@ vi.mock('../agents/runner.js', () => ({
   runAgent: vi.fn(),
 }));
 
-vi.mock('../workflow/evaluation/index.js', () => ({
+vi.mock('../core/workflow/evaluation/index.js', () => ({
   detectMatchedRule: vi.fn(),
 }));
 
-vi.mock('../workflow/engine/phase-runner.js', () => ({
+vi.mock('../core/workflow/phase-runner.js', () => ({
   needsStatusJudgmentPhase: vi.fn().mockReturnValue(false),
   runReportPhase: vi.fn().mockResolvedValue(undefined),
   runStatusJudgmentPhase: vi.fn().mockResolvedValue(''),
 }));
 
-vi.mock('../utils/session.js', () => ({
+vi.mock('../shared/utils/reportDir.js', () => ({
   generateReportDir: vi.fn().mockReturnValue('test-report-dir'),
 }));
 
 // --- Imports (after mocks) ---
 
-import { WorkflowEngine } from '../workflow/engine/WorkflowEngine.js';
+import { WorkflowEngine } from '../core/workflow/index.js';
 import {
   makeResponse,
   buildDefaultWorkflowConfig,

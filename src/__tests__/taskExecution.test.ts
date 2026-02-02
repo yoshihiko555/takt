@@ -5,30 +5,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies before importing the module under test
-vi.mock('../config/index.js', () => ({
+vi.mock('../infra/config/index.js', () => ({
   loadWorkflowByIdentifier: vi.fn(),
   isWorkflowPath: vi.fn(() => false),
   loadGlobalConfig: vi.fn(() => ({})),
 }));
 
-vi.mock('../task/index.js', () => ({
+vi.mock('../infra/task/index.js', () => ({
   TaskRunner: vi.fn(),
 }));
 
-vi.mock('../task/clone.js', () => ({
+vi.mock('../infra/task/clone.js', () => ({
   createSharedClone: vi.fn(),
   removeClone: vi.fn(),
 }));
 
-vi.mock('../task/autoCommit.js', () => ({
+vi.mock('../infra/task/autoCommit.js', () => ({
   autoCommitAndPush: vi.fn(),
 }));
 
-vi.mock('../task/summarize.js', () => ({
+vi.mock('../infra/task/summarize.js', () => ({
   summarizeTaskName: vi.fn(),
 }));
 
-vi.mock('../utils/ui.js', () => ({
+vi.mock('../shared/ui/index.js', () => ({
   header: vi.fn(),
   info: vi.fn(),
   error: vi.fn(),
@@ -37,7 +37,7 @@ vi.mock('../utils/ui.js', () => ({
   blankLine: vi.fn(),
 }));
 
-vi.mock('../utils/debug.js', () => ({
+vi.mock('../shared/utils/debug.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
     debug: vi.fn(),
@@ -45,11 +45,11 @@ vi.mock('../utils/debug.js', () => ({
   }),
 }));
 
-vi.mock('../utils/error.js', () => ({
+vi.mock('../shared/utils/error.js', () => ({
   getErrorMessage: vi.fn((e) => e.message),
 }));
 
-vi.mock('./workflowExecution.js', () => ({
+vi.mock('../features/tasks/execute/workflowExecution.js', () => ({
   executeWorkflow: vi.fn(),
 }));
 
@@ -62,11 +62,11 @@ vi.mock('../constants.js', () => ({
   DEFAULT_LANGUAGE: 'en',
 }));
 
-import { createSharedClone } from '../task/clone.js';
-import { summarizeTaskName } from '../task/summarize.js';
-import { info } from '../utils/ui.js';
-import { resolveTaskExecution } from '../commands/execution/taskExecution.js';
-import type { TaskInfo } from '../task/index.js';
+import { createSharedClone } from '../infra/task/clone.js';
+import { summarizeTaskName } from '../infra/task/summarize.js';
+import { info } from '../shared/ui/index.js';
+import { resolveTaskExecution } from '../features/tasks/index.js';
+import type { TaskInfo } from '../infra/task/index.js';
 
 const mockCreateSharedClone = vi.mocked(createSharedClone);
 const mockSummarizeTaskName = vi.mocked(summarizeTaskName);

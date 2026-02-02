@@ -43,23 +43,23 @@ vi.mock('node:child_process', () => ({
   execFileSync: vi.fn(),
 }));
 
-vi.mock('../github/issue.js', () => ({
+vi.mock('../infra/github/issue.js', () => ({
   fetchIssue: mockFetchIssue,
   formatIssueAsTask: mockFormatIssueAsTask,
   checkGhCli: mockCheckGhCli,
 }));
 
-vi.mock('../github/pr.js', () => ({
+vi.mock('../infra/github/pr.js', () => ({
   createPullRequest: mockCreatePullRequest,
   pushBranch: mockPushBranch,
   buildPrBody: vi.fn().mockReturnValue('PR body'),
 }));
 
-vi.mock('../task/git.js', () => ({
+vi.mock('../infra/task/git.js', () => ({
   stageAndCommit: vi.fn().mockReturnValue('abc1234'),
 }));
 
-vi.mock('../utils/ui.js', () => ({
+vi.mock('../shared/ui/index.js', () => ({
   header: vi.fn(),
   info: vi.fn(),
   warn: vi.fn(),
@@ -73,12 +73,12 @@ vi.mock('../utils/ui.js', () => ({
   })),
 }));
 
-vi.mock('../utils/notification.js', () => ({
+vi.mock('../shared/utils/notification.js', () => ({
   notifySuccess: vi.fn(),
   notifyError: vi.fn(),
 }));
 
-vi.mock('../utils/session.js', () => ({
+vi.mock('../shared/utils/reportDir.js', () => ({
   generateSessionId: vi.fn().mockReturnValue('test-session-id'),
   createSessionLog: vi.fn().mockReturnValue({
     startTime: new Date().toISOString(),
@@ -91,8 +91,8 @@ vi.mock('../utils/session.js', () => ({
   generateReportDir: vi.fn().mockReturnValue('test-report-dir'),
 }));
 
-vi.mock('../config/paths.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../config/paths.js')>();
+vi.mock('../infra/config/paths.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../infra/config/paths.js')>();
   return {
     ...original,
     loadAgentSessions: vi.fn().mockReturnValue({}),
@@ -104,8 +104,8 @@ vi.mock('../config/paths.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../config/global/globalConfig.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../config/global/globalConfig.js')>();
+vi.mock('../infra/config/global/globalConfig.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../infra/config/global/globalConfig.js')>();
   return {
     ...original,
     loadGlobalConfig: vi.fn().mockReturnValue({}),
@@ -114,8 +114,8 @@ vi.mock('../config/global/globalConfig.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../config/project/projectConfig.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../config/project/projectConfig.js')>();
+vi.mock('../infra/config/project/projectConfig.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../infra/config/project/projectConfig.js')>();
   return {
     ...original,
     loadProjectConfig: vi.fn().mockReturnValue({}),
@@ -131,7 +131,7 @@ vi.mock('../prompt/index.js', () => ({
   promptInput: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('../workflow/engine/phase-runner.js', () => ({
+vi.mock('../core/workflow/phase-runner.js', () => ({
   needsStatusJudgmentPhase: vi.fn().mockReturnValue(false),
   runReportPhase: vi.fn().mockResolvedValue(undefined),
   runStatusJudgmentPhase: vi.fn().mockResolvedValue(''),
@@ -139,7 +139,7 @@ vi.mock('../workflow/engine/phase-runner.js', () => ({
 
 // --- Imports (after mocks) ---
 
-import { executePipeline } from '../commands/execution/pipelineExecution.js';
+import { executePipeline } from '../features/pipeline/index.js';
 import {
   EXIT_ISSUE_FETCH_FAILED,
   EXIT_WORKFLOW_FAILED,

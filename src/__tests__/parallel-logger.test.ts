@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ParallelLogger } from '../workflow/engine/parallel-logger.js';
-import type { StreamEvent } from '../claude/types.js';
+import { ParallelLogger } from '../core/workflow/index.js';
+import type { StreamEvent } from '../core/workflow/index.js';
 
 describe('ParallelLogger', () => {
   let output: string[];

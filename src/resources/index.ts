@@ -5,13 +5,14 @@
  * Resources are organized into:
  * - resources/global/{lang}/workflows/ - Builtin workflows (loaded via fallback)
  * - resources/global/{lang}/agents/   - Builtin agents (loaded via fallback)
+ * - resources/global/{lang}/prompts/  - Builtin prompt templates
  * - resources/project/                - Project-level template files (.gitignore)
  */
 
 import { readFileSync, readdirSync, existsSync, statSync, mkdirSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import type { Language } from '../models/types.js';
+import type { Language } from '../core/models/index.js';
 
 /**
  * Get the resources directory path
@@ -102,4 +103,3 @@ function copyDirRecursive(srcDir: string, destDir: string, options: CopyOptions 
     }
   }
 }
-

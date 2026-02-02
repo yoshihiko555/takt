@@ -8,17 +8,17 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import type { WorkflowStep, WorkflowRule, AgentResponse } from '../models/types.js';
+import type { WorkflowStep, WorkflowRule, AgentResponse } from '../core/models/index.js';
 
-vi.mock('../config/global/globalConfig.js', () => ({
+vi.mock('../infra/config/global/globalConfig.js', () => ({
   loadGlobalConfig: vi.fn().mockReturnValue({}),
   getLanguage: vi.fn().mockReturnValue('en'),
 }));
 
-import { InstructionBuilder } from '../workflow/instruction/InstructionBuilder.js';
-import { ReportInstructionBuilder, type ReportInstructionContext } from '../workflow/instruction/ReportInstructionBuilder.js';
-import { StatusJudgmentBuilder, type StatusJudgmentContext } from '../workflow/instruction/StatusJudgmentBuilder.js';
-import type { InstructionContext } from '../workflow/instruction/instruction-context.js';
+import { InstructionBuilder } from '../core/workflow/index.js';
+import { ReportInstructionBuilder, type ReportInstructionContext } from '../core/workflow/index.js';
+import { StatusJudgmentBuilder, type StatusJudgmentContext } from '../core/workflow/index.js';
+import type { InstructionContext } from '../core/workflow/index.js';
 
 // Function wrappers for test readability
 function buildInstruction(step: WorkflowStep, ctx: InstructionContext): string {

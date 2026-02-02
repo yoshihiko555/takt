@@ -6,8 +6,8 @@
 
 import { executeClaudeCli } from './process.js';
 import type { ClaudeSpawnOptions, ClaudeCallOptions } from './types.js';
-import type { AgentResponse, Status } from '../models/types.js';
-import { createLogger } from '../utils/debug.js';
+import type { AgentResponse, Status } from '../core/models/index.js';
+import { createLogger } from '../shared/utils/debug.js';
 
 // Re-export for backward compatibility
 export type { ClaudeCallOptions } from './types.js';

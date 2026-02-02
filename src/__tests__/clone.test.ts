@@ -21,7 +21,7 @@ vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
 }));
 
-vi.mock('../utils/debug.js', () => ({
+vi.mock('../shared/utils/debug.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
     debug: vi.fn(),
@@ -29,12 +29,12 @@ vi.mock('../utils/debug.js', () => ({
   }),
 }));
 
-vi.mock('../config/global/globalConfig.js', () => ({
+vi.mock('../infra/config/global/globalConfig.js', () => ({
   loadGlobalConfig: vi.fn(() => ({})),
 }));
 
 import { execFileSync } from 'node:child_process';
-import { createSharedClone, createTempCloneForBranch } from '../task/clone.js';
+import { createSharedClone, createTempCloneForBranch } from '../infra/task/clone.js';
 
 const mockExecFileSync = vi.mocked(execFileSync);
 

@@ -17,24 +17,24 @@ vi.mock('../agents/runner.js', () => ({
   runAgent: vi.fn(),
 }));
 
-vi.mock('../workflow/evaluation/index.js', () => ({
+vi.mock('../core/workflow/evaluation/index.js', () => ({
   detectMatchedRule: vi.fn(),
 }));
 
-vi.mock('../workflow/engine/phase-runner.js', () => ({
+vi.mock('../core/workflow/phase-runner.js', () => ({
   needsStatusJudgmentPhase: vi.fn().mockReturnValue(false),
   runReportPhase: vi.fn().mockResolvedValue(undefined),
   runStatusJudgmentPhase: vi.fn().mockResolvedValue(''),
 }));
 
-vi.mock('../utils/session.js', () => ({
+vi.mock('../shared/utils/reportDir.js', () => ({
   generateReportDir: vi.fn().mockReturnValue('test-report-dir'),
 }));
 
 // --- Imports (after mocks) ---
 
-import { WorkflowEngine } from '../workflow/engine/WorkflowEngine.js';
-import { runReportPhase } from '../workflow/engine/phase-runner.js';
+import { WorkflowEngine } from '../core/workflow/index.js';
+import { runReportPhase } from '../core/workflow/index.js';
 import {
   makeResponse,
   makeStep,
@@ -43,7 +43,7 @@ import {
   mockDetectMatchedRuleSequence,
   applyDefaultMocks,
 } from './engine-test-helpers.js';
-import type { WorkflowConfig } from '../models/types.js';
+import type { WorkflowConfig } from '../core/models/index.js';
 
 function createWorktreeDirs(): { projectCwd: string; cloneCwd: string } {
   const base = join(tmpdir(), `takt-worktree-test-${randomUUID()}`);
@@ -100,7 +100,7 @@ describe('WorkflowEngine: worktree reportDir resolution', () => {
     }
   });
 
-  it('should pass cwd-based reportDir to phase runner context in worktree mode', async () => {
+  it('should pass projectCwd-based reportDir to phase runner context in worktree mode', async () => {
     // Given: worktree environment where cwd !== projectCwd
     const config = buildSimpleConfig();
     const engine = new WorkflowEngine(config, cloneCwd, 'test task', {
@@ -117,14 +117,14 @@ describe('WorkflowEngine: worktree reportDir resolution', () => {
     // When: run the workflow
     await engine.run();
 
-    // Then: runReportPhase was called with context containing cwd-based reportDir
+    // Then: runReportPhase was called with context containing projectCwd-based reportDir
     const reportPhaseMock = vi.mocked(runReportPhase);
     expect(reportPhaseMock).toHaveBeenCalled();
     const phaseCtx = reportPhaseMock.mock.calls[0][2] as { reportDir: string };
 
-    // reportDir should be resolved from cloneCwd (cwd), not projectCwd
-    const expectedPath = join(cloneCwd, '.takt/reports/test-report-dir');
-    const unexpectedPath = join(projectCwd, '.takt/reports/test-report-dir');
+    // reportDir should be resolved from projectCwd, not cloneCwd
+    const expectedPath = join(projectCwd, '.takt/reports/test-report-dir');
+    const unexpectedPath = join(cloneCwd, '.takt/reports/test-report-dir');
 
     expect(phaseCtx.reportDir).toBe(expectedPath);
     expect(phaseCtx.reportDir).not.toBe(unexpectedPath);

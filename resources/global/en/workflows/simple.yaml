@@ -99,11 +99,14 @@ steps:
     rules:
       - condition: Implementation complete
         next: ai_review
+      - condition: No implementation (report only)
+        next: plan
       - condition: Cannot proceed, insufficient info
         next: plan
     instruction_template: |
       Follow the plan from the plan step and implement.
-      Refer to the plan report (00-plan.md) and proceed with implementation.
+      Refer to the plan report ({report:00-plan.md}) and proceed with implementation.
+      Use only the Report Directory files shown in Workflow Context. Do not search or open reports outside that directory.
 
       **Scope report format (create at implementation start):**
       ```markdown
@@ -134,6 +137,25 @@ steps:
       - **Options Considered**: {List of options}
       - **Reason**: {Why this option was chosen}
       ```
+
+      **Required output (include headings)**
+      ## Work done
+      - {summary of work performed}
+      ## Changes made
+      - {summary of code changes}
+      ## Test results
+      - {command and outcome}
+
+      **No-implementation handling (required)**
+      - If you only produced reports and made no code changes, output the tag for "No implementation (report only)"
+
+      **Required output (include headings)**
+      ## Work done
+      - {summary of work performed}
+      ## Changes made
+      - {summary of code changes}
+      ## Test results
+      - {command and outcome}
 
   - name: ai_review
     edit: false
@@ -260,7 +282,7 @@ steps:
       Run tests, verify the build, and perform final approval.
 
       **Workflow Overall Review:**
-      1. Does the implementation match the plan (00-plan.md)?
+      1. Does the implementation match the plan ({report:00-plan.md})?
       2. Were all review step issues addressed?
       3. Was the original task objective achieved?
 

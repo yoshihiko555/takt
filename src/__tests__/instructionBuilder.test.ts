@@ -6,15 +6,15 @@ import { describe, it, expect } from 'vitest';
 import {
   InstructionBuilder,
   isReportObjectConfig,
-} from '../workflow/instruction/InstructionBuilder.js';
-import { ReportInstructionBuilder, type ReportInstructionContext } from '../workflow/instruction/ReportInstructionBuilder.js';
-import { StatusJudgmentBuilder, type StatusJudgmentContext } from '../workflow/instruction/StatusJudgmentBuilder.js';
-import {
+  ReportInstructionBuilder,
+  StatusJudgmentBuilder,
   buildExecutionMetadata,
   renderExecutionMetadata,
+  generateStatusRulesFromRules,
+  type ReportInstructionContext,
+  type StatusJudgmentContext,
   type InstructionContext,
-} from '../workflow/instruction/instruction-context.js';
-import { generateStatusRulesFromRules } from '../workflow/instruction/status-rules.js';
+} from '../core/workflow/index.js';
 
 // Backward-compatible function wrappers for test readability
 function buildInstruction(step: WorkflowStep, ctx: InstructionContext): string {
@@ -26,7 +26,7 @@ function buildReportInstruction(step: WorkflowStep, ctx: ReportInstructionContex
 function buildStatusJudgmentInstruction(step: WorkflowStep, ctx: StatusJudgmentContext): string {
   return new StatusJudgmentBuilder(step, ctx).build();
 }
-import type { WorkflowStep, WorkflowRule } from '../models/types.js';
+import type { WorkflowStep, WorkflowRule } from '../core/models/index.js';
 
 
 function createMinimalStep(template: string): WorkflowStep {

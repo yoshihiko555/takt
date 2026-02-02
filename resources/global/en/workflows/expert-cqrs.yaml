@@ -100,7 +100,8 @@ steps:
       - WebFetch
     instruction_template: |
       Follow the plan from the plan step and implement.
-      Refer to the plan report (00-plan.md) and proceed with implementation.
+      Refer to the plan report ({report:00-plan.md}) and proceed with implementation.
+      Use only the Report Directory files shown in Workflow Context. Do not search or open reports outside that directory.
 
       **Scope report format (create at implementation start):**
       ```markdown
@@ -131,9 +132,19 @@ steps:
       - **Options Considered**: {List of options}
       - **Reason**: {Why this option was chosen}
       ```
+
+      **Required output (include headings)**
+      ## Work done
+      - {summary of work performed}
+      ## Changes made
+      - {summary of code changes}
+      ## Test results
+      - {command and outcome}
     rules:
       - condition: Implementation is complete
         next: ai_review
+      - condition: No implementation (report only)
+        next: plan
       - condition: Cannot proceed with implementation
         next: plan
 
@@ -194,6 +205,7 @@ steps:
   - name: ai_fix
     edit: true
     agent: ../agents/default/coder.md
+    session: refresh
     allowed_tools:
       - Read
       - Glob
@@ -229,10 +241,30 @@ steps:
       - Reporting "fixed" without opening files
       - Judging based on assumptions
       - Leaving problems that AI Reviewer REJECTED
+
+      **Handling "no fix needed" (required)**
+      - Do not claim "no fix needed" unless you can show the checked target file(s) for each AI Review issue
+      - If an issue involves generated code or spec sync, and you cannot verify the source spec, output the tag for "Unable to proceed with fixes"
+      - When "no fix needed", output the tag for "Unable to proceed with fixes" and include the reason + checked scope
+
+      **Required output (include headings)**
+      ## Files checked
+      - {path:line}
+      ## Searches run
+      - {command and summary}
+      ## Fixes applied
+      - {what changed}
+      ## Test results
+      - {command and outcome}
+
+      **No-implementation handling (required)**
+      - If you only produced reports and made no code changes, output the tag for "No implementation (report only)"
     pass_previous_response: true
     rules:
       - condition: AI Reviewer's issues have been fixed
         next: ai_review
+      - condition: No fix needed (verified target files/spec)
+        next: plan
       - condition: Unable to proceed with fixes
         next: plan
 
@@ -507,7 +539,7 @@ steps:
       Run tests, verify the build, and perform final approval.
 
       **Workflow Overall Review:**
-      1. Does the implementation match the plan (00-plan.md)?
+      1. Does the implementation match the plan ({report:00-plan.md})?
       2. Were all review step issues addressed?
       3. Was the original task objective achieved?
 

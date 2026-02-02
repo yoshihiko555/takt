@@ -10,15 +10,15 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-import type { WorkflowConfig, WorkflowStep, AgentResponse, WorkflowRule } from '../models/types.js';
+import type { WorkflowConfig, WorkflowStep, AgentResponse, WorkflowRule } from '../core/models/index.js';
 
 // --- Mock imports (consumers must call vi.mock before importing this) ---
 
 import { runAgent } from '../agents/runner.js';
-import { detectMatchedRule } from '../workflow/evaluation/index.js';
-import type { RuleMatch } from '../workflow/evaluation/index.js';
-import { needsStatusJudgmentPhase, runReportPhase, runStatusJudgmentPhase } from '../workflow/engine/phase-runner.js';
-import { generateReportDir } from '../utils/session.js';
+import { detectMatchedRule } from '../core/workflow/index.js';
+import type { RuleMatch } from '../core/workflow/index.js';
+import { needsStatusJudgmentPhase, runReportPhase, runStatusJudgmentPhase } from '../core/workflow/index.js';
+import { generateReportDir } from '../shared/utils/reportDir.js';
 
 // --- Factory functions ---
 

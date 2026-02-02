@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { WorkflowConfigRawSchema } from '../models/schemas.js';
+import { WorkflowConfigRawSchema } from '../core/models/index.js';
 
 const RESOURCES_DIR = join(import.meta.dirname, '../../resources/global');
 

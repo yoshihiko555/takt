@@ -8,8 +8,8 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { EventEmitter } from 'node:events';
 import { existsSync } from 'node:fs';
-import { isReportObjectConfig } from '../workflow/instruction/InstructionBuilder.js';
-import type { WorkflowStep, ReportObjectConfig, ReportConfig } from '../models/types.js';
+import { isReportObjectConfig } from '../core/workflow/index.js';
+import type { WorkflowStep, ReportObjectConfig, ReportConfig } from '../core/models/index.js';
 
 /**
  * Extracted emitStepReports logic for unit testing.

@@ -12,7 +12,7 @@ import {
   handleKeyInput,
   readMultilineFromStream,
 } from '../prompt/index.js';
-import { isFullWidth, getDisplayWidth, truncateText } from '../utils/text.js';
+import { isFullWidth, getDisplayWidth, truncateText } from '../shared/utils/text.js';
 
 // Disable chalk colors for predictable test output
 chalk.level = 0;

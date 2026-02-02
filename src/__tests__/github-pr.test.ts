@@ -6,8 +6,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildPrBody } from '../github/pr.js';
-import type { GitHubIssue } from '../github/types.js';
+import { buildPrBody } from '../infra/github/pr.js';
+import type { GitHubIssue } from '../infra/github/types.js';
 
 describe('buildPrBody', () => {
   it('should build body with issue and report', () => {

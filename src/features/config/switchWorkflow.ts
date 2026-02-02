@@ -1,0 +1,63 @@
+/**
+ * Workflow switching command
+ */
+
+import { listWorkflows, loadWorkflow } from '../../infra/config/loaders/workflowLoader.js';
+import { getCurrentWorkflow, setCurrentWorkflow } from '../../infra/config/paths.js';
+import { info, success, error } from '../../shared/ui/index.js';
+import { selectOption } from '../../prompt/index.js';
+
+/**
+ * Get all available workflow options
+ */
+function getAllWorkflowOptions(cwd: string): { label: string; value: string }[] {
+  const current = getCurrentWorkflow(cwd);
+  const workflows = listWorkflows(cwd);
+
+  const options: { label: string; value: string }[] = [];
+
+  // Add all workflows
+  for (const name of workflows) {
+    const isCurrent = name === current;
+    const label = isCurrent ? `${name} (current)` : name;
+    options.push({ label, value: name });
+  }
+
+  return options;
+}
+
+/**
+ * Switch to a different workflow
+ * @returns true if switch was successful
+ */
+export async function switchWorkflow(cwd: string, workflowName?: string): Promise<boolean> {
+  // No workflow specified - show selection prompt
+  if (!workflowName) {
+    const current = getCurrentWorkflow(cwd);
+    info(`Current workflow: ${current}`);
+
+    const options = getAllWorkflowOptions(cwd);
+    const selected = await selectOption('Select workflow:', options);
+
+    if (!selected) {
+      info('Cancelled');
+      return false;
+    }
+
+    workflowName = selected;
+  }
+
+  // Check if workflow exists
+  const config = loadWorkflow(workflowName, cwd);
+
+  if (!config) {
+    error(`Workflow "${workflowName}" not found`);
+    return false;
+  }
+
+  // Save to project config
+  setCurrentWorkflow(cwd, workflowName);
+  success(`Switched to workflow: ${workflowName}`);
+
+  return true;
+}

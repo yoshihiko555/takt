@@ -10,20 +10,20 @@ vi.mock('../prompt/index.js', () => ({
   selectOptionWithDefault: vi.fn(),
 }));
 
-vi.mock('../task/clone.js', () => ({
+vi.mock('../infra/task/clone.js', () => ({
   createSharedClone: vi.fn(),
   removeClone: vi.fn(),
 }));
 
-vi.mock('../task/autoCommit.js', () => ({
+vi.mock('../infra/task/autoCommit.js', () => ({
   autoCommitAndPush: vi.fn(),
 }));
 
-vi.mock('../task/summarize.js', () => ({
+vi.mock('../infra/task/summarize.js', () => ({
   summarizeTaskName: vi.fn(),
 }));
 
-vi.mock('../utils/ui.js', () => ({
+vi.mock('../shared/ui/index.js', () => ({
   info: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock('../utils/ui.js', () => ({
   setLogLevel: vi.fn(),
 }));
 
-vi.mock('../utils/debug.js', () => ({
+vi.mock('../shared/utils/debug.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
     debug: vi.fn(),
@@ -43,31 +43,20 @@ vi.mock('../utils/debug.js', () => ({
   getDebugLogFile: vi.fn(),
 }));
 
-vi.mock('../config/index.js', () => ({
+vi.mock('../infra/config/index.js', () => ({
   initGlobalDirs: vi.fn(),
   initProjectDirs: vi.fn(),
   loadGlobalConfig: vi.fn(() => ({ logLevel: 'info' })),
   getEffectiveDebugConfig: vi.fn(),
 }));
 
-vi.mock('../config/paths.js', () => ({
+vi.mock('../infra/config/paths.js', () => ({
   clearAgentSessions: vi.fn(),
   getCurrentWorkflow: vi.fn(() => 'default'),
   isVerboseMode: vi.fn(() => false),
 }));
 
-vi.mock('../commands/index.js', () => ({
-  executeTask: vi.fn(),
-  runAllTasks: vi.fn(),
-  switchWorkflow: vi.fn(),
-  switchConfig: vi.fn(),
-  addTask: vi.fn(),
-  watchTasks: vi.fn(),
-  listTasks: vi.fn(),
-  interactiveMode: vi.fn(() => Promise.resolve({ confirmed: false, task: '' })),
-}));
-
-vi.mock('../config/loaders/workflowLoader.js', () => ({
+vi.mock('../infra/config/loaders/workflowLoader.js', () => ({
   listWorkflows: vi.fn(() => []),
 }));
 
@@ -79,20 +68,20 @@ vi.mock('../constants.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../github/issue.js', () => ({
+vi.mock('../infra/github/issue.js', () => ({
   isIssueReference: vi.fn((s: string) => /^#\d+$/.test(s)),
   resolveIssueTask: vi.fn(),
 }));
 
-vi.mock('../utils/updateNotifier.js', () => ({
+vi.mock('../shared/utils/updateNotifier.js', () => ({
   checkForUpdates: vi.fn(),
 }));
 
 import { confirm } from '../prompt/index.js';
-import { createSharedClone } from '../task/clone.js';
-import { summarizeTaskName } from '../task/summarize.js';
-import { info } from '../utils/ui.js';
-import { confirmAndCreateWorktree } from '../commands/execution/selectAndExecute.js';
+import { createSharedClone } from '../infra/task/clone.js';
+import { summarizeTaskName } from '../infra/task/summarize.js';
+import { info } from '../shared/ui/index.js';
+import { confirmAndCreateWorktree } from '../features/tasks/index.js';
 
 const mockConfirm = vi.mocked(confirm);
 const mockCreateSharedClone = vi.mocked(createSharedClone);

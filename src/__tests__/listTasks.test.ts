@@ -8,8 +8,8 @@ import {
   extractTaskSlug,
   buildListItems,
   type BranchInfo,
-} from '../task/branchList.js';
-import { isBranchMerged, showFullDiff, type ListAction } from '../commands/management/listTasks.js';
+} from '../infra/task/branchList.js';
+import { isBranchMerged, showFullDiff, type ListAction } from '../features/tasks/index.js';
 
 describe('parseTaktBranches', () => {
   it('should parse takt/ branches from git branch output', () => {

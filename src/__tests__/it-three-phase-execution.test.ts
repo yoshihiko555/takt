@@ -14,7 +14,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setMockScenario, resetScenario } from '../mock/scenario.js';
-import type { WorkflowConfig, WorkflowStep, WorkflowRule } from '../models/types.js';
+import type { WorkflowConfig, WorkflowStep, WorkflowRule } from '../core/models/index.js';
 
 // --- Mocks ---
 
@@ -30,30 +30,30 @@ const mockNeedsStatusJudgmentPhase = vi.fn();
 const mockRunReportPhase = vi.fn();
 const mockRunStatusJudgmentPhase = vi.fn();
 
-vi.mock('../workflow/engine/phase-runner.js', () => ({
+vi.mock('../core/workflow/phase-runner.js', () => ({
   needsStatusJudgmentPhase: (...args: unknown[]) => mockNeedsStatusJudgmentPhase(...args),
   runReportPhase: (...args: unknown[]) => mockRunReportPhase(...args),
   runStatusJudgmentPhase: (...args: unknown[]) => mockRunStatusJudgmentPhase(...args),
 }));
 
-vi.mock('../utils/session.js', () => ({
+vi.mock('../shared/utils/reportDir.js', () => ({
   generateReportDir: vi.fn().mockReturnValue('test-report-dir'),
   generateSessionId: vi.fn().mockReturnValue('test-session-id'),
 }));
 
-vi.mock('../config/global/globalConfig.js', () => ({
+vi.mock('../infra/config/global/globalConfig.js', () => ({
   loadGlobalConfig: vi.fn().mockReturnValue({}),
   getLanguage: vi.fn().mockReturnValue('en'),
   getDisabledBuiltins: vi.fn().mockReturnValue([]),
 }));
 
-vi.mock('../config/project/projectConfig.js', () => ({
+vi.mock('../infra/config/project/projectConfig.js', () => ({
   loadProjectConfig: vi.fn().mockReturnValue({}),
 }));
 
 // --- Imports (after mocks) ---
 
-import { WorkflowEngine } from '../workflow/engine/WorkflowEngine.js';
+import { WorkflowEngine } from '../core/workflow/index.js';
 
 // --- Test helpers ---
 

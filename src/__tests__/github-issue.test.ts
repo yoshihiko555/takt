@@ -12,7 +12,7 @@ import {
   isIssueReference,
   formatIssueAsTask,
   type GitHubIssue,
-} from '../github/issue.js';
+} from '../infra/github/issue.js';
 
 describe('parseIssueNumbers', () => {
   it('should parse single issue reference', () => {

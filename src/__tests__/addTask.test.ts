@@ -8,15 +8,15 @@ import * as path from 'node:path';
 import { tmpdir } from 'node:os';
 
 // Mock dependencies before importing the module under test
-vi.mock('../commands/interactive/interactive.js', () => ({
+vi.mock('../features/interactive/index.js', () => ({
   interactiveMode: vi.fn(),
 }));
 
-vi.mock('../providers/index.js', () => ({
+vi.mock('../infra/providers/index.js', () => ({
   getProvider: vi.fn(),
 }));
 
-vi.mock('../config/global/globalConfig.js', () => ({
+vi.mock('../infra/config/global/globalConfig.js', () => ({
   loadGlobalConfig: vi.fn(() => ({ provider: 'claude' })),
 }));
 
@@ -26,17 +26,17 @@ vi.mock('../prompt/index.js', () => ({
   selectOption: vi.fn(),
 }));
 
-vi.mock('../task/summarize.js', () => ({
+vi.mock('../infra/task/summarize.js', () => ({
   summarizeTaskName: vi.fn(),
 }));
 
-vi.mock('../utils/ui.js', () => ({
+vi.mock('../shared/ui/index.js', () => ({
   success: vi.fn(),
   info: vi.fn(),
   blankLine: vi.fn(),
 }));
 
-vi.mock('../utils/debug.js', () => ({
+vi.mock('../shared/utils/debug.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
     debug: vi.fn(),
@@ -44,15 +44,15 @@ vi.mock('../utils/debug.js', () => ({
   }),
 }));
 
-vi.mock('../config/loaders/workflowLoader.js', () => ({
+vi.mock('../infra/config/loaders/workflowLoader.js', () => ({
   listWorkflows: vi.fn(),
 }));
 
-vi.mock('../config/paths.js', async (importOriginal) => ({ ...(await importOriginal<Record<string, unknown>>()),
+vi.mock('../infra/config/paths.js', async (importOriginal) => ({ ...(await importOriginal<Record<string, unknown>>()),
   getCurrentWorkflow: vi.fn(() => 'default'),
 }));
 
-vi.mock('../github/issue.js', () => ({
+vi.mock('../infra/github/issue.js', () => ({
   isIssueReference: vi.fn((s: string) => /^#\d+$/.test(s)),
   resolveIssueTask: vi.fn(),
   parseIssueNumbers: vi.fn((args: string[]) => {
@@ -67,13 +67,13 @@ vi.mock('../github/issue.js', () => ({
   }),
 }));
 
-import { interactiveMode } from '../commands/interactive/interactive.js';
-import { getProvider } from '../providers/index.js';
+import { interactiveMode } from '../features/interactive/index.js';
+import { getProvider } from '../infra/providers/index.js';
 import { promptInput, confirm, selectOption } from '../prompt/index.js';
-import { summarizeTaskName } from '../task/summarize.js';
-import { listWorkflows } from '../config/loaders/workflowLoader.js';
-import { resolveIssueTask } from '../github/issue.js';
-import { addTask, summarizeConversation } from '../commands/management/addTask.js';
+import { summarizeTaskName } from '../infra/task/summarize.js';
+import { listWorkflows } from '../infra/config/loaders/workflowLoader.js';
+import { resolveIssueTask } from '../infra/github/issue.js';
+import { addTask, summarizeConversation } from '../features/tasks/index.js';
 
 const mockResolveIssueTask = vi.mocked(resolveIssueTask);
 

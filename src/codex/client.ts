@@ -5,9 +5,9 @@
  */
 
 import { Codex } from '@openai/codex-sdk';
-import type { AgentResponse } from '../models/types.js';
-import { createLogger } from '../utils/debug.js';
-import { getErrorMessage } from '../utils/error.js';
+import type { AgentResponse } from '../core/models/index.js';
+import { createLogger } from '../shared/utils/debug.js';
+import { getErrorMessage } from '../shared/utils/error.js';
 import type { CodexCallOptions } from './types.js';
 import {
   type CodexEvent,

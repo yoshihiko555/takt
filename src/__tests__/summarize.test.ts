@@ -4,15 +4,15 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../providers/index.js', () => ({
+vi.mock('../infra/providers/index.js', () => ({
   getProvider: vi.fn(),
 }));
 
-vi.mock('../config/global/globalConfig.js', () => ({
+vi.mock('../infra/config/global/globalConfig.js', () => ({
   loadGlobalConfig: vi.fn(),
 }));
 
-vi.mock('../utils/debug.js', () => ({
+vi.mock('../shared/utils/debug.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
     debug: vi.fn(),
@@ -20,9 +20,9 @@ vi.mock('../utils/debug.js', () => ({
   }),
 }));
 
-import { getProvider } from '../providers/index.js';
-import { loadGlobalConfig } from '../config/global/globalConfig.js';
-import { summarizeTaskName } from '../task/summarize.js';
+import { getProvider } from '../infra/providers/index.js';
+import { loadGlobalConfig } from '../infra/config/global/globalConfig.js';
+import { summarizeTaskName } from '../infra/task/summarize.js';
 
 const mockGetProvider = vi.mocked(getProvider);
 const mockLoadGlobalConfig = vi.mocked(loadGlobalConfig);

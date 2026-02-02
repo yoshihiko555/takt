@@ -19,7 +19,7 @@ import {
   type NdjsonStepComplete,
   type NdjsonWorkflowComplete,
   type NdjsonWorkflowAbort,
-} from '../utils/session.js';
+} from '../infra/fs/session.js';
 
 /** Create a temp project directory with .takt/logs structure */
 function createTempProject(): string {

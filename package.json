@@ -7,7 +7,7 @@
   "bin": {
     "takt": "./bin/takt",
     "takt-dev": "./bin/takt",
-    "takt-cli": "./dist/cli/index.js"
+    "takt-cli": "./dist/app/cli/index.js"
   },
   "scripts": {
     "build": "tsc",

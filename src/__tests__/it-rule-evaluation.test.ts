@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { WorkflowStep, WorkflowState, WorkflowRule, AgentResponse } from '../models/types.js';
+import type { WorkflowStep, WorkflowState, WorkflowRule, AgentResponse } from '../core/models/index.js';
 
 // --- Mocks ---
 
@@ -29,19 +29,19 @@ vi.mock('../claude/client.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../config/global/globalConfig.js', () => ({
+vi.mock('../infra/config/global/globalConfig.js', () => ({
   loadGlobalConfig: vi.fn().mockReturnValue({}),
   getLanguage: vi.fn().mockReturnValue('en'),
 }));
 
-vi.mock('../config/project/projectConfig.js', () => ({
+vi.mock('../infra/config/project/projectConfig.js', () => ({
   loadProjectConfig: vi.fn().mockReturnValue({}),
 }));
 
 // --- Imports (after mocks) ---
 
-import { detectMatchedRule, evaluateAggregateConditions } from '../workflow/evaluation/index.js';
-import type { RuleMatch, RuleEvaluatorContext } from '../workflow/evaluation/index.js';
+import { detectMatchedRule, evaluateAggregateConditions } from '../core/workflow/index.js';
+import type { RuleMatch, RuleEvaluatorContext } from '../core/workflow/index.js';
 
 // --- Test helpers ---
 
@@ -49,7 +49,11 @@ function makeRule(condition: string, next: string, extra?: Partial<WorkflowRule>
   return { condition, next, ...extra };
 }
 
-function makeStep(name: string, rules: WorkflowRule[], parallel?: WorkflowStep[]): WorkflowStep {
+function makeStep(
+  name: string,
+  rules: WorkflowRule[],
+  parallel?: WorkflowStep[],
+): WorkflowStep {
   return {
     name,
     agent: 'test-agent',
@@ -139,6 +143,7 @@ describe('Rule Evaluation IT: Phase 1 tag fallback', () => {
     expect(result).toEqual<RuleMatch>({ index: 1, method: 'phase1_tag' });
   });
 });
+
 
 describe('Rule Evaluation IT: Aggregate conditions (all/any)', () => {
   beforeEach(() => {

@@ -25,8 +25,8 @@ vi.mock('../prompt/index.js', () => ({
 }));
 
 // Import after mocks are set up
-const { needsLanguageSetup } = await import('../config/global/initialization.js');
-const { getGlobalConfigPath } = await import('../config/paths.js');
+const { needsLanguageSetup } = await import('../infra/config/global/initialization.js');
+const { getGlobalConfigPath } = await import('../infra/config/paths.js');
 const { copyProjectResourcesToDir, getLanguageResourcesDir, getProjectResourcesDir } = await import('../resources/index.js');
 
 describe('initialization', () => {

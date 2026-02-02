@@ -10,7 +10,7 @@ import {
   WorkflowConfigRawSchema,
   CustomAgentConfigSchema,
   GlobalConfigSchema,
-} from '../models/schemas.js';
+} from '../core/models/index.js';
 
 describe('AgentTypeSchema', () => {
   it('should accept valid agent types', () => {

@@ -6,7 +6,7 @@
  */
 
 import type { PermissionResult, PermissionUpdate, AgentDefinition, PermissionMode as SdkPermissionMode } from '@anthropic-ai/claude-agent-sdk';
-import type { PermissionMode } from '../models/types.js';
+import type { PermissionMode } from '../core/models/index.js';
 
 // Re-export PermissionResult for convenience
 export type { PermissionResult, PermissionUpdate };

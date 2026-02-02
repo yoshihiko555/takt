@@ -31,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Internal
 
 - Refactored instruction builder: extracted context assembly and status rules logic (#44)
-- Introduced `src/task/git.ts` for DRY git commit operations
+- Introduced `src/infra/task/git.ts` for DRY git commit operations
 - Unified error handling with `getErrorMessage()`
 - Made `projectCwd` required throughout codebase
 - Removed deprecated `sacrificeMode`

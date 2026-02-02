@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock all external dependencies
 const mockFetchIssue = vi.fn();
 const mockCheckGhCli = vi.fn().mockReturnValue({ available: true });
-vi.mock('../github/issue.js', () => ({
+vi.mock('../infra/github/issue.js', () => ({
   fetchIssue: mockFetchIssue,
   formatIssueAsTask: vi.fn((issue: { title: string; body: string; number: number }) =>
     `## GitHub Issue #${issue.number}: ${issue.title}\n\n${issue.body}`
@@ -20,20 +20,20 @@ vi.mock('../github/issue.js', () => ({
 const mockCreatePullRequest = vi.fn();
 const mockPushBranch = vi.fn();
 const mockBuildPrBody = vi.fn(() => 'Default PR body');
-vi.mock('../github/pr.js', () => ({
+vi.mock('../infra/github/pr.js', () => ({
   createPullRequest: mockCreatePullRequest,
   pushBranch: mockPushBranch,
   buildPrBody: mockBuildPrBody,
 }));
 
 const mockExecuteTask = vi.fn();
-vi.mock('../commands/execution/taskExecution.js', () => ({
+vi.mock('../features/tasks/index.js', () => ({
   executeTask: mockExecuteTask,
 }));
 
 // Mock loadGlobalConfig
 const mockLoadGlobalConfig = vi.fn();
-vi.mock('../config/global/globalConfig.js', async (importOriginal) => ({ ...(await importOriginal<Record<string, unknown>>()),
+vi.mock('../infra/config/global/globalConfig.js', async (importOriginal) => ({ ...(await importOriginal<Record<string, unknown>>()),
   loadGlobalConfig: mockLoadGlobalConfig,
 }));
 
@@ -44,7 +44,7 @@ vi.mock('node:child_process', () => ({
 }));
 
 // Mock UI
-vi.mock('../utils/ui.js', () => ({
+vi.mock('../shared/ui/index.js', () => ({
   info: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
@@ -56,7 +56,7 @@ vi.mock('../utils/ui.js', () => ({
   debug: vi.fn(),
 }));
 // Mock debug logger
-vi.mock('../utils/debug.js', () => ({
+vi.mock('../shared/utils/debug.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
     debug: vi.fn(),
@@ -64,7 +64,7 @@ vi.mock('../utils/debug.js', () => ({
   }),
 }));
 
-const { executePipeline } = await import('../commands/execution/pipelineExecution.js');
+const { executePipeline } = await import('../features/pipeline/index.js');
 
 describe('executePipeline', () => {
   beforeEach(() => {

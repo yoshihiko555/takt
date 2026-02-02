@@ -61,7 +61,7 @@ Each step executes in up to 3 phases (session is resumed across phases):
 | Phase 2 | Report output | Write only | When `step.report` is defined |
 | Phase 3 | Status judgment | None (judgment only) | When step has tag-based rules |
 
-Phase 2/3 are implemented in `src/workflow/phase-runner.ts`. The session is resumed so the agent retains context from Phase 1.
+Phase 2/3 are implemented in `src/core/workflow/engine/phase-runner.ts`. The session is resumed so the agent retains context from Phase 1.
 
 ### Rule Evaluation (5-Stage Fallback)
 
@@ -73,11 +73,11 @@ After step execution, rules are evaluated to determine the next step. Evaluation
 4. **AI judge (ai() only)** - AI evaluates `ai("condition text")` rules
 5. **AI judge fallback** - AI evaluates ALL conditions as final resort
 
-Implemented in `src/workflow/rule-evaluator.ts`. The matched method is tracked as `RuleMatchMethod` type.
+Implemented in `src/core/workflow/evaluation/RuleEvaluator.ts`. The matched method is tracked as `RuleMatchMethod` type.
 
 ### Key Components
 
-**WorkflowEngine** (`src/workflow/engine.ts`)
+**WorkflowEngine** (`src/core/workflow/engine/WorkflowEngine.ts`)
 - State machine that orchestrates agent execution via EventEmitter
 - Manages step transitions based on rule evaluation results
 - Emits events: `step:start`, `step:complete`, `step:blocked`, `step:loop_detected`, `workflow:complete`, `workflow:abort`, `iteration:limit`
@@ -85,7 +85,7 @@ Implemented in `src/workflow/rule-evaluator.ts`. The matched method is tracked a
 - Maintains agent sessions per step for conversation continuity
 - Parallel step execution via `runParallelStep()` with `Promise.all()`
 
-**Instruction Builder** (`src/workflow/instruction-builder.ts`)
+**Instruction Builder** (`src/core/workflow/instruction/InstructionBuilder.ts`)
 - Auto-injects standard sections into every instruction (no need for `{task}` or `{previous_response}` placeholders in templates):
   1. Execution context (working dir, edit permission rules)
   2. Workflow context (iteration counts, report dir)
@@ -111,18 +111,18 @@ Implemented in `src/workflow/rule-evaluator.ts`. The matched method is tracked a
 - `executor.ts` - Query execution using `@anthropic-ai/claude-agent-sdk`
 - `query-manager.ts` - Concurrent query tracking with query IDs
 
-**Configuration** (`src/config/`)
+**Configuration** (`src/infra/config/`)
 - `loader.ts` - Custom agent loading from `.takt/agents.yaml`
 - `workflowLoader.ts` - YAML workflow parsing with Zod validation; resolves user workflows (`~/.takt/workflows/`) with builtin fallback (`resources/global/{lang}/workflows/`)
 - `agentLoader.ts` - Agent prompt file loading
 - `paths.ts` - Directory structure (`.takt/`, `~/.takt/`), session management
 
-**Task Management** (`src/task/`)
+**Task Management** (`src/infra/task/`)
 - `runner.ts` - TaskRunner class for managing task files (`.takt/tasks/`)
 - `watcher.ts` - TaskWatcher class for polling and auto-executing tasks (used by `/watch`)
 - `index.ts` - Task operations (getNextTask, completeTask, addTask)
 
-**GitHub Integration** (`src/github/issue.ts`)
+**GitHub Integration** (`src/infra/github/issue.ts`)
 - Fetches issues via `gh` CLI, formats as task text with title/body/labels/comments
 
 ### Data Flow
@@ -273,7 +273,7 @@ Files: `.takt/logs/{sessionId}.jsonl`, with `latest.json` pointer. Legacy `.json
 
 - ESM modules with `.js` extensions in imports
 - Strict TypeScript with `noUncheckedIndexedAccess`
-- Zod schemas for runtime validation (`src/models/schemas.ts`)
+- Zod schemas for runtime validation (`src/core/models/schemas.ts`)
 - Uses `@anthropic-ai/claude-agent-sdk` for Claude integration
 
 ## Design Principles

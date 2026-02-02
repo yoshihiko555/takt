@@ -25,8 +25,8 @@ vi.mock('../prompt/index.js', () => ({
 }));
 
 // Import after mocks are set up
-const { initGlobalDirs, needsLanguageSetup } = await import('../config/global/initialization.js');
-const { getGlobalConfigPath, getGlobalConfigDir } = await import('../config/paths.js');
+const { initGlobalDirs, needsLanguageSetup } = await import('../infra/config/global/initialization.js');
+const { getGlobalConfigPath, getGlobalConfigDir } = await import('../infra/config/paths.js');
 
 describe('initGlobalDirs with non-interactive mode', () => {
   beforeEach(() => {

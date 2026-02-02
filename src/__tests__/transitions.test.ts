@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { determineNextStepByRules } from '../workflow/engine/transitions.js';
-import type { WorkflowStep } from '../models/types.js';
+import { determineNextStepByRules } from '../core/workflow/index.js';
+import type { WorkflowStep } from '../core/models/index.js';
 
 function createStepWithRules(rules: { condition: string; next: string }[]): WorkflowStep {
   return {

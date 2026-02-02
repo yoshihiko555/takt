@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { WorkflowConfigRawSchema, ParallelSubStepRawSchema, WorkflowStepRawSchema } from '../models/schemas.js';
+import { WorkflowConfigRawSchema, ParallelSubStepRawSchema, WorkflowStepRawSchema } from '../core/models/index.js';
 
 describe('ParallelSubStepRawSchema', () => {
   it('should validate a valid parallel sub-step', () => {

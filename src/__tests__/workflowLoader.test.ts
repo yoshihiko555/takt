@@ -11,7 +11,7 @@ import {
   loadWorkflowByIdentifier,
   listWorkflows,
   loadAllWorkflows,
-} from '../config/loaders/workflowLoader.js';
+} from '../infra/config/loaders/workflowLoader.js';
 
 const SAMPLE_WORKFLOW = `name: test-workflow
 description: Test workflow

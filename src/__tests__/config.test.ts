@@ -13,7 +13,7 @@ import {
   loadWorkflow,
   listWorkflows,
   loadAgentPromptFromPath,
-} from '../config/loaders/loader.js';
+} from '../infra/config/loaders/loader.js';
 import {
   getCurrentWorkflow,
   setCurrentWorkflow,
@@ -35,9 +35,9 @@ import {
   getWorktreeSessionPath,
   loadWorktreeSessions,
   updateWorktreeSession,
-} from '../config/paths.js';
-import { getLanguage } from '../config/global/globalConfig.js';
-import { loadProjectConfig } from '../config/project/projectConfig.js';
+} from '../infra/config/paths.js';
+import { getLanguage } from '../infra/config/global/globalConfig.js';
+import { loadProjectConfig } from '../infra/config/project/projectConfig.js';
 
 describe('getBuiltinWorkflow', () => {
   it('should return builtin workflow when it exists in resources', () => {
