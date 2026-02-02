@@ -426,7 +426,7 @@ export class WorkflowEngine extends EventEmitter {
       this.state.status = 'aborted';
       return {
         response: {
-          agent: step.agent,
+          agent: step.agent ?? step.name,
           status: 'blocked',
           content: ERROR_MESSAGES.LOOP_DETECTED(step.name, loopCheck.count),
           timestamp: new Date(),

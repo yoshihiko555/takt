@@ -113,10 +113,10 @@ export const WorkflowRuleSchema = z.object({
   interactive_only: z.boolean().optional(),
 });
 
-/** Sub-step schema for parallel execution (agent is required) */
+/** Sub-step schema for parallel execution */
 export const ParallelSubStepRawSchema = z.object({
   name: z.string().min(1),
-  agent: z.string().min(1),
+  agent: z.string().optional(),
   agent_name: z.string().optional(),
   allowed_tools: z.array(z.string()).optional(),
   provider: z.enum(['claude', 'codex', 'mock']).optional(),
@@ -155,10 +155,7 @@ export const WorkflowStepRawSchema = z.object({
   pass_previous_response: z.boolean().optional().default(true),
   /** Sub-steps to execute in parallel */
   parallel: z.array(ParallelSubStepRawSchema).optional(),
-}).refine(
-  (data) => data.agent || (data.parallel && data.parallel.length > 0),
-  { message: 'Step must have either an agent or parallel sub-steps' },
-);
+});
 
 /** Workflow configuration schema - raw YAML format */
 export const WorkflowConfigRawSchema = z.object({

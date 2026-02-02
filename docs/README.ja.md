@@ -207,6 +207,31 @@ steps:
       アーキテクチャとコード品質の観点で実装をレビューしてください。
 ```
 
+### エージェントレスステップ
+
+`agent` フィールドは省略可能です。省略した場合、ステップはシステムプロンプトなしで `instruction_template` のみを使って実行されます。これはエージェントの動作カスタマイズが不要なシンプルなタスクに便利です。
+
+```yaml
+  - name: summarize
+    # agent未指定 — instruction_templateのみを使用
+    edit: false
+    rules:
+      - condition: 要約完了
+        next: COMPLETE
+    instruction_template: |
+      レポートを読んで簡潔な要約を提供してください。
+```
+
+また、`agent` の値としてインラインシステムプロンプトを記述することもできます（指定されたファイルが存在しない場合）:
+
+```yaml
+  - name: review
+    agent: "あなたはコードレビュアーです。可読性と保守性に焦点を当ててください。"
+    edit: false
+    instruction_template: |
+      コード品質をレビューしてください。
+```
+
 ### パラレルステップ
 
 ステップ内でサブステップを並列実行し、集約条件で評価できます:

@@ -45,7 +45,7 @@ export class OptionsBuilder {
 
     return {
       ...this.buildBaseOptions(step),
-      sessionId: step.session === 'refresh' ? undefined : this.getSessionId(step.agent),
+      sessionId: step.session === 'refresh' ? undefined : this.getSessionId(step.agent ?? step.name),
       allowedTools,
     };
   }

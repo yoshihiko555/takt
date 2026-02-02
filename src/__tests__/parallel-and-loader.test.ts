@@ -22,14 +22,14 @@ describe('ParallelSubStepRawSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject a sub-step without agent', () => {
+  it('should accept a sub-step without agent (instruction_template only)', () => {
     const raw = {
       name: 'no-agent-step',
       instruction_template: 'Do something',
     };
 
     const result = ParallelSubStepRawSchema.safeParse(raw);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('should accept optional fields', () => {
@@ -90,14 +90,14 @@ describe('WorkflowStepRawSchema with parallel', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject a step with neither agent nor parallel', () => {
+  it('should accept a step with neither agent nor parallel (instruction_template only)', () => {
     const raw = {
       name: 'orphan-step',
       instruction_template: 'Do something',
     };
 
     const result = WorkflowStepRawSchema.safeParse(raw);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('should accept a step with agent (no parallel)', () => {
@@ -111,14 +111,14 @@ describe('WorkflowStepRawSchema with parallel', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject a step with empty parallel array', () => {
+  it('should accept a step with empty parallel array (no agent, no parallel content)', () => {
     const raw = {
       name: 'empty-parallel',
       parallel: [],
     };
 
     const result = WorkflowStepRawSchema.safeParse(raw);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });
 

@@ -209,6 +209,31 @@ steps:
       Review the implementation for architecture and code quality.
 ```
 
+### Agent-less Steps
+
+The `agent` field is optional. When omitted, the step executes using only the `instruction_template` without a system prompt. This is useful for simple tasks where agent behavior customization is not needed.
+
+```yaml
+  - name: summarize
+    # No agent specified — uses instruction_template only
+    edit: false
+    rules:
+      - condition: Summary complete
+        next: COMPLETE
+    instruction_template: |
+      Read the reports and provide a brief summary.
+```
+
+You can also provide an inline system prompt as the `agent` value (when the specified file does not exist):
+
+```yaml
+  - name: review
+    agent: "You are a code reviewer. Focus on readability and maintainability."
+    edit: false
+    instruction_template: |
+      Review the code for quality.
+```
+
 ### Parallel Steps
 
 Steps can execute sub-steps concurrently with aggregate evaluation:

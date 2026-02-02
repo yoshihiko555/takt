@@ -130,9 +130,10 @@ export async function runReportPhase(
   stepIteration: number,
   ctx: PhaseRunnerContext,
 ): Promise<void> {
-  const sessionId = ctx.getSessionId(step.agent);
+  const sessionKey = step.agent ?? step.name;
+  const sessionId = ctx.getSessionId(sessionKey);
   if (!sessionId) {
-    throw new Error(`Report phase requires a session to resume, but no sessionId found for agent "${step.agent}" in step "${step.name}"`);
+    throw new Error(`Report phase requires a session to resume, but no sessionId found for agent "${sessionKey}" in step "${step.name}"`);
   }
 
   log.debug('Running report phase', { step: step.name, sessionId });
@@ -156,7 +157,7 @@ export async function runReportPhase(
   }
 
   // Update session (phase 2 may update it)
-  ctx.updateAgentSession(step.agent, reportResponse.sessionId);
+  ctx.updateAgentSession(sessionKey, reportResponse.sessionId);
 
   log.debug('Report phase complete', { step: step.name, status: reportResponse.status });
 }
@@ -170,9 +171,10 @@ export async function runStatusJudgmentPhase(
   step: WorkflowStep,
   ctx: PhaseRunnerContext,
 ): Promise<string> {
-  const sessionId = ctx.getSessionId(step.agent);
+  const sessionKey = step.agent ?? step.name;
+  const sessionId = ctx.getSessionId(sessionKey);
   if (!sessionId) {
-    throw new Error(`Status judgment phase requires a session to resume, but no sessionId found for agent "${step.agent}" in step "${step.name}"`);
+    throw new Error(`Status judgment phase requires a session to resume, but no sessionId found for agent "${sessionKey}" in step "${step.name}"`);
   }
 
   log.debug('Running status judgment phase', { step: step.name, sessionId });
@@ -190,7 +192,7 @@ export async function runStatusJudgmentPhase(
   const judgmentResponse = await runAgent(step.agent, judgmentInstruction, judgmentOptions);
 
   // Update session (phase 3 may update it)
-  ctx.updateAgentSession(step.agent, judgmentResponse.sessionId);
+  ctx.updateAgentSession(sessionKey, judgmentResponse.sessionId);
 
   log.debug('Status judgment phase complete', { step: step.name, status: judgmentResponse.status });
   return judgmentResponse.content;

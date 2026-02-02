@@ -154,15 +154,15 @@ export class AgentRunner {
     return provider.callCustom(agentConfig.name, task, systemPrompt, callOptions);
   }
 
-  /** Run an agent by name or path */
+  /** Run an agent by name, path, inline prompt string, or no agent at all */
   async run(
-    agentSpec: string,
+    agentSpec: string | undefined,
     task: string,
     options: RunAgentOptions,
   ): Promise<AgentResponse> {
-    const agentName = AgentRunner.extractAgentName(agentSpec);
+    const agentName = agentSpec ? AgentRunner.extractAgentName(agentSpec) : 'default';
     log.debug('Running agent', {
-      agentSpec,
+      agentSpec: agentSpec ?? '(none)',
       agentName,
       provider: options.provider,
       model: options.model,
@@ -171,11 +171,8 @@ export class AgentRunner {
       permissionMode: options.permissionMode,
     });
 
-    // If agentPath is provided (from workflow), use it to load prompt
+    // 1. If agentPath is provided (resolved file exists), load prompt from file
     if (options.agentPath) {
-      if (!existsSync(options.agentPath)) {
-        throw new Error(`Agent file not found: ${options.agentPath}`);
-      }
       const systemPrompt = AgentRunner.loadAgentPromptFromPath(options.agentPath);
 
       const providerType = AgentRunner.resolveProvider(options.cwd, options);
@@ -198,15 +195,54 @@ export class AgentRunner {
       return provider.call(agentName, task, callOptions);
     }
 
-    // Fallback: Look for custom agent by name
-    const customAgents = loadCustomAgents();
-    const agentConfig = customAgents.get(agentName);
+    // 2. If agentSpec is provided but no agentPath (file not found), try custom agent first,
+    //    then use the string as inline system prompt
+    if (agentSpec) {
+      const customAgents = loadCustomAgents();
+      const agentConfig = customAgents.get(agentName);
+      if (agentConfig) {
+        return this.runCustom(agentConfig, task, options);
+      }
 
-    if (agentConfig) {
-      return this.runCustom(agentConfig, task, options);
+      // Use agentSpec string as inline system prompt
+      const providerType = AgentRunner.resolveProvider(options.cwd, options);
+      const provider = getProvider(providerType);
+
+      const callOptions: ProviderCallOptions = {
+        cwd: options.cwd,
+        sessionId: options.sessionId,
+        allowedTools: options.allowedTools,
+        maxTurns: options.maxTurns,
+        model: AgentRunner.resolveModel(options.cwd, options),
+        systemPrompt: agentSpec,
+        permissionMode: options.permissionMode,
+        onStream: options.onStream,
+        onPermissionRequest: options.onPermissionRequest,
+        onAskUserQuestion: options.onAskUserQuestion,
+        bypassPermissions: options.bypassPermissions,
+      };
+
+      return provider.call(agentName, task, callOptions);
     }
 
-    throw new Error(`Unknown agent: ${agentSpec}`);
+    // 3. No agent specified — run with instruction_template only (no system prompt)
+    const providerType = AgentRunner.resolveProvider(options.cwd, options);
+    const provider = getProvider(providerType);
+
+    const callOptions: ProviderCallOptions = {
+      cwd: options.cwd,
+      sessionId: options.sessionId,
+      allowedTools: options.allowedTools,
+      maxTurns: options.maxTurns,
+      model: AgentRunner.resolveModel(options.cwd, options),
+      permissionMode: options.permissionMode,
+      onStream: options.onStream,
+      onPermissionRequest: options.onPermissionRequest,
+      onAskUserQuestion: options.onAskUserQuestion,
+      bypassPermissions: options.bypassPermissions,
+    };
+
+    return provider.call(agentName, task, callOptions);
   }
 }
 
@@ -215,7 +251,7 @@ export class AgentRunner {
 const defaultRunner = new AgentRunner();
 
 export async function runAgent(
-  agentSpec: string,
+  agentSpec: string | undefined,
   task: string,
   options: RunAgentOptions,
 ): Promise<AgentResponse> {

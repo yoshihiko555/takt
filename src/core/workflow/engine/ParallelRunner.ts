@@ -92,8 +92,9 @@ export class ParallelRunner {
           ? { ...baseOptions, onStream: parallelLogger.createStreamHandler(subStep.name, index) }
           : baseOptions;
 
+        const subSessionKey = subStep.agent ?? subStep.name;
         const subResponse = await runAgent(subStep.agent, subInstruction, agentOptions);
-        updateAgentSession(subStep.agent, subResponse.sessionId);
+        updateAgentSession(subSessionKey, subResponse.sessionId);
 
         // Phase 2: report output for sub-step
         if (subStep.report) {

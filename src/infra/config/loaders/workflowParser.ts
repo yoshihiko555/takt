@@ -148,14 +148,24 @@ function normalizeRule(r: {
 /** Normalize a raw step into internal WorkflowStep format. */
 function normalizeStepFromRaw(step: RawStep, workflowDir: string): WorkflowStep {
   const rules: WorkflowRule[] | undefined = step.rules?.map(normalizeRule);
-  const agentSpec: string = step.agent ?? '';
+  const agentSpec: string | undefined = step.agent || undefined;
+
+  // Resolve agent path: if the resolved path exists on disk, use it; otherwise leave agentPath undefined
+  // so that the runner treats agentSpec as an inline system prompt string.
+  let agentPath: string | undefined;
+  if (agentSpec) {
+    const resolved = resolveAgentPathForWorkflow(agentSpec, workflowDir);
+    if (existsSync(resolved)) {
+      agentPath = resolved;
+    }
+  }
 
   const result: WorkflowStep = {
     name: step.name,
     agent: agentSpec,
     session: step.session,
     agentDisplayName: step.agent_name || (agentSpec ? extractAgentDisplayName(agentSpec) : step.name),
-    agentPath: agentSpec ? resolveAgentPathForWorkflow(agentSpec, workflowDir) : undefined,
+    agentPath,
     allowedTools: step.allowed_tools,
     provider: step.provider,
     model: step.model,

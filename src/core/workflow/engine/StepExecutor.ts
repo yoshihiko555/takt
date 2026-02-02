@@ -85,18 +85,19 @@ export class StepExecutor {
       ? state.stepIterations.get(step.name) ?? 1
       : incrementStepIteration(state, step.name);
     const instruction = prebuiltInstruction ?? this.buildInstruction(step, stepIteration, state, task, maxIterations);
+    const sessionKey = step.agent ?? step.name;
     log.debug('Running step', {
       step: step.name,
-      agent: step.agent,
+      agent: step.agent ?? '(none)',
       stepIteration,
       iteration: state.iteration,
-      sessionId: state.agentSessions.get(step.agent) ?? 'new',
+      sessionId: state.agentSessions.get(sessionKey) ?? 'new',
     });
 
     // Phase 1: main execution (Write excluded if step has report)
     const agentOptions = this.deps.optionsBuilder.buildAgentOptions(step);
     let response = await runAgent(step.agent, instruction, agentOptions);
-    updateAgentSession(step.agent, response.sessionId);
+    updateAgentSession(sessionKey, response.sessionId);
 
     const phaseCtx = this.deps.optionsBuilder.buildPhaseRunnerContext(state, updateAgentSession);
 
