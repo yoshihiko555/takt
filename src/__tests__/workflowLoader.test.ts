@@ -32,7 +32,7 @@ describe('isWorkflowPath', () => {
 
   it('should return true for home directory paths', () => {
     expect(isWorkflowPath('~/workflow.yaml')).toBe(true);
-    expect(isWorkflowPath('~/.takt/workflows/custom.yaml')).toBe(true);
+    expect(isWorkflowPath('~/.takt/pieces/custom.yaml')).toBe(true);
   });
 
   it('should return true for relative paths starting with ./', () => {

@@ -165,7 +165,7 @@ export class DebugLogger {
   }
 }
 
-// ---- Backward-compatible module-level functions ----
+// ---- Module-level functions ----
 
 export function initDebugLogger(config?: DebugConfig, projectDir?: string): void {
   DebugLogger.getInstance().init(config, projectDir);

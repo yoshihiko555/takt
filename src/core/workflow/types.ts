@@ -6,7 +6,7 @@
  */
 
 import type { PermissionResult, PermissionUpdate } from '@anthropic-ai/claude-agent-sdk';
-import type { WorkflowMovement, WorkflowStep, AgentResponse, WorkflowState, Language } from '../models/types.js';
+import type { WorkflowMovement, AgentResponse, WorkflowState, Language } from '../models/types.js';
 
 export type ProviderType = 'claude' | 'codex' | 'mock';
 

@@ -174,9 +174,6 @@ export class QueryExecutor {
   }
 }
 
-// ---- Backward-compatible module-level function ----
-
-/** @deprecated Use QueryExecutor.execute() instead */
 export async function executeClaudeQuery(
   prompt: string,
   options: ClaudeSpawnOptions,

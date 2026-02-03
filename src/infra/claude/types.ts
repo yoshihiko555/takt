@@ -12,7 +12,7 @@ import type { PermissionResult } from '../../core/workflow/index.js';
 // Re-export PermissionResult for convenience
 export type { PermissionResult, PermissionUpdate };
 
-/** Stream event data types (for backward compatibility) */
+/** Stream event data types */
 export interface InitEventData {
   model: string;
   sessionId: string;

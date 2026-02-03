@@ -69,7 +69,7 @@ export function listCustomAgents(): string[] {
  * Load agent prompt content.
  * Agents can be loaded from:
  * - ~/.takt/agents/*.md (global agents)
- * - ~/.takt/workflows/{workflow}/*.md (workflow-specific agents)
+ * - ~/.takt/pieces/{workflow}/*.md (workflow-specific agents)
  */
 export function loadAgentPrompt(agent: CustomAgentConfig): string {
   if (agent.prompt) {

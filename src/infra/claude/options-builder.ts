@@ -177,7 +177,7 @@ export class SdkOptionsBuilder {
   }
 }
 
-// ---- Backward-compatible module-level functions ----
+// ---- Module-level functions ----
 
 export function createCanUseToolCallback(
   handler: PermissionHandler

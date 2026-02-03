@@ -33,7 +33,7 @@ export async function executeTask(options: ExecuteTaskOptions): Promise<boolean>
       error(`Workflow file not found: ${workflowIdentifier}`);
     } else {
       error(`Workflow "${workflowIdentifier}" not found.`);
-      info('Available workflows are in ~/.takt/workflows/ or .takt/workflows/');
+      info('Available workflows are in ~/.takt/pieces/ or .takt/workflows/');
       info('Use "takt switch" to select a workflow.');
     }
     return false;

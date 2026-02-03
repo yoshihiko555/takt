@@ -10,7 +10,6 @@ export {
   setCurrentWorkflow,
   isVerboseMode,
   type PermissionMode,
-  type ProjectPermissionMode,
   type ProjectLocalConfig,
 } from './projectConfig.js';
 

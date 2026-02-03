@@ -36,8 +36,6 @@ export class AppContext {
   }
 }
 
-// ---- Backward-compatible module-level functions ----
-
 /** Get whether quiet mode is active (CLI flag or config, resolved in preAction) */
 export function isQuietMode(): boolean {
   return AppContext.getInstance().getQuietMode();

@@ -1,7 +1,7 @@
 /**
  * Configuration loader for takt
  *
- * Re-exports from specialized loaders for backward compatibility.
+ * Re-exports from specialized loaders.
  */
 
 // Workflow loading

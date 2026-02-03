@@ -175,8 +175,6 @@ export interface InteractiveSelectCallbacks<T extends string> {
    * Return null to delegate to default handler.
    */
   onKeyPress?: (key: string, value: T, index: number) => SelectOptionItem<T>[] | null;
-  /** Called when 'b' key is pressed. Returns updated options for re-render. @deprecated Use onKeyPress instead */
-  onBookmark?: (value: T, index: number) => SelectOptionItem<T>[];
   /** Custom label for cancel option (default: "Cancel") */
   cancelLabel?: string;
 }
@@ -201,7 +199,7 @@ function interactiveSelect<T extends string>(
     let selectedIndex = initialIndex;
     const cancelLabel = callbacks?.cancelLabel ?? 'Cancel';
 
-    printHeader(message, !!callbacks?.onKeyPress || !!callbacks?.onBookmark);
+    printHeader(message, !!callbacks?.onKeyPress);
 
     process.stdout.write('\x1B[?7l');
 
@@ -265,22 +263,9 @@ function interactiveSelect<T extends string>(
           cleanup(onKeypress);
           resolve({ selectedIndex: result.cancelIndex, finalOptions: currentOptions });
           break;
-        case 'bookmark': {
-          if (!callbacks?.onBookmark) break;
-          // Only bookmark actual options, not the cancel row
-          if (result.selectedIndex >= currentOptions.length) break;
-          const item = currentOptions[result.selectedIndex];
-          if (!item) break;
-          const newOptions = callbacks.onBookmark(item.value, result.selectedIndex);
-          // Find the same value in the new options to preserve cursor position
-          const currentValue = item.value;
-          currentOptions = newOptions;
-          totalItems = hasCancelOption ? currentOptions.length + 1 : currentOptions.length;
-          const newIdx = currentOptions.findIndex((o) => o.value === currentValue);
-          selectedIndex = newIdx >= 0 ? newIdx : Math.min(selectedIndex, currentOptions.length - 1);
-          totalLines = redrawMenu(currentOptions, selectedIndex, hasCancelOption, totalLines, cancelLabel);
+        case 'bookmark':
+          // Handled by custom onKeyPress
           break;
-        }
         case 'remove_bookmark':
           // Ignore - should be handled by custom onKeyPress
           break;
@@ -299,7 +284,6 @@ function interactiveSelect<T extends string>(
 
 /**
  * Prompt user to select from a list of options using cursor navigation.
- * @param callbacks.onBookmark - Called when 'b' key is pressed. Returns updated options for re-render.
  * @returns Selected option or null if cancelled
  */
 export async function selectOption<T extends string>(

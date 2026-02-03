@@ -9,11 +9,6 @@
 export const COMPLETE_MOVEMENT = 'COMPLETE';
 export const ABORT_MOVEMENT = 'ABORT';
 
-/** @deprecated Use COMPLETE_MOVEMENT instead */
-export const COMPLETE_STEP = COMPLETE_MOVEMENT;
-/** @deprecated Use ABORT_MOVEMENT instead */
-export const ABORT_STEP = ABORT_MOVEMENT;
-
 /** Maximum user inputs to store */
 export const MAX_USER_INPUTS = 100;
 export const MAX_INPUT_LENGTH = 10000;

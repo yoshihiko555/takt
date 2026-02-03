@@ -18,7 +18,6 @@ export {
   getCurrentWorkflow,
   setCurrentWorkflow,
   isVerboseMode,
-  type ProjectPermissionMode,
   type ProjectLocalConfig,
   writeFileAtomic,
   getInputHistoryPath,
@@ -102,8 +101,8 @@ export * from './agents/index.js';
 // Workflow engine
 export {
   WorkflowEngine,
-  COMPLETE_STEP,
-  ABORT_STEP,
+  COMPLETE_MOVEMENT,
+  ABORT_MOVEMENT,
   ERROR_MESSAGES,
   determineNextMovementByRules,
   extractBlockedPrompt,

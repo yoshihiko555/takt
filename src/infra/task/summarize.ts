@@ -81,7 +81,7 @@ export class TaskSummarizer {
   }
 }
 
-// ---- Backward-compatible module-level function ----
+// ---- Module-level function ----
 
 const defaultSummarizer = new TaskSummarizer();
 

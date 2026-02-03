@@ -13,7 +13,6 @@ import type {
   LatestLogPointer,
 } from '../../shared/utils/index.js';
 
-// Re-export types for backward compatibility
 export type {
   SessionLog,
   NdjsonWorkflowStart,
@@ -238,8 +237,6 @@ export class SessionManager {
     writeFileAtomic(latestPath, JSON.stringify(pointer, null, 2));
   }
 }
-
-// ---- Backward-compatible module-level functions ----
 
 const defaultManager = new SessionManager();
 

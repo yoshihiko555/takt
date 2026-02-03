@@ -16,7 +16,6 @@ import { createLogger } from '../shared/utils/index.js';
 import { loadTemplate } from '../shared/prompts/index.js';
 import type { RunAgentOptions } from './types.js';
 
-// Re-export for backward compatibility
 export type { RunAgentOptions, StreamCallback } from './types.js';
 
 const log = createLogger('runner');
@@ -225,7 +224,7 @@ export class AgentRunner {
   }
 }
 
-// ---- Backward-compatible module-level functions ----
+// ---- Module-level function facade ----
 
 const defaultRunner = new AgentRunner();
 
@@ -235,12 +234,4 @@ export async function runAgent(
   options: RunAgentOptions,
 ): Promise<AgentResponse> {
   return defaultRunner.run(agentSpec, task, options);
-}
-
-export async function runCustomAgent(
-  agentConfig: CustomAgentConfig,
-  task: string,
-  options: RunAgentOptions,
-): Promise<AgentResponse> {
-  return defaultRunner.runCustom(agentConfig, task, options);
 }

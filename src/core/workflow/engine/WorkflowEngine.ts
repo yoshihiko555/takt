@@ -32,7 +32,6 @@ import { ParallelRunner } from './ParallelRunner.js';
 
 const log = createLogger('engine');
 
-// Re-export types for backward compatibility
 export type {
   WorkflowEvents,
   UserInputRequest,
@@ -41,7 +40,7 @@ export type {
   IterationLimitCallback,
   WorkflowEngineOptions,
 } from '../types.js';
-export { COMPLETE_MOVEMENT, ABORT_MOVEMENT, COMPLETE_STEP, ABORT_STEP } from '../constants.js';
+export { COMPLETE_MOVEMENT, ABORT_MOVEMENT } from '../constants.js';
 
 /** Workflow engine for orchestrating agent execution */
 export class WorkflowEngine extends EventEmitter {

@@ -76,8 +76,6 @@ export class StateManager {
   }
 }
 
-// --- Backward-compatible function facades ---
-
 /**
  * Create initial workflow state from config and options.
  */

@@ -2,7 +2,7 @@
  * SDK message to stream event converter
  *
  * Converts Claude Agent SDK messages to the internal stream event format
- * for backward compatibility with the streaming display system.
+ * for use with the streaming display system.
  */
 
 import type {
@@ -85,7 +85,7 @@ function extractToolResultContent(toolResult: unknown): { content: string; isErr
 }
 
 /**
- * Convert SDK message to stream event for backward compatibility.
+ * Convert SDK message to stream event.
  *
  * @param message - The SDK message to convert
  * @param callback - The callback to invoke with stream events

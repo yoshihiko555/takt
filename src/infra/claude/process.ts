@@ -15,7 +15,6 @@ import type {
   ClaudeResult,
 } from './types.js';
 
-// Re-export types for backward compatibility
 export type {
   StreamEvent,
   StreamCallback,
@@ -59,7 +58,7 @@ export async function executeClaudeCli(
 }
 
 /**
- * ClaudeProcess class for backward compatibility.
+ * ClaudeProcess class wrapping the SDK query function.
  * Wraps the SDK query function.
  */
 export class ClaudeProcess {

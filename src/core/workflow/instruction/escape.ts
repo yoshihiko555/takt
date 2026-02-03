@@ -18,7 +18,7 @@ export function escapeTemplateChars(str: string): string {
  * Replace template placeholders in the instruction_template body.
  *
  * These placeholders may still be used in instruction_template for
- * backward compatibility or special cases.
+ * special cases or legacy templates.
  */
 export function replaceTemplatePlaceholders(
   template: string,
@@ -34,8 +34,6 @@ export function replaceTemplatePlaceholders(
   result = result.replace(/\{iteration\}/g, String(context.iteration));
   result = result.replace(/\{max_iterations\}/g, String(context.maxIterations));
   result = result.replace(/\{movement_iteration\}/g, String(context.movementIteration));
-  // @deprecated Use {movement_iteration} instead
-  result = result.replace(/\{step_iteration\}/g, String(context.movementIteration));
 
   // Replace {previous_response}
   if (step.passPreviousResponse) {

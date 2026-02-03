@@ -215,14 +215,11 @@ function normalizeStepFromRaw(step: RawStep, workflowDir: string): WorkflowMovem
 export function normalizeWorkflowConfig(raw: unknown, workflowDir: string): WorkflowConfig {
   const parsed = WorkflowConfigRawSchema.parse(raw);
 
-  // Prefer `movements` over legacy `steps`
-  const rawMovements = parsed.movements ?? parsed.steps ?? [];
-  const movements: WorkflowMovement[] = rawMovements.map((step) =>
+  const movements: WorkflowMovement[] = parsed.movements.map((step) =>
     normalizeStepFromRaw(step, workflowDir),
   );
 
-  // Prefer `initial_movement` over legacy `initial_step`
-  const initialMovement = parsed.initial_movement ?? parsed.initial_step ?? movements[0]?.name ?? '';
+  const initialMovement = parsed.initial_movement ?? movements[0]?.name ?? '';
 
   return {
     name: parsed.name,

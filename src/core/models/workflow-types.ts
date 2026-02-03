@@ -83,9 +83,6 @@ export interface WorkflowMovement {
   parallel?: WorkflowMovement[];
 }
 
-/** @deprecated Use WorkflowMovement instead */
-export type WorkflowStep = WorkflowMovement;
-
 /** Loop detection configuration */
 export interface LoopDetectionConfig {
   /** Maximum consecutive runs of the same step before triggering (default: 10) */

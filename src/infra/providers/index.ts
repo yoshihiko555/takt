@@ -10,7 +10,6 @@ import { CodexProvider } from './codex.js';
 import { MockProvider } from './mock.js';
 import type { Provider, ProviderType } from './types.js';
 
-// Re-export types for backward compatibility
 export type { ProviderCallOptions, Provider, ProviderType } from './types.js';
 
 /**
@@ -51,8 +50,6 @@ export class ProviderRegistry {
   }
 
 }
-
-// ---- Backward-compatible module-level functions ----
 
 export function getProvider(type: ProviderType): Provider {
   return ProviderRegistry.getInstance().get(type);

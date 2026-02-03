@@ -14,20 +14,20 @@ import {
   type InstructionContext,
 } from '../core/workflow/index.js';
 
-// Backward-compatible function wrappers for test readability
-function buildInstruction(step: WorkflowStep, ctx: InstructionContext): string {
+// Function wrappers for test readability
+function buildInstruction(step: WorkflowMovement, ctx: InstructionContext): string {
   return new InstructionBuilder(step, ctx).build();
 }
-function buildReportInstruction(step: WorkflowStep, ctx: ReportInstructionContext): string {
+function buildReportInstruction(step: WorkflowMovement, ctx: ReportInstructionContext): string {
   return new ReportInstructionBuilder(step, ctx).build();
 }
-function buildStatusJudgmentInstruction(step: WorkflowStep, ctx: StatusJudgmentContext): string {
+function buildStatusJudgmentInstruction(step: WorkflowMovement, ctx: StatusJudgmentContext): string {
   return new StatusJudgmentBuilder(step, ctx).build();
 }
-import type { WorkflowStep, WorkflowRule } from '../core/models/index.js';
+import type { WorkflowMovement, WorkflowRule } from '../core/models/index.js';
 
 
-function createMinimalStep(template: string): WorkflowStep {
+function createMinimalStep(template: string): WorkflowMovement {
   return {
     name: 'test-step',
     agent: 'test-agent',

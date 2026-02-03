@@ -12,9 +12,6 @@ import type { WorkflowCategoryConfigNode } from '../../core/models/schemas.js';
  */
 export type PermissionMode = 'default' | 'sacrifice-my-pc';
 
-/** @deprecated Use PermissionMode instead */
-export type ProjectPermissionMode = PermissionMode;
-
 /** Project configuration stored in .takt/config.yaml */
 export interface ProjectLocalConfig {
   /** Current workflow name */

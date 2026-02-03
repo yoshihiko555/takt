@@ -152,8 +152,6 @@ export class GlobalConfigManager {
   }
 }
 
-// ---- Backward-compatible module-level functions ----
-
 export function invalidateGlobalConfigCache(): void {
   GlobalConfigManager.getInstance().invalidateCache();
 }

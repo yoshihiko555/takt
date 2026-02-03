@@ -14,7 +14,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setMockScenario, resetScenario } from '../infra/mock/index.js';
-import type { WorkflowConfig, WorkflowStep, WorkflowRule } from '../core/models/index.js';
+import type { WorkflowConfig, WorkflowMovement, WorkflowRule } from '../core/models/index.js';
 import { callAiJudge, detectRuleIndex } from '../infra/claude/index.js';
 
 // --- Mocks ---
@@ -89,7 +89,7 @@ function makeMovement(
   agentPath: string,
   rules: WorkflowRule[],
   options: { report?: string | { label: string; path: string }[]; edit?: boolean } = {},
-): WorkflowStep {
+): WorkflowMovement {
   return {
     name,
     agent: './agents/agent.md',

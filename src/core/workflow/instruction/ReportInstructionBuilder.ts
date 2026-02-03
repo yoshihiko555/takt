@@ -19,7 +19,7 @@ export interface ReportInstructionContext {
   cwd: string;
   /** Report directory path */
   reportDir: string;
-  /** Movement iteration (for {step_iteration} replacement) */
+  /** Movement iteration (for {movement_iteration} replacement) */
   movementIteration: number;
   /** Language */
   language?: Language;

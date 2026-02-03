@@ -54,14 +54,14 @@ export type {
 // Stream conversion
 export { sdkMessageToStreamEvent } from './stream-converter.js';
 
-// Options building (backward-compatible functions)
+// Options building
 export {
   createCanUseToolCallback,
   createAskUserQuestionHooks,
   buildSdkOptions,
 } from './options-builder.js';
 
-// Client functions (backward-compatible)
+// Client functions
 export {
   callClaude,
   callClaudeCustom,

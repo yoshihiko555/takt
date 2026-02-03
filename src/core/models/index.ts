@@ -10,7 +10,6 @@ export type {
   SessionState,
   WorkflowRule,
   WorkflowMovement,
-  WorkflowStep,
   LoopDetectionConfig,
   WorkflowConfig,
   WorkflowState,

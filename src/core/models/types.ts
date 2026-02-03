@@ -29,7 +29,6 @@ export type {
   ReportConfig,
   ReportObjectConfig,
   WorkflowMovement,
-  WorkflowStep,
   LoopDetectionConfig,
   WorkflowConfig,
   WorkflowState,

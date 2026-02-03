@@ -84,7 +84,7 @@ export class QueryRegistry {
   }
 
   /**
-   * Interrupt the most recently started Claude query (backward compatibility).
+   * Interrupt the most recently started Claude query.
    * @returns true if a query was interrupted, false if no query was running
    */
   interruptCurrentProcess(): boolean {
@@ -95,8 +95,6 @@ export class QueryRegistry {
     return true;
   }
 }
-
-// ---- Backward-compatible module-level functions ----
 
 /** Generate a unique query ID */
 export function generateQueryId(): string {

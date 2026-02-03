@@ -249,7 +249,7 @@ export class CloneManager {
   }
 }
 
-// ---- Backward-compatible module-level functions ----
+// ---- Module-level functions ----
 
 const defaultManager = new CloneManager();
 

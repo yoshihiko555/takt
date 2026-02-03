@@ -26,9 +26,6 @@ export function getGlobalPiecesDir(): string {
   return join(getGlobalConfigDir(), 'pieces');
 }
 
-/** @deprecated Use getGlobalPiecesDir() instead */
-export const getGlobalWorkflowsDir = getGlobalPiecesDir;
-
 /** Get takt global logs directory */
 export function getGlobalLogsDir(): string {
   return join(getGlobalConfigDir(), 'logs');
@@ -43,9 +40,6 @@ export function getGlobalConfigPath(): string {
 export function getBuiltinPiecesDir(lang: Language): string {
   return join(getLanguageResourcesDir(lang), 'pieces');
 }
-
-/** @deprecated Use getBuiltinPiecesDir() instead */
-export const getBuiltinWorkflowsDir = getBuiltinPiecesDir;
 
 /** Get builtin agents directory (resources/global/{lang}/agents) */
 export function getBuiltinAgentsDir(lang: Language): string {
@@ -102,7 +96,7 @@ export {
   type ProjectLocalConfig,
 } from './project/projectConfig.js';
 
-// Re-export session storage functions for backward compatibility
+// Re-export session storage functions
 export {
   writeFileAtomic,
   getInputHistoryPath,

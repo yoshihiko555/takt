@@ -10,7 +10,6 @@ import type { AgentResponse, Status } from '../../core/models/index.js';
 import { createLogger } from '../../shared/utils/index.js';
 import { loadTemplate } from '../../shared/prompts/index.js';
 
-// Re-export for backward compatibility
 export type { ClaudeCallOptions } from './types.js';
 
 const log = createLogger('client');
@@ -250,7 +249,7 @@ export class ClaudeClient {
   }
 }
 
-// ---- Backward-compatible module-level functions ----
+// ---- Module-level functions ----
 
 const defaultClient = new ClaudeClient();
 

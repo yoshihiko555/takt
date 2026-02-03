@@ -3,7 +3,7 @@
  *
  * Supports both YAML (.yaml/.yml) and Markdown (.md) task files.
  * YAML files are validated against TaskFileSchema.
- * Markdown files are treated as plain text (backward compatible).
+ * Markdown files are treated as plain text.
  */
 
 import * as fs from 'node:fs';

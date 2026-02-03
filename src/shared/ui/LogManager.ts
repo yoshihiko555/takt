@@ -2,7 +2,7 @@
  * Log level management and formatted console output.
  *
  * LogManager is a singleton that encapsulates the current log level state.
- * Module-level functions are provided for backward compatibility.
+ * Module-level functions are provided as convenient facades.
  */
 
 import chalk from 'chalk';
@@ -83,8 +83,6 @@ export class LogManager {
     console.log(chalk.green(message));
   }
 }
-
-// ---- Backward-compatible module-level functions ----
 
 export function setLogLevel(level: LogLevel): void {
   LogManager.getInstance().setLogLevel(level);

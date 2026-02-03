@@ -9,7 +9,7 @@
 export { WorkflowEngine } from './engine/index.js';
 
 // Constants
-export { COMPLETE_MOVEMENT, ABORT_MOVEMENT, COMPLETE_STEP, ABORT_STEP, ERROR_MESSAGES } from './constants.js';
+export { COMPLETE_MOVEMENT, ABORT_MOVEMENT, ERROR_MESSAGES } from './constants.js';
 
 // Types
 export type {

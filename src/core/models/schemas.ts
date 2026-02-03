@@ -158,30 +158,15 @@ export const WorkflowMovementRawSchema = z.object({
   parallel: z.array(ParallelSubMovementRawSchema).optional(),
 });
 
-/** @deprecated Use WorkflowMovementRawSchema instead */
-export const WorkflowStepRawSchema = WorkflowMovementRawSchema;
-
-/** @deprecated Use ParallelSubMovementRawSchema instead */
-export const ParallelSubStepRawSchema = ParallelSubMovementRawSchema;
-
-/** Workflow configuration schema - raw YAML format (accepts both `movements` and legacy `steps`) */
+/** Workflow configuration schema - raw YAML format */
 export const WorkflowConfigRawSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  /** Preferred key: movements */
-  movements: z.array(WorkflowMovementRawSchema).min(1).optional(),
-  /** @deprecated Use `movements` instead */
-  steps: z.array(WorkflowMovementRawSchema).min(1).optional(),
-  /** Preferred key: initial_movement */
+  movements: z.array(WorkflowMovementRawSchema).min(1),
   initial_movement: z.string().optional(),
-  /** @deprecated Use `initial_movement` instead */
-  initial_step: z.string().optional(),
   max_iterations: z.number().int().positive().optional().default(10),
   answer_agent: z.string().optional(),
-}).refine(
-  (data) => (data.movements && data.movements.length > 0) || (data.steps && data.steps.length > 0),
-  { message: 'Workflow must have at least one movement (use `movements` or legacy `steps` key)' }
-);
+});
 
 /** Custom agent configuration schema */
 export const CustomAgentConfigSchema = z.object({

@@ -20,7 +20,6 @@ import {
   emitCodexItemUpdate,
 } from './CodexStreamHandler.js';
 
-// Re-export for backward compatibility
 export type { CodexCallOptions } from './types.js';
 
 const log = createLogger('codex-sdk');
@@ -198,8 +197,6 @@ export class CodexClient {
     });
   }
 }
-
-// ---- Backward-compatible module-level functions ----
 
 const defaultClient = new CodexClient();
 

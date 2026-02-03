@@ -96,8 +96,8 @@ function resolveWorkflowFile(workflowsDir: string, name: string): string | null 
  *
  * Priority:
  * 1. Project-local workflows → .takt/workflows/{name}.yaml
- * 2. User workflows → ~/.takt/workflows/{name}.yaml
- * 3. Builtin workflows → resources/global/{lang}/workflows/{name}.yaml
+ * 2. User workflows → ~/.takt/pieces/{name}.yaml
+ * 3. Builtin workflows → resources/global/{lang}/pieces/{name}.yaml
  */
 export function loadWorkflow(
   name: string,
@@ -113,14 +113,6 @@ export function loadWorkflow(
   const globalMatch = resolveWorkflowFile(globalPiecesDir, name);
   if (globalMatch) {
     return loadWorkflowFromFile(globalMatch);
-  }
-
-  // Fallback: legacy ~/.takt/workflows/ directory (deprecated)
-  const legacyGlobalDir = join(homedir(), '.takt', 'workflows');
-  const legacyMatch = resolveWorkflowFile(legacyGlobalDir, name);
-  if (legacyMatch) {
-    log.info(`Loading workflow from deprecated path ~/.takt/workflows/. Please move to ~/.takt/pieces/.`);
-    return loadWorkflowFromFile(legacyMatch);
   }
 
   return getBuiltinWorkflow(name);
@@ -229,12 +221,6 @@ function getWorkflowDirs(cwd: string): { dir: string; source: WorkflowSource; di
   if (getBuiltinWorkflowsEnabled()) {
     dirs.push({ dir: getBuiltinPiecesDir(lang), disabled, source: 'builtin' });
   }
-  // Legacy fallback: ~/.takt/workflows/ (deprecated, lowest user priority)
-  const legacyGlobalDir = join(homedir(), '.takt', 'workflows');
-  if (existsSync(legacyGlobalDir)) {
-    log.info(`Scanning deprecated path ~/.takt/workflows/. Please move to ~/.takt/pieces/.`);
-    dirs.push({ dir: legacyGlobalDir, source: 'user' });
-  }
   dirs.push({ dir: getGlobalPiecesDir(), source: 'user' });
   dirs.push({ dir: join(getProjectConfigDir(cwd), 'workflows'), source: 'project' });
   return dirs;
@@ -245,7 +231,7 @@ function getWorkflowDirs(cwd: string): { dir: string; source: WorkflowSource; di
  *
  * Priority (later entries override earlier):
  *   1. Builtin workflows
- *   2. User workflows (~/.takt/workflows/)
+ *   2. User workflows (~/.takt/pieces/)
  *   3. Project-local workflows (.takt/workflows/)
  */
 export function loadAllWorkflowsWithSources(cwd: string): Map<string, WorkflowWithSource> {
@@ -269,7 +255,7 @@ export function loadAllWorkflowsWithSources(cwd: string): Map<string, WorkflowWi
  *
  * Priority (later entries override earlier):
  *   1. Builtin workflows
- *   2. User workflows (~/.takt/workflows/)
+ *   2. User workflows (~/.takt/pieces/)
  *   3. Project-local workflows (.takt/workflows/)
  */
 export function loadAllWorkflows(cwd: string): Map<string, WorkflowConfig> {

@@ -8,9 +8,9 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse, stringify } from 'yaml';
 import { copyProjectResourcesToDir } from '../../resources/index.js';
-import type { PermissionMode, ProjectPermissionMode, ProjectLocalConfig } from '../types.js';
+import type { PermissionMode, ProjectLocalConfig } from '../types.js';
 
-export type { PermissionMode, ProjectPermissionMode, ProjectLocalConfig };
+export type { PermissionMode, ProjectLocalConfig };
 
 /** Default project configuration */
 const DEFAULT_PROJECT_CONFIG: ProjectLocalConfig = {

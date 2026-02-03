@@ -73,7 +73,7 @@ export class AutoCommitter {
   }
 }
 
-// ---- Backward-compatible module-level function ----
+// ---- Module-level function ----
 
 const defaultCommitter = new AutoCommitter();
 

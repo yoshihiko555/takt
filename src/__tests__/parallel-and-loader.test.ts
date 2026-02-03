@@ -8,9 +8,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { WorkflowConfigRawSchema, ParallelSubStepRawSchema, WorkflowStepRawSchema } from '../core/models/index.js';
+import { WorkflowConfigRawSchema, ParallelSubMovementRawSchema, WorkflowMovementRawSchema } from '../core/models/index.js';
 
-describe('ParallelSubStepRawSchema', () => {
+describe('ParallelSubMovementRawSchema', () => {
   it('should validate a valid parallel sub-movement', () => {
     const raw = {
       name: 'arch-review',
@@ -18,7 +18,7 @@ describe('ParallelSubStepRawSchema', () => {
       instruction_template: 'Review architecture',
     };
 
-    const result = ParallelSubStepRawSchema.safeParse(raw);
+    const result = ParallelSubMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
   });
 
@@ -28,7 +28,7 @@ describe('ParallelSubStepRawSchema', () => {
       instruction_template: 'Do something',
     };
 
-    const result = ParallelSubStepRawSchema.safeParse(raw);
+    const result = ParallelSubMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
   });
 
@@ -45,7 +45,7 @@ describe('ParallelSubStepRawSchema', () => {
       pass_previous_response: false,
     };
 
-    const result = ParallelSubStepRawSchema.safeParse(raw);
+    const result = ParallelSubMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.agent_name).toBe('Coder');
@@ -65,7 +65,7 @@ describe('ParallelSubStepRawSchema', () => {
       ],
     };
 
-    const result = ParallelSubStepRawSchema.safeParse(raw);
+    const result = ParallelSubMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.rules).toHaveLength(2);
@@ -73,7 +73,7 @@ describe('ParallelSubStepRawSchema', () => {
   });
 });
 
-describe('WorkflowStepRawSchema with parallel', () => {
+describe('WorkflowMovementRawSchema with parallel', () => {
   it('should accept a movement with parallel sub-movements (no agent)', () => {
     const raw = {
       name: 'parallel-review',
@@ -86,7 +86,7 @@ describe('WorkflowStepRawSchema with parallel', () => {
       ],
     };
 
-    const result = WorkflowStepRawSchema.safeParse(raw);
+    const result = WorkflowMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
   });
 
@@ -96,7 +96,7 @@ describe('WorkflowStepRawSchema with parallel', () => {
       instruction_template: 'Do something',
     };
 
-    const result = WorkflowStepRawSchema.safeParse(raw);
+    const result = WorkflowMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
   });
 
@@ -107,7 +107,7 @@ describe('WorkflowStepRawSchema with parallel', () => {
       instruction_template: 'Code something',
     };
 
-    const result = WorkflowStepRawSchema.safeParse(raw);
+    const result = WorkflowMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
   });
 
@@ -117,7 +117,7 @@ describe('WorkflowStepRawSchema with parallel', () => {
       parallel: [],
     };
 
-    const result = WorkflowStepRawSchema.safeParse(raw);
+    const result = WorkflowMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
   });
 });
@@ -194,7 +194,7 @@ describe('ai() condition in WorkflowRuleSchema', () => {
       ],
     };
 
-    const result = WorkflowStepRawSchema.safeParse(raw);
+    const result = WorkflowMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.rules?.[0].condition).toBe('ai("All reviews approved")');
@@ -212,7 +212,7 @@ describe('ai() condition in WorkflowRuleSchema', () => {
       ],
     };
 
-    const result = WorkflowStepRawSchema.safeParse(raw);
+    const result = WorkflowMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
   });
 });
@@ -299,7 +299,7 @@ describe('all()/any() aggregate condition regex parsing', () => {
   });
 });
 
-describe('all()/any() condition in WorkflowStepRawSchema', () => {
+describe('all()/any() condition in WorkflowMovementRawSchema', () => {
   it('should accept all() condition as a string', () => {
     const raw = {
       name: 'parallel-review',
@@ -312,7 +312,7 @@ describe('all()/any() condition in WorkflowStepRawSchema', () => {
       ],
     };
 
-    const result = WorkflowStepRawSchema.safeParse(raw);
+    const result = WorkflowMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.rules?.[0].condition).toBe('all("approved")');
@@ -333,7 +333,7 @@ describe('all()/any() condition in WorkflowStepRawSchema', () => {
       ],
     };
 
-    const result = WorkflowStepRawSchema.safeParse(raw);
+    const result = WorkflowMovementRawSchema.safeParse(raw);
     expect(result.success).toBe(true);
   });
 });

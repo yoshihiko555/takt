@@ -24,7 +24,6 @@ import {
   instructBranch,
 } from './taskActions.js';
 
-// Re-export for backward compatibility (tests import from this module)
 export {
   type ListAction,
   isBranchMerged,

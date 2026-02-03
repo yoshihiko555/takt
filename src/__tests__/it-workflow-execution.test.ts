@@ -14,7 +14,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setMockScenario, resetScenario } from '../infra/mock/index.js';
-import type { WorkflowConfig, WorkflowStep, WorkflowRule } from '../core/models/index.js';
+import type { WorkflowConfig, WorkflowMovement, WorkflowRule } from '../core/models/index.js';
 import { callAiJudge, detectRuleIndex } from '../infra/claude/index.js';
 
 // --- Mocks (minimal — only infrastructure, not core logic) ---
@@ -62,7 +62,7 @@ function makeRule(condition: string, next: string): WorkflowRule {
   return { condition, next };
 }
 
-function makeMovement(name: string, agentPath: string, rules: WorkflowRule[]): WorkflowStep {
+function makeMovement(name: string, agentPath: string, rules: WorkflowRule[]): WorkflowMovement {
   return {
     name,
     agent: `./agents/${name}.md`,
