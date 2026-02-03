@@ -101,6 +101,7 @@ export class WorkflowEngine extends EventEmitter {
       getReportDir: () => this.reportDir,
       getLanguage: () => this.options.language,
       getInteractive: () => this.options.interactive === true,
+      getWorkflowSteps: () => this.config.steps.map(s => ({ name: s.name, description: s.description })),
       detectRuleIndex: this.detectRuleIndex,
       callAiJudge: this.callAiJudge,
     });

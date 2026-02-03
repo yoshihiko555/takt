@@ -26,6 +26,8 @@ export function isReportObjectConfig(report: string | ReportConfig[] | ReportObj
 /** Shape of localized section strings */
 interface SectionStrings {
   workflowContext: string;
+  workflowStructure: string;
+  currentStepMarker: string;
   iteration: string;
   iterationWorkflowWide: string;
   stepIteration: string;
@@ -127,12 +129,23 @@ export class InstructionBuilder {
 
   private renderWorkflowContext(language: Language): string {
     const s = getPromptObject<SectionStrings>('instruction.sections', language);
-    const lines: string[] = [
-      s.workflowContext,
-      `- ${s.iteration}: ${this.context.iteration}/${this.context.maxIterations}${s.iterationWorkflowWide}`,
-      `- ${s.stepIteration}: ${this.context.stepIteration}${s.stepIterationTimes}`,
-      `- ${s.step}: ${this.step.name}`,
-    ];
+    const lines: string[] = [s.workflowContext];
+
+    // Workflow structure (if workflow steps info is available)
+    if (this.context.workflowSteps && this.context.workflowSteps.length > 0) {
+      lines.push(s.workflowStructure.replace('{count}', String(this.context.workflowSteps.length)));
+      this.context.workflowSteps.forEach((ws, index) => {
+        const isCurrent = index === this.context.currentStepIndex;
+        const marker = isCurrent ? ` ← ${s.currentStepMarker}` : '';
+        const desc = ws.description ? `（${ws.description}）` : '';
+        lines.push(`- Step ${index + 1}: ${ws.name}${desc}${marker}`);
+      });
+      lines.push('');
+    }
+
+    lines.push(`- ${s.iteration}: ${this.context.iteration}/${this.context.maxIterations}${s.iterationWorkflowWide}`);
+    lines.push(`- ${s.stepIteration}: ${this.context.stepIteration}${s.stepIterationTimes}`);
+    lines.push(`- ${s.step}: ${this.step.name}`);
 
     // If step has report config, include Report Directory path and phase note
     if (this.step.report && this.context.reportDir) {

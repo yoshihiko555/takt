@@ -34,6 +34,10 @@ export interface InstructionContext {
   language?: Language;
   /** Whether interactive-only rules are enabled */
   interactive?: boolean;
+  /** Top-level workflow steps for workflow structure display */
+  workflowSteps?: ReadonlyArray<{ name: string; description?: string }>;
+  /** Index of the current step in workflowSteps (0-based) */
+  currentStepIndex?: number;
 }
 
 /** Execution environment metadata prepended to agent instructions */

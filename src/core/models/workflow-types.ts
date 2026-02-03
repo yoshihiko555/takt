@@ -53,6 +53,8 @@ export interface ReportObjectConfig {
 /** Single step in a workflow */
 export interface WorkflowStep {
   name: string;
+  /** Brief description of this step's role in the workflow */
+  description?: string;
   /** Agent name, path, or inline prompt as specified in workflow YAML. Undefined when step runs without an agent. */
   agent?: string;
   /** Session handling for this step */

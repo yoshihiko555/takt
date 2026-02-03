@@ -31,6 +31,7 @@ export interface StepExecutorDeps {
   readonly getReportDir: () => string;
   readonly getLanguage: () => Language | undefined;
   readonly getInteractive: () => boolean;
+  readonly getWorkflowSteps: () => ReadonlyArray<{ name: string; description?: string }>;
   readonly detectRuleIndex: (content: string, stepName: string) => number;
   readonly callAiJudge: (
     agentOutput: string,
@@ -52,6 +53,7 @@ export class StepExecutor {
     task: string,
     maxIterations: number,
   ): string {
+    const workflowSteps = this.deps.getWorkflowSteps();
     return new InstructionBuilder(step, {
       task,
       iteration: state.iteration,
@@ -64,6 +66,8 @@ export class StepExecutor {
       reportDir: join(this.deps.getProjectCwd(), this.deps.getReportDir()),
       language: this.deps.getLanguage(),
       interactive: this.deps.getInteractive(),
+      workflowSteps,
+      currentStepIndex: workflowSteps.findIndex(s => s.name === step.name),
     }).build();
   }
 

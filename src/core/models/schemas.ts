@@ -133,6 +133,7 @@ export const ParallelSubStepRawSchema = z.object({
 /** Workflow step schema - raw YAML format */
 export const WorkflowStepRawSchema = z.object({
   name: z.string().min(1),
+  description: z.string().optional(),
   /** Agent is required for normal steps, optional for parallel container steps */
   agent: z.string().optional(),
   /** Session handling for this step */

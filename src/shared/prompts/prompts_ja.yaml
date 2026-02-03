@@ -146,6 +146,8 @@ instruction:
 
   sections:
     workflowContext: "## Workflow Context"
+    workflowStructure: "このワークフローは{count}ステップで構成されています:"
+    currentStepMarker: "現在"
     iteration: "Iteration"
     iterationWorkflowWide: "（ワークフロー全体）"
     stepIteration: "Step Iteration"

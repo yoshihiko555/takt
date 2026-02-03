@@ -133,6 +133,8 @@ instruction:
 
   sections:
     workflowContext: "## Workflow Context"
+    workflowStructure: "This workflow consists of {count} steps:"
+    currentStepMarker: "current"
     iteration: "Iteration"
     iterationWorkflowWide: "(workflow-wide)"
     stepIteration: "Step Iteration"

@@ -185,6 +185,7 @@ function normalizeStepFromRaw(step: RawStep, workflowDir: string): WorkflowStep 
 
   const result: WorkflowStep = {
     name: step.name,
+    description: step.description,
     agent: agentSpec,
     session: step.session,
     agentDisplayName: step.agent_name || (agentSpec ? extractAgentDisplayName(agentSpec) : step.name),

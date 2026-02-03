@@ -503,6 +503,121 @@ describe('instruction-builder', () => {
 
       expect(result).toContain('- Step Iteration: 3（このステップの実行回数）');
     });
+
+    it('should include workflow structure when workflowSteps is provided', () => {
+      const step = createMinimalStep('Do work');
+      step.name = 'implement';
+      const context = createMinimalContext({
+        language: 'en',
+        workflowSteps: [
+          { name: 'plan' },
+          { name: 'implement' },
+          { name: 'review' },
+        ],
+        currentStepIndex: 1,
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('This workflow consists of 3 steps:');
+      expect(result).toContain('- Step 1: plan');
+      expect(result).toContain('- Step 2: implement');
+      expect(result).toContain('← current');
+      expect(result).toContain('- Step 3: review');
+    });
+
+    it('should mark current step with marker', () => {
+      const step = createMinimalStep('Do work');
+      step.name = 'plan';
+      const context = createMinimalContext({
+        language: 'en',
+        workflowSteps: [
+          { name: 'plan' },
+          { name: 'implement' },
+        ],
+        currentStepIndex: 0,
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('- Step 1: plan ← current');
+      expect(result).not.toContain('- Step 2: implement ← current');
+    });
+
+    it('should include description in parentheses when provided', () => {
+      const step = createMinimalStep('Do work');
+      step.name = 'plan';
+      const context = createMinimalContext({
+        language: 'ja',
+        workflowSteps: [
+          { name: 'plan', description: 'タスクを分析し実装計画を作成する' },
+          { name: 'implement' },
+        ],
+        currentStepIndex: 0,
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('- Step 1: plan（タスクを分析し実装計画を作成する） ← 現在');
+    });
+
+    it('should skip workflow structure when workflowSteps is not provided', () => {
+      const step = createMinimalStep('Do work');
+      const context = createMinimalContext({ language: 'en' });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).not.toContain('This workflow consists of');
+    });
+
+    it('should skip workflow structure when workflowSteps is empty', () => {
+      const step = createMinimalStep('Do work');
+      const context = createMinimalContext({
+        language: 'en',
+        workflowSteps: [],
+        currentStepIndex: -1,
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).not.toContain('This workflow consists of');
+    });
+
+    it('should render workflow structure in Japanese', () => {
+      const step = createMinimalStep('Do work');
+      step.name = 'plan';
+      const context = createMinimalContext({
+        language: 'ja',
+        workflowSteps: [
+          { name: 'plan' },
+          { name: 'implement' },
+        ],
+        currentStepIndex: 0,
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('このワークフローは2ステップで構成されています:');
+      expect(result).toContain('← 現在');
+    });
+
+    it('should not show current marker when currentStepIndex is -1', () => {
+      const step = createMinimalStep('Do work');
+      step.name = 'sub-step';
+      const context = createMinimalContext({
+        language: 'en',
+        workflowSteps: [
+          { name: 'plan' },
+          { name: 'implement' },
+        ],
+        currentStepIndex: -1,
+      });
+
+      const result = buildInstruction(step, context);
+
+      expect(result).toContain('This workflow consists of 2 steps:');
+      expect(result).not.toContain('← current');
+    });
   });
 
   describe('buildInstruction report-free (phase separation)', () => {
