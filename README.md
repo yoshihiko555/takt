@@ -261,6 +261,8 @@ takt config
 
 TAKT uses YAML-based workflow definitions and rule-based routing. Builtin workflows are embedded in the package, with user workflows in `~/.takt/workflows/` taking priority. Use `takt eject` to copy builtins to `~/.takt/` for customization.
 
+> **Note (v0.4.0)**: Internal terminology has changed from "step" to "movement" for workflow components. User-facing workflow files remain compatible, but if you customize workflows, you may see `movements:` instead of `steps:` in YAML files. The functionality remains the same.
+
 ### Workflow Example
 
 ```yaml
@@ -366,7 +368,7 @@ Execute sub-movements in parallel within a movement and evaluate with aggregate 
 |------|--------|-------------|
 | Tag-based | `"condition text"` | Agent outputs `[MOVEMENTNAME:N]` tag, matched by index |
 | AI judge | `ai("condition text")` | AI evaluates condition against agent output |
-| Aggregate | `all("X")` / `any("X")` | Aggregates parallel sub-step matched conditions |
+| Aggregate | `all("X")` / `any("X")` | Aggregates parallel sub-movement matched conditions |
 
 ## Builtin Workflows
 
@@ -413,7 +415,7 @@ You are a code reviewer specialized in security.
 
 ## Model Selection
 
-The `model` field (in workflow steps, agent config, or global config) is passed directly to the provider (Claude Code CLI / Codex SDK). TAKT does not resolve model aliases.
+The `model` field (in workflow movements, agent config, or global config) is passed directly to the provider (Claude Code CLI / Codex SDK). TAKT does not resolve model aliases.
 
 ### Claude Code
 
@@ -506,7 +508,7 @@ Priority: Environment variables > `config.yaml` settings
 | `{report}` | PR body | Workflow execution report |
 
 **Model Resolution Priority:**
-1. Workflow step `model` (highest priority)
+1. Workflow movement `model` (highest priority)
 2. Custom agent `model`
 3. Global config `model`
 4. Provider default (Claude: sonnet, Codex: codex)
@@ -630,7 +632,7 @@ Variables available in `instruction_template`:
 | `{iteration}` | Workflow-wide turn count (total steps executed) |
 | `{max_iterations}` | Maximum iteration count |
 | `{movement_iteration}` | Per-movement iteration count (times this movement has been executed) |
-| `{previous_response}` | Output from previous step (auto-injected if not in template) |
+| `{previous_response}` | Output from previous movement (auto-injected if not in template) |
 | `{user_inputs}` | Additional user inputs during workflow (auto-injected if not in template) |
 | `{report_dir}` | Report directory path (e.g., `.takt/reports/20250126-143052-task-summary`) |
 | `{report:filename}` | Expands to `{report_dir}/filename` (e.g., `{report:00-plan.md}`) |
