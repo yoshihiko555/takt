@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] - 2026-02-04
+
+### Changed
+
+- **BREAKING:** Complete terminology migration from "workflow" to "piece" across entire codebase
+  - All CLI commands, configuration files, and documentation now use "piece" terminology
+  - `WorkflowEngine` → `PieceEngine`
+  - `workflow_categories` → `piece_categories` in config files
+  - `builtin_workflows_enabled` → `builtin_pieces_enabled`
+  - `~/.takt/workflows/` → `~/.takt/pieces/` (user piece directory)
+  - `.takt/workflows/` → `.takt/pieces/` (project piece directory)
+  - All workflow-related file names and types renamed to piece-equivalents
+  - Updated all documentation (README.md, CLAUDE.md, docs/*)
+
+### Internal
+
+- Complete directory structure refactoring:
+  - `src/core/workflow/` → `src/core/piece/`
+  - `src/features/workflowSelection/` → `src/features/pieceSelection/`
+- File renames:
+  - `workflow-types.ts` → `piece-types.ts`
+  - `workflowExecution.ts` → `pieceExecution.ts`
+  - `workflowLoader.ts` → `pieceLoader.ts`
+  - `workflowParser.ts` → `pieceParser.ts`
+  - `workflowResolver.ts` → `pieceResolver.ts`
+  - `workflowCategories.ts` → `pieceCategories.ts`
+  - `switchWorkflow.ts` → `switchPiece.ts`
+- All test files updated to reflect new terminology (194 files changed, ~3,400 insertions, ~3,400 deletions)
+- Resources directory updated:
+  - `resources/global/*/pieces/*.yaml` updated with new terminology
+  - All prompt files (`*.md`) updated
+  - Configuration files (`config.yaml`, `default-categories.yaml`) updated
+
 ## [0.4.1] - 2026-02-04
 
 ### Fixed
