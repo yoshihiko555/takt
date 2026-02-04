@@ -149,6 +149,128 @@ describe('WorkflowEngine Integration: Happy Path', () => {
       // plan, implement, ai_review, reviewers(1st), fix, reviewers(2nd), supervise = 7
       expect(state.iteration).toBe(7);
     });
+
+    it('should inject latest reviewers output as Previous Response for repeated fix steps', async () => {
+      const config = buildDefaultWorkflowConfig();
+      const engine = new WorkflowEngine(config, tmpDir, 'test task', { projectCwd: tmpDir });
+
+      mockRunAgentSequence([
+        makeResponse({ agent: 'plan', content: 'Plan done' }),
+        makeResponse({ agent: 'implement', content: 'Impl done' }),
+        makeResponse({ agent: 'ai_review', content: 'No issues' }),
+        // Round 1 reviewers
+        makeResponse({ agent: 'arch-review', content: 'Arch R1 OK' }),
+        makeResponse({ agent: 'security-review', content: 'Sec R1 needs fix' }),
+        // fix round 1
+        makeResponse({ agent: 'fix', content: 'Fix R1' }),
+        // Round 2 reviewers
+        makeResponse({ agent: 'arch-review', content: 'Arch R2 OK' }),
+        makeResponse({ agent: 'security-review', content: 'Sec R2 still failing' }),
+        // fix round 2
+        makeResponse({ agent: 'fix', content: 'Fix R2' }),
+        // Round 3 reviewers (approved)
+        makeResponse({ agent: 'arch-review', content: 'Arch R3 OK' }),
+        makeResponse({ agent: 'security-review', content: 'Sec R3 OK' }),
+        // supervise
+        makeResponse({ agent: 'supervise', content: 'All passed' }),
+      ]);
+
+      mockDetectMatchedRuleSequence([
+        { index: 0, method: 'phase1_tag' },  // plan → implement
+        { index: 0, method: 'phase1_tag' },  // implement → ai_review
+        { index: 0, method: 'phase1_tag' },  // ai_review → reviewers
+        { index: 0, method: 'phase1_tag' },  // arch-review → approved
+        { index: 1, method: 'phase1_tag' },  // security-review → needs_fix
+        { index: 1, method: 'aggregate' },   // reviewers: any(needs_fix) → fix
+        { index: 0, method: 'phase1_tag' },  // fix → reviewers
+        { index: 0, method: 'phase1_tag' },  // arch-review → approved
+        { index: 1, method: 'phase1_tag' },  // security-review → needs_fix
+        { index: 1, method: 'aggregate' },   // reviewers: any(needs_fix) → fix
+        { index: 0, method: 'phase1_tag' },  // fix → reviewers
+        { index: 0, method: 'phase1_tag' },  // arch-review → approved
+        { index: 0, method: 'phase1_tag' },  // security-review → approved
+        { index: 0, method: 'aggregate' },   // reviewers: all(approved) → supervise
+        { index: 0, method: 'phase1_tag' },  // supervise → COMPLETE
+      ]);
+
+      const fixInstructions: string[] = [];
+      engine.on('movement:start', (step, _iteration, instruction) => {
+        if (step.name === 'fix') {
+          fixInstructions.push(instruction);
+        }
+      });
+
+      await engine.run();
+
+      expect(fixInstructions).toHaveLength(2);
+
+      const fix1 = fixInstructions[0]!;
+      expect(fix1).toContain('## Previous Response');
+      expect(fix1).toContain('Arch R1 OK');
+      expect(fix1).toContain('Sec R1 needs fix');
+      expect(fix1).not.toContain('Arch R2 OK');
+      expect(fix1).not.toContain('Sec R2 still failing');
+
+      const fix2 = fixInstructions[1]!;
+      expect(fix2).toContain('## Previous Response');
+      expect(fix2).toContain('Arch R2 OK');
+      expect(fix2).toContain('Sec R2 still failing');
+      expect(fix2).not.toContain('Arch R1 OK');
+      expect(fix2).not.toContain('Sec R1 needs fix');
+    });
+
+    it('should use the latest movement output across different steps for Previous Response', async () => {
+      const config = buildDefaultWorkflowConfig();
+      const engine = new WorkflowEngine(config, tmpDir, 'test task', { projectCwd: tmpDir });
+
+      mockRunAgentSequence([
+        makeResponse({ agent: 'plan', content: 'Plan done' }),
+        makeResponse({ agent: 'implement', content: 'Impl done' }),
+        makeResponse({ agent: 'ai_review', content: 'AI issues found' }),
+        // ai_fix (should see ai_review output)
+        makeResponse({ agent: 'ai_fix', content: 'AI issues fixed' }),
+        // reviewers (approved)
+        makeResponse({ agent: 'arch-review', content: 'Arch OK' }),
+        makeResponse({ agent: 'security-review', content: 'Sec OK' }),
+        // supervise (should see reviewers aggregate output)
+        makeResponse({ agent: 'supervise', content: 'All passed' }),
+      ]);
+
+      mockDetectMatchedRuleSequence([
+        { index: 0, method: 'phase1_tag' },  // plan → implement
+        { index: 0, method: 'phase1_tag' },  // implement → ai_review
+        { index: 1, method: 'phase1_tag' },  // ai_review → ai_fix
+        { index: 0, method: 'phase1_tag' },  // ai_fix → reviewers
+        { index: 0, method: 'phase1_tag' },  // arch-review → approved
+        { index: 0, method: 'phase1_tag' },  // security-review → approved
+        { index: 0, method: 'aggregate' },   // reviewers → supervise
+        { index: 0, method: 'phase1_tag' },  // supervise → COMPLETE
+      ]);
+
+      const aiFixInstructions: string[] = [];
+      const superviseInstructions: string[] = [];
+      engine.on('movement:start', (step, _iteration, instruction) => {
+        if (step.name === 'ai_fix') {
+          aiFixInstructions.push(instruction);
+        } else if (step.name === 'supervise') {
+          superviseInstructions.push(instruction);
+        }
+      });
+
+      await engine.run();
+
+      expect(aiFixInstructions).toHaveLength(1);
+      const aiFix = aiFixInstructions[0]!;
+      expect(aiFix).toContain('## Previous Response');
+      expect(aiFix).toContain('AI issues found');
+      expect(aiFix).not.toContain('AI issues fixed');
+
+      expect(superviseInstructions).toHaveLength(1);
+      const supervise = superviseInstructions[0]!;
+      expect(supervise).toContain('## Previous Response');
+      expect(supervise).toContain('Arch OK');
+      expect(supervise).toContain('Sec OK');
+    });
   });
 
   // =====================================================

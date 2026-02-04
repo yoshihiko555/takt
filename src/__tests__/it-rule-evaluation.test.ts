@@ -66,6 +66,7 @@ function makeState(movementOutputs?: Map<string, AgentResponse>): WorkflowState 
     iteration: 1,
     status: 'running',
     movementOutputs: movementOutputs ?? new Map(),
+    lastOutput: undefined,
     movementIterations: new Map(),
     agentSessions: new Map(),
     userInputs: [],

@@ -114,6 +114,8 @@ export interface WorkflowState {
   currentMovement: string;
   iteration: number;
   movementOutputs: Map<string, AgentResponse>;
+  /** Most recent movement output (used for Previous Response injection) */
+  lastOutput?: AgentResponse;
   userInputs: string[];
   agentSessions: Map<string, string>;
   /** Per-movement iteration counters (how many times each movement has been executed) */

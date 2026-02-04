@@ -241,7 +241,7 @@ export async function executeWorkflow(
       phase,
       phaseName,
       status: phaseStatus,
-      ...(content ? { content } : {}),
+      content: content ?? '',
       timestamp: new Date().toISOString(),
       ...(phaseError ? { error: phaseError } : {}),
     };

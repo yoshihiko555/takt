@@ -134,6 +134,7 @@ export class MovementExecutor {
     }
 
     state.movementOutputs.set(step.name, response);
+    state.lastOutput = response;
     this.emitMovementReports(step);
     return { response, instruction };
   }
@@ -174,4 +175,3 @@ export class MovementExecutor {
   }
 
 }
-

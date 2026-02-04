@@ -39,6 +39,7 @@ export class StateManager {
       currentMovement: config.initialMovement,
       iteration: 0,
       movementOutputs: new Map(),
+      lastOutput: undefined,
       userInputs,
       agentSessions,
       movementIterations: new Map(),
@@ -111,6 +112,7 @@ export function addUserInput(state: WorkflowState, input: string): void {
  * Get the most recent movement output.
  */
 export function getPreviousOutput(state: WorkflowState): AgentResponse | undefined {
+  if (state.lastOutput) return state.lastOutput;
   const outputs = Array.from(state.movementOutputs.values());
   return outputs[outputs.length - 1];
 }
