@@ -70,6 +70,12 @@ describe('isIssueReference', () => {
     expect(isIssueReference('6')).toBe(false);
   });
 
+  it('should return false for issue number followed by text (issue #32)', () => {
+    expect(isIssueReference('#32あああ')).toBe(false);
+    expect(isIssueReference('#10abc')).toBe(false);
+    expect(isIssueReference('#123text')).toBe(false);
+  });
+
   it('should return false for multiple issues (single string)', () => {
     expect(isIssueReference('#6 #7')).toBe(false);
   });

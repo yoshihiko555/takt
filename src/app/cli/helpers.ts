@@ -49,14 +49,19 @@ export function parseCreateWorktreeOption(value?: string): boolean | undefined {
 }
 
 /**
- * Check if the input is a task description (should execute directly)
- * vs a short input that should enter interactive mode as initial input.
+ * Check if the input is a task description that should execute directly
+ * vs one that should enter interactive mode.
  *
- * Task descriptions: contain spaces, or are issue references (#N).
- * Short single words: routed to interactive mode as first message.
+ * Direct execution (returns true):
+ * - Valid issue references (e.g., "#32", "#10 #20")
+ *
+ * Interactive mode (returns false):
+ * - All other inputs (task descriptions, single words, slash-prefixed, etc.)
+ *
+ * Note: This simplified logic ensures that only explicit issue references
+ * trigger direct execution. All other inputs go through interactive mode
+ * for requirement clarification.
  */
 export function isDirectTask(input: string): boolean {
-  if (input.includes(' ')) return true;
-  if (isIssueReference(input) || input.trim().split(/\s+/).every((t: string) => isIssueReference(t))) return true;
-  return false;
+  return isIssueReference(input) || input.trim().split(/\s+/).every((t: string) => isIssueReference(t));
 }

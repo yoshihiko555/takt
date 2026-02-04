@@ -11,8 +11,31 @@ import { checkForUpdates } from '../../shared/utils/index.js';
 checkForUpdates();
 
 // Import in dependency order
-import { program } from './program.js';
+import { program, runPreActionHook } from './program.js';
 import './commands.js';
-import './routing.js';
+import { executeDefaultAction } from './routing.js';
 
-program.parse();
+(async () => {
+  const args = process.argv.slice(2);
+  const firstArg = args[0];
+
+  // Handle '/' prefixed inputs that are not known commands
+  if (firstArg?.startsWith('/')) {
+    const commandName = firstArg.slice(1);
+    const knownCommands = program.commands.map((cmd) => cmd.name());
+
+    if (!knownCommands.includes(commandName)) {
+      // Treat as task instruction
+      const task = args.join(' ');
+      await runPreActionHook();
+      await executeDefaultAction(task);
+      process.exit(0);
+    }
+  }
+
+  // Normal parsing for all other cases (including '#' prefixed inputs)
+  await program.parseAsync();
+})().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

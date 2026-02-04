@@ -54,8 +54,11 @@ program
   .option('--create-worktree <yes|no>', 'Skip the worktree prompt by explicitly specifying yes or no')
   .option('-q, --quiet', 'Minimal output mode: suppress AI output (for CI)');
 
-// Common initialization for all commands
-program.hook('preAction', async () => {
+/**
+ * Run pre-action hook: common initialization for all commands.
+ * Exported for use in slash-command fallback logic.
+ */
+export async function runPreActionHook(): Promise<void> {
   resolvedCwd = resolve(process.cwd());
 
   const rootOpts = program.opts();
@@ -86,4 +89,7 @@ program.hook('preAction', async () => {
   setQuietMode(quietMode);
 
   log.info('TAKT CLI starting', { version: cliVersion, cwd: resolvedCwd, verbose, pipelineMode, quietMode });
-});
+}
+
+// Common initialization for all commands
+program.hook('preAction', runPreActionHook);
