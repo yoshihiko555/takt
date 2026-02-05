@@ -32,6 +32,7 @@ export {
   setShowOthersCategory,
   getOthersCategoryName,
   setOthersCategoryName,
+  getBuiltinCategoryName,
 } from './pieceCategories.js';
 
 export {

@@ -12,6 +12,7 @@ import {
   getPieceCategoriesConfig,
   getShowOthersCategory,
   getOthersCategoryName,
+  getBuiltinCategoryName,
 } from '../global/pieceCategories.js';
 import { getLanguageResourcesDir } from '../../resources/index.js';
 import { listBuiltinPieceNames } from './pieceResolver.js';
@@ -33,11 +34,15 @@ export interface CategoryConfig {
   pieceCategories: PieceCategoryNode[];
   showOthersCategory: boolean;
   othersCategoryName: string;
+  builtinCategoryName: string;
+  /** True when categories are from user or project config (not builtin defaults). Triggers auto-categorization of builtins. */
+  hasCustomCategories: boolean;
 }
 
 export interface CategorizedPieces {
   categories: PieceCategoryNode[];
   builtinCategories: PieceCategoryNode[];
+  builtinCategoryName: string;
   allPieces: Map<string, PieceWithSource>;
   missingPieces: MissingPiece[];
 }
@@ -134,6 +139,8 @@ function parseCategoryConfig(raw: unknown, sourceLabel: string): CategoryConfig 
     pieceCategories: parseCategoryTree(parsed.piece_categories, sourceLabel),
     showOthersCategory,
     othersCategoryName,
+    builtinCategoryName: 'Builtin',
+    hasCustomCategories: false,
   };
 }
 
@@ -166,16 +173,19 @@ export function getPieceCategories(cwd: string): CategoryConfig | null {
   if (userCategoriesNode) {
     const showOthersCategory = getShowOthersCategory() ?? true;
     const othersCategoryName = getOthersCategoryName() ?? 'Others';
+    const builtinCategoryName = getBuiltinCategoryName() ?? 'Builtin';
     return {
       pieceCategories: parseCategoryTree(userCategoriesNode, 'user config'),
       showOthersCategory,
       othersCategoryName,
+      builtinCategoryName,
+      hasCustomCategories: true,
     };
   }
 
   const projectConfig = loadCategoryConfigFromPath(getProjectConfigPath(cwd), 'project config');
   if (projectConfig) {
-    return projectConfig;
+    return { ...projectConfig, hasCustomCategories: true };
   }
 
   return loadDefaultCategories();
@@ -211,12 +221,14 @@ function buildCategoryTreeForSource(
   allPieces: Map<string, PieceWithSource>,
   sourceFilter: (source: PieceSource) => boolean,
   categorized: Set<string>,
+  allowedPieces?: Set<string>,
 ): PieceCategoryNode[] {
   const result: PieceCategoryNode[] = [];
 
   for (const node of categories) {
     const pieces: string[] = [];
     for (const pieceName of node.pieces) {
+      if (allowedPieces && !allowedPieces.has(pieceName)) continue;
       const entry = allPieces.get(pieceName);
       if (!entry) continue;
       if (!sourceFilter(entry.source)) continue;
@@ -224,7 +236,7 @@ function buildCategoryTreeForSource(
       categorized.add(pieceName);
     }
 
-    const children = buildCategoryTreeForSource(node.children, allPieces, sourceFilter, categorized);
+    const children = buildCategoryTreeForSource(node.children, allPieces, sourceFilter, categorized, allowedPieces);
     if (pieces.length > 0 || children.length > 0) {
       result.push({ name: node.name, pieces, children });
     }
@@ -259,12 +271,66 @@ function appendOthersCategory(
 }
 
 /**
+ * Collect uncategorized builtin piece names.
+ */
+function collectUncategorizedBuiltins(
+  allPieces: Map<string, PieceWithSource>,
+  categorizedBuiltin: Set<string>,
+): Set<string> {
+  const uncategorized = new Set<string>();
+  for (const [pieceName, entry] of allPieces.entries()) {
+    if (entry.source === 'builtin' && !categorizedBuiltin.has(pieceName)) {
+      uncategorized.add(pieceName);
+    }
+  }
+  return uncategorized;
+}
+
+/**
+ * Build builtin categories for uncategorized builtins using default category structure.
+ * Falls back to flat list if default categories are unavailable.
+ */
+function buildAutoBuiltinCategories(
+  allPieces: Map<string, PieceWithSource>,
+  uncategorizedBuiltins: Set<string>,
+  builtinCategoryName: string,
+  defaultConfig: CategoryConfig | null,
+): PieceCategoryNode[] {
+  if (defaultConfig) {
+    const autoCategorized = new Set<string>();
+    const autoCategories = buildCategoryTreeForSource(
+      defaultConfig.pieceCategories,
+      allPieces,
+      (source) => source === 'builtin',
+      autoCategorized,
+      uncategorizedBuiltins,
+    );
+    // Any builtins still not categorized by default categories go into a flat list
+    const remaining: string[] = [];
+    for (const name of uncategorizedBuiltins) {
+      if (!autoCategorized.has(name)) {
+        remaining.push(name);
+      }
+    }
+    if (remaining.length > 0) {
+      autoCategories.push({ name: builtinCategoryName, pieces: remaining, children: [] });
+    }
+    return autoCategories;
+  }
+
+  // No default categories available: flat list
+  return [{ name: builtinCategoryName, pieces: Array.from(uncategorizedBuiltins), children: [] }];
+}
+
+/**
  * Build categorized pieces map from configuration.
  */
 export function buildCategorizedPieces(
   allPieces: Map<string, PieceWithSource>,
   config: CategoryConfig,
 ): CategorizedPieces {
+  const { builtinCategoryName } = config;
+
   const ignoreMissing = new Set<string>();
   if (!getBuiltinPiecesEnabled()) {
     for (const name of listBuiltinPieceNames({ includeDisabled: true })) {
@@ -301,6 +367,16 @@ export function buildCategorizedPieces(
     categorizedBuiltin,
   );
 
+  // When user defined categories, auto-categorize uncategorized builtins
+  if (config.hasCustomCategories) {
+    const uncategorizedBuiltins = collectUncategorizedBuiltins(allPieces, categorizedBuiltin);
+    if (uncategorizedBuiltins.size > 0) {
+      const defaultConfig = loadDefaultCategories();
+      const autoCategories = buildAutoBuiltinCategories(allPieces, uncategorizedBuiltins, builtinCategoryName, defaultConfig);
+      builtinCategories.push(...autoCategories);
+    }
+  }
+
   const finalCategories = config.showOthersCategory
     ? appendOthersCategory(
       categories,
@@ -311,19 +387,27 @@ export function buildCategorizedPieces(
     )
     : categories;
 
-  const finalBuiltinCategories = config.showOthersCategory
-    ? appendOthersCategory(
-      builtinCategories,
-      allPieces,
-      categorizedBuiltin,
-      isBuiltin,
-      config.othersCategoryName,
-    )
-    : builtinCategories;
+  // For user-defined configs, uncategorized builtins are already handled above,
+  // so only apply Others for non-user-defined configs
+  let finalBuiltinCategories: PieceCategoryNode[];
+  if (config.hasCustomCategories) {
+    finalBuiltinCategories = builtinCategories;
+  } else {
+    finalBuiltinCategories = config.showOthersCategory
+      ? appendOthersCategory(
+        builtinCategories,
+        allPieces,
+        categorizedBuiltin,
+        isBuiltin,
+        config.othersCategoryName,
+      )
+      : builtinCategories;
+  }
 
   return {
     categories: finalCategories,
     builtinCategories: finalBuiltinCategories,
+    builtinCategoryName,
     allPieces,
     missingPieces,
   };

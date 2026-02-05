@@ -15,6 +15,7 @@ interface PieceCategoriesFile {
   categories?: PieceCategoryConfigNode;
   show_others_category?: boolean;
   others_category_name?: string;
+  builtin_category_name?: string;
 }
 
 function getDefaultPieceCategoriesPath(): string {
@@ -100,3 +101,10 @@ export function setOthersCategoryName(name: string): void {
   data.others_category_name = name;
   savePieceCategoriesFile(data);
 }
+
+/** Get builtin category name */
+export function getBuiltinCategoryName(): string | undefined {
+  const data = loadPieceCategoriesFile();
+  return data.builtin_category_name;
+}
+

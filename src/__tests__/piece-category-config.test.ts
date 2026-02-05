@@ -36,6 +36,7 @@ const pieceCategoriesState = vi.hoisted(() => ({
   categories: undefined as any,
   showOthersCategory: undefined as boolean | undefined,
   othersCategoryName: undefined as string | undefined,
+  builtinCategoryName: undefined as string | undefined,
 }));
 
 vi.mock('../infra/config/global/globalConfig.js', async (importOriginal) => {
@@ -53,6 +54,7 @@ vi.mock('../infra/config/global/pieceCategories.js', async (importOriginal) => {
     getPieceCategoriesConfig: () => pieceCategoriesState.categories,
     getShowOthersCategory: () => pieceCategoriesState.showOthersCategory,
     getOthersCategoryName: () => pieceCategoriesState.othersCategoryName,
+    getBuiltinCategoryName: () => pieceCategoriesState.builtinCategoryName,
   };
 });
 
@@ -105,6 +107,7 @@ describe('piece category config loading', () => {
     pieceCategoriesState.categories = undefined;
     pieceCategoriesState.showOthersCategory = undefined;
     pieceCategoriesState.othersCategoryName = undefined;
+    pieceCategoriesState.builtinCategoryName = undefined;
   });
 
   afterEach(() => {
@@ -126,6 +129,7 @@ others_category_name: "Others"
     expect(config!.pieceCategories).toEqual([
       { name: 'Default', pieces: ['simple'], children: [] },
     ]);
+    expect(config!.hasCustomCategories).toBe(false);
   });
 
   it('should prefer project config over default when piece_categories is defined', () => {
@@ -150,6 +154,7 @@ show_others_category: false
       { name: 'Project', pieces: ['custom'], children: [] },
     ]);
     expect(config!.showOthersCategory).toBe(false);
+    expect(config!.hasCustomCategories).toBe(true);
   });
 
   it('should prefer user config over project config when piece_categories is defined', () => {
@@ -179,6 +184,7 @@ piece_categories:
     expect(config!.pieceCategories).toEqual([
       { name: 'User', pieces: ['preferred'], children: [] },
     ]);
+    expect(config!.hasCustomCategories).toBe(true);
   });
 
   it('should ignore configs without piece_categories and fall back to default', () => {
@@ -223,6 +229,8 @@ describe('buildCategorizedPieces', () => {
       ],
       showOthersCategory: true,
       othersCategoryName: 'Others',
+      builtinCategoryName: 'Builtin',
+      hasCustomCategories: false,
     };
 
     const categorized = buildCategorizedPieces(allPieces, config);
@@ -236,6 +244,7 @@ describe('buildCategorizedPieces', () => {
     expect(categorized.missingPieces).toEqual([
       { categoryPath: ['Cat'], pieceName: 'missing' },
     ]);
+    expect(categorized.builtinCategoryName).toBe('Builtin');
   });
 
   it('should skip empty categories', () => {
@@ -248,6 +257,8 @@ describe('buildCategorizedPieces', () => {
       ],
       showOthersCategory: false,
       othersCategoryName: 'Others',
+      builtinCategoryName: 'Builtin',
+      hasCustomCategories: false,
     };
 
     const categorized = buildCategorizedPieces(allPieces, config);
@@ -278,5 +289,195 @@ describe('buildCategorizedPieces', () => {
 
     const paths = findPieceCategories('nested', categories);
     expect(paths).toEqual(['Parent / Child']);
+  });
+});
+
+describe('buildCategorizedPieces with hasCustomCategories (auto builtin categorization)', () => {
+  let testDir: string;
+  let resourcesDir: string;
+
+  beforeEach(() => {
+    testDir = join(tmpdir(), `takt-cat-config-${randomUUID()}`);
+    resourcesDir = join(testDir, 'resources');
+
+    mkdirSync(resourcesDir, { recursive: true });
+    pathsState.resourcesDir = resourcesDir;
+
+    pieceCategoriesState.categories = undefined;
+    pieceCategoriesState.showOthersCategory = undefined;
+    pieceCategoriesState.othersCategoryName = undefined;
+    pieceCategoriesState.builtinCategoryName = undefined;
+  });
+
+  afterEach(() => {
+    rmSync(testDir, { recursive: true, force: true });
+  });
+
+  it('should auto-categorize uncategorized builtins when hasCustomCategories is true', () => {
+    // Set up default categories for auto-categorization
+    writeYaml(join(resourcesDir, 'default-categories.yaml'), `
+piece_categories:
+  Standard:
+    pieces:
+      - default
+      - minimal
+  Advanced:
+    pieces:
+      - research
+`);
+
+    const allPieces = createPieceMap([
+      { name: 'my-piece', source: 'user' },
+      { name: 'default', source: 'builtin' },
+      { name: 'minimal', source: 'builtin' },
+      { name: 'research', source: 'builtin' },
+    ]);
+
+    // User only categorizes their own piece
+    const config = {
+      pieceCategories: [
+        { name: 'My Pieces', pieces: ['my-piece'], children: [] },
+      ],
+      showOthersCategory: false,
+      othersCategoryName: 'Others',
+      builtinCategoryName: 'Builtin',
+      hasCustomCategories: true,
+    };
+
+    const categorized = buildCategorizedPieces(allPieces, config);
+
+    // User pieces in categories
+    expect(categorized.categories).toEqual([
+      { name: 'My Pieces', pieces: ['my-piece'], children: [] },
+    ]);
+
+    // Builtins auto-categorized using default category structure
+    expect(categorized.builtinCategories).toEqual([
+      { name: 'Standard', pieces: ['default', 'minimal'], children: [] },
+      { name: 'Advanced', pieces: ['research'], children: [] },
+    ]);
+  });
+
+  it('should not duplicate builtins that are explicitly in user categories', () => {
+    writeYaml(join(resourcesDir, 'default-categories.yaml'), `
+piece_categories:
+  Standard:
+    pieces:
+      - default
+      - minimal
+`);
+
+    const allPieces = createPieceMap([
+      { name: 'my-piece', source: 'user' },
+      { name: 'default', source: 'builtin' },
+      { name: 'minimal', source: 'builtin' },
+    ]);
+
+    // User explicitly includes 'default' in their category
+    const config = {
+      pieceCategories: [
+        { name: 'My Favorites', pieces: ['my-piece', 'default'], children: [] },
+      ],
+      showOthersCategory: false,
+      othersCategoryName: 'Others',
+      builtinCategoryName: 'Builtin',
+      hasCustomCategories: true,
+    };
+
+    const categorized = buildCategorizedPieces(allPieces, config);
+
+    // 'default' is in user-defined builtin categories (from user's category config)
+    expect(categorized.builtinCategories).toEqual([
+      { name: 'My Favorites', pieces: ['default'], children: [] },
+      // 'minimal' auto-categorized from default categories
+      { name: 'Standard', pieces: ['minimal'], children: [] },
+    ]);
+  });
+
+  it('should ensure builtins are visible even with showOthersCategory: false', () => {
+    writeYaml(join(resourcesDir, 'default-categories.yaml'), `
+piece_categories:
+  Standard:
+    pieces:
+      - default
+`);
+
+    const allPieces = createPieceMap([
+      { name: 'my-piece', source: 'user' },
+      { name: 'default', source: 'builtin' },
+      { name: 'extra-builtin', source: 'builtin' },
+    ]);
+
+    const config = {
+      pieceCategories: [
+        { name: 'My Pieces', pieces: ['my-piece'], children: [] },
+      ],
+      showOthersCategory: false,
+      othersCategoryName: 'Others',
+      builtinCategoryName: 'Builtin',
+      hasCustomCategories: true,
+    };
+
+    const categorized = buildCategorizedPieces(allPieces, config);
+
+    // Both builtins should be in builtinCategories, never hidden
+    expect(categorized.builtinCategories).toEqual([
+      { name: 'Standard', pieces: ['default'], children: [] },
+      // extra-builtin not in default categories, so flat under Builtin
+      { name: 'Builtin', pieces: ['extra-builtin'], children: [] },
+    ]);
+  });
+
+  it('should use custom builtinCategoryName when configured', () => {
+    const allPieces = createPieceMap([
+      { name: 'my-piece', source: 'user' },
+      { name: 'default', source: 'builtin' },
+    ]);
+
+    // No default categories file — builtins go to flat list
+    const config = {
+      pieceCategories: [
+        { name: 'My Pieces', pieces: ['my-piece'], children: [] },
+      ],
+      showOthersCategory: false,
+      othersCategoryName: 'Others',
+      builtinCategoryName: 'System Pieces',
+      hasCustomCategories: true,
+    };
+
+    const categorized = buildCategorizedPieces(allPieces, config);
+
+    expect(categorized.builtinCategoryName).toBe('System Pieces');
+    // Flat fallback uses the custom name
+    expect(categorized.builtinCategories).toEqual([
+      { name: 'System Pieces', pieces: ['default'], children: [] },
+    ]);
+  });
+
+  it('should fall back to flat Builtin category when default categories are unavailable', () => {
+    // No default-categories.yaml file
+
+    const allPieces = createPieceMap([
+      { name: 'my-piece', source: 'user' },
+      { name: 'default', source: 'builtin' },
+      { name: 'minimal', source: 'builtin' },
+    ]);
+
+    const config = {
+      pieceCategories: [
+        { name: 'My Pieces', pieces: ['my-piece'], children: [] },
+      ],
+      showOthersCategory: false,
+      othersCategoryName: 'Others',
+      builtinCategoryName: 'Builtin',
+      hasCustomCategories: true,
+    };
+
+    const categorized = buildCategorizedPieces(allPieces, config);
+
+    // All builtins in a flat 'Builtin' category
+    expect(categorized.builtinCategories).toEqual([
+      { name: 'Builtin', pieces: ['default', 'minimal'], children: [] },
+    ]);
   });
 });

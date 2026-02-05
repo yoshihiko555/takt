@@ -366,7 +366,7 @@ async function selectTopLevelPieceOption(
     // 4. Builtin pieces
     if (builtinCount > 0) {
       options.push({
-        label: `📂 Builtin/ (${builtinCount})`,
+        label: `📂 ${categorized.builtinCategoryName}/ (${builtinCount})`,
         value: BUILTIN_SOURCE_VALUE,
       });
     }
