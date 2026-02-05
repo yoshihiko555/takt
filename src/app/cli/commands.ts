@@ -7,7 +7,7 @@
 import { clearAgentSessions, getCurrentPiece } from '../../infra/config/index.js';
 import { success } from '../../shared/ui/index.js';
 import { runAllTasks, addTask, watchTasks, listTasks } from '../../features/tasks/index.js';
-import { switchPiece, switchConfig, ejectBuiltin, resetCategoriesToDefault } from '../../features/config/index.js';
+import { switchPiece, switchConfig, ejectBuiltin, resetCategoriesToDefault, deploySkill } from '../../features/config/index.js';
 import { previewPrompts } from '../../features/prompt/index.js';
 import { program, resolvedCwd } from './program.js';
 import { resolveAgentOverrides } from './helpers.js';
@@ -107,4 +107,11 @@ program
   .argument('[piece]', 'Piece name or path (defaults to current)')
   .action(async (piece?: string) => {
     await previewPrompts(resolvedCwd, piece);
+  });
+
+program
+  .command('export-cc')
+  .description('Export takt pieces/agents as Claude Code Skill (~/.claude/)')
+  .action(async () => {
+    await deploySkill();
   });
