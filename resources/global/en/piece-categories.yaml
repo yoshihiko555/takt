@@ -1,8 +1,10 @@
 piece_categories:
   "🚀 Quick Start":
     pieces:
-      - minimal
       - default
+      - passthrough
+      - coding
+      - minimal
 
   "🔍 Review & Fix":
     pieces:
