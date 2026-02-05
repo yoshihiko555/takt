@@ -75,10 +75,11 @@ program
 
 program
   .command('eject')
-  .description('Copy builtin piece/agents to ~/.takt/ for customization')
+  .description('Copy builtin piece/agents for customization (default: project .takt/)')
   .argument('[name]', 'Specific builtin to eject')
-  .action(async (name?: string) => {
-    await ejectBuiltin(name);
+  .option('--global', 'Eject to ~/.takt/ instead of project .takt/')
+  .action(async (name: string | undefined, opts: { global?: boolean }) => {
+    await ejectBuiltin(name, { global: opts.global, projectDir: resolvedCwd });
   });
 
 program
