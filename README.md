@@ -78,12 +78,12 @@ takt
 takt hello
 ```
 
-**Note:** If you specify a string with spaces, Issue reference (`#6`), or `--task` / `--issue` options, interactive mode will be skipped and the task will be executed directly.
+**Note:** Issue references (`#6`) and `--task` / `--issue` options skip interactive mode and execute the task directly. All other inputs (including text with spaces) enter interactive mode for requirement refinement.
 
 **Flow:**
 1. Select piece
 2. Refine task content through conversation with AI
-3. Finalize task instructions with `/go` (you can also add additional instructions like `/go additional instructions`)
+3. Finalize task instructions with `/go` (you can also add additional instructions like `/go additional instructions`), or use `/play <task>` to execute a task immediately
 4. Execute (create worktree, run piece, create PR)
 
 #### Execution Example
@@ -125,21 +125,20 @@ Proceed with these task instructions? (Y/n) y
 
 ### Direct Task Execution
 
-When task content is clear, you can skip interactive mode and execute directly.
+Use the `--task` option to skip interactive mode and execute directly.
 
 ```bash
-# Specify task content directly (string with spaces)
-takt "Add login feature"
-
 # Specify task content with --task option
 takt --task "Fix bug"
 
 # Specify piece
-takt "Add authentication" --piece expert
+takt --task "Add authentication" --piece expert
 
 # Auto-create PR
-takt "Fix bug" --auto-pr
+takt --task "Fix bug" --auto-pr
 ```
+
+**Note:** Passing a string as an argument (e.g., `takt "Add login feature"`) enters interactive mode with it as the initial message.
 
 ### GitHub Issue Tasks
 
