@@ -51,6 +51,7 @@ import {
   notifySuccess,
   notifyError,
   preventSleep,
+  playWarningSound,
   isDebugEnabled,
   writePromptLog,
 } from '../../../shared/utils/index.js';
@@ -150,6 +151,7 @@ export async function executePiece(
   // Load saved agent sessions for continuity (from project root or clone-specific storage)
   const isWorktree = cwd !== projectCwd;
   const globalConfig = loadGlobalConfig();
+  const shouldNotify = globalConfig.notificationSound !== false;
   const currentProvider = globalConfig.provider ?? 'claude';
 
   // Prevent macOS idle sleep if configured
@@ -186,6 +188,10 @@ export async function executePiece(
       })
     );
     info(getLabel('piece.iterationLimit.currentMovement', undefined, { currentMovement: request.currentMovement }));
+
+    if (shouldNotify) {
+      playWarningSound();
+    }
 
     const action = await selectOption(getLabel('piece.iterationLimit.continueQuestion'), [
       {
@@ -439,7 +445,9 @@ export async function executePiece(
 
     success(`Piece completed (${state.iteration} iterations${elapsedDisplay})`);
     info(`Session log: ${ndjsonLogPath}`);
-    notifySuccess('TAKT', getLabel('piece.notifyComplete', undefined, { iteration: String(state.iteration) }));
+    if (shouldNotify) {
+      notifySuccess('TAKT', getLabel('piece.notifyComplete', undefined, { iteration: String(state.iteration) }));
+    }
   });
 
   engine.on('piece:abort', (state, reason) => {
@@ -484,7 +492,9 @@ export async function executePiece(
 
     error(`Piece aborted after ${state.iteration} iterations${elapsedDisplay}: ${reason}`);
     info(`Session log: ${ndjsonLogPath}`);
-    notifyError('TAKT', getLabel('piece.notifyAbort', undefined, { reason }));
+    if (shouldNotify) {
+      notifyError('TAKT', getLabel('piece.notifyAbort', undefined, { reason }));
+    }
   });
 
   // Suppress EPIPE errors from SDK child process stdin after interrupt.
