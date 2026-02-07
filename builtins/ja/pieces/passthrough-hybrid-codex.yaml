@@ -4,9 +4,6 @@
 name: passthrough-hybrid-codex
 description: Single-agent thin wrapper. Pass task directly to coder as-is.
 max_iterations: 10
-policies:
-  coding: ../policies/coding.md
-  testing: ../policies/testing.md
 personas:
   coder: ../personas/coder.md
 initial_movement: execute
@@ -41,3 +38,6 @@ movements:
         interactive_only: true
     instruction_template: |
       タスクをこなしてください。
+policies:
+  coding: ../policies/coding.md
+  testing: ../policies/testing.md

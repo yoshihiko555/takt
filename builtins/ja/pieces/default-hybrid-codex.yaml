@@ -4,15 +4,9 @@
 name: default-hybrid-codex
 description: Standard development piece with planning and specialized reviews
 max_iterations: 30
-policies:
-  coding: ../policies/coding.md
-  review: ../policies/review.md
-  testing: ../policies/testing.md
 knowledge:
   architecture: ../knowledge/architecture.md
   backend: ../knowledge/backend.md
-  ai-antipattern: ../knowledge/ai-antipattern.md
-  qa: ../knowledge/qa.md
 personas:
   planner: ../personas/planner.md
   architect-planner: ../personas/architect-planner.md
@@ -32,14 +26,6 @@ instructions:
   review-qa: ../instructions/review-qa.md
   fix: ../instructions/fix.md
   supervise: ../instructions/supervise.md
-output_contracts:
-  plan: ../output-contracts/plan.md
-  architecture-design: ../output-contracts/architecture-design.md
-  ai-review: ../output-contracts/ai-review.md
-  architecture-review: ../output-contracts/architecture-review.md
-  qa-review: ../output-contracts/qa-review.md
-  validation: ../output-contracts/validation.md
-  summary: ../output-contracts/summary.md
 initial_movement: plan
 loop_monitors:
   - cycle:
@@ -151,8 +137,9 @@ movements:
   - name: ai_review
     edit: false
     persona: ai-antipattern-reviewer
-    policy: review
-    knowledge: ai-antipattern
+    policy:
+      - review
+      - ai-antipattern
     report:
       name: 04-ai-review.md
       format: ai-review
@@ -236,8 +223,9 @@ movements:
       - name: qa-review
         edit: false
         persona: qa-reviewer
-        policy: review
-        knowledge: qa
+        policy:
+          - review
+          - qa
         report:
           name: 06-qa-review.md
           format: qa-review
@@ -302,3 +290,17 @@ movements:
       - condition: 要求未達成、テスト失敗、ビルドエラー
         next: plan
     instruction: supervise
+policies:
+  coding: ../policies/coding.md
+  review: ../policies/review.md
+  testing: ../policies/testing.md
+  ai-antipattern: ../policies/ai-antipattern.md
+  qa: ../policies/qa.md
+output_contracts:
+  plan: ../output-contracts/plan.md
+  architecture-design: ../output-contracts/architecture-design.md
+  ai-review: ../output-contracts/ai-review.md
+  architecture-review: ../output-contracts/architecture-review.md
+  qa-review: ../output-contracts/qa-review.md
+  validation: ../output-contracts/validation.md
+  summary: ../output-contracts/summary.md

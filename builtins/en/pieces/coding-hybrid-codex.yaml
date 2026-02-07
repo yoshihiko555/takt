@@ -4,10 +4,6 @@
 name: coding-hybrid-codex
 description: Lightweight development piece with planning and parallel reviews (plan -> implement -> parallel review -> complete)
 max_iterations: 20
-policies:
-  coding: ../policies/coding.md
-  review: ../policies/review.md
-  testing: ../policies/testing.md
 knowledge:
   architecture: ../knowledge/architecture.md
 personas:
@@ -21,10 +17,6 @@ instructions:
   ai-review: ../instructions/ai-review.md
   review-arch: ../instructions/review-arch.md
   fix: ../instructions/fix.md
-output_contracts:
-  plan: ../output-contracts/plan.md
-  ai-review: ../output-contracts/ai-review.md
-  architecture-review: ../output-contracts/architecture-review.md
 initial_movement: plan
 movements:
   - name: plan
@@ -87,7 +79,9 @@ movements:
       - name: ai_review
         edit: false
         persona: ai-antipattern-reviewer
-        policy: review
+        policy:
+          - review
+          - ai-antipattern
         report:
           name: 04-ai-review.md
           format: ai-review
@@ -148,3 +142,12 @@ movements:
       - condition: Cannot determine, insufficient information
         next: ABORT
     instruction: fix
+policies:
+  coding: ../policies/coding.md
+  review: ../policies/review.md
+  testing: ../policies/testing.md
+  ai-antipattern: ../policies/ai-antipattern.md
+output_contracts:
+  plan: ../output-contracts/plan.md
+  ai-review: ../output-contracts/ai-review.md
+  architecture-review: ../output-contracts/architecture-review.md

@@ -4,17 +4,11 @@
 name: expert-hybrid-codex
 description: アーキテクチャ・フロントエンド・セキュリティ・QA専門家レビュー
 max_iterations: 30
-policies:
-  coding: ../policies/coding.md
-  review: ../policies/review.md
-  testing: ../policies/testing.md
 knowledge:
   frontend: ../knowledge/frontend.md
   backend: ../knowledge/backend.md
   security: ../knowledge/security.md
   architecture: ../knowledge/architecture.md
-  ai-antipattern: ../knowledge/ai-antipattern.md
-  qa: ../knowledge/qa.md
 personas:
   planner: ../personas/planner.md
   coder: ../personas/coder.md
@@ -37,15 +31,6 @@ instructions:
   fix: ../instructions/fix.md
   supervise: ../instructions/supervise.md
   fix-supervisor: ../instructions/fix-supervisor.md
-output_contracts:
-  plan: ../output-contracts/plan.md
-  ai-review: ../output-contracts/ai-review.md
-  architecture-review: ../output-contracts/architecture-review.md
-  frontend-review: ../output-contracts/frontend-review.md
-  security-review: ../output-contracts/security-review.md
-  qa-review: ../output-contracts/qa-review.md
-  validation: ../output-contracts/validation.md
-  summary: ../output-contracts/summary.md
 initial_movement: plan
 movements:
   - name: plan
@@ -107,8 +92,9 @@ movements:
   - name: ai_review
     edit: false
     persona: ai-antipattern-reviewer
-    policy: review
-    knowledge: ai-antipattern
+    policy:
+      - review
+      - ai-antipattern
     report:
       name: 03-ai-review.md
       format: ai-review
@@ -229,8 +215,9 @@ movements:
       - name: qa-review
         edit: false
         persona: qa-reviewer
-        policy: review
-        knowledge: qa
+        policy:
+          - review
+          - qa
         report:
           name: 07-qa-review.md
           format: qa-review
@@ -323,3 +310,18 @@ movements:
         next: supervise
       - condition: 修正を進行できない
         next: plan
+policies:
+  coding: ../policies/coding.md
+  review: ../policies/review.md
+  testing: ../policies/testing.md
+  ai-antipattern: ../policies/ai-antipattern.md
+  qa: ../policies/qa.md
+output_contracts:
+  plan: ../output-contracts/plan.md
+  ai-review: ../output-contracts/ai-review.md
+  architecture-review: ../output-contracts/architecture-review.md
+  frontend-review: ../output-contracts/frontend-review.md
+  security-review: ../output-contracts/security-review.md
+  qa-review: ../output-contracts/qa-review.md
+  validation: ../output-contracts/validation.md
+  summary: ../output-contracts/summary.md

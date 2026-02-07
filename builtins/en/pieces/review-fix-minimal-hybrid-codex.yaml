@@ -4,10 +4,6 @@
 name: review-fix-minimal-hybrid-codex
 description: Review and fix piece for existing code (starts with review, no implementation)
 max_iterations: 20
-policies:
-  coding: ../policies/coding.md
-  review: ../policies/review.md
-  testing: ../policies/testing.md
 personas:
   coder: ../personas/coder.md
   ai-antipattern-reviewer: ../personas/ai-antipattern-reviewer.md
@@ -18,8 +14,6 @@ instructions:
   ai-fix: ../instructions/ai-fix.md
   supervise: ../instructions/supervise.md
   fix-supervisor: ../instructions/fix-supervisor.md
-output_contracts:
-  ai-review: ../output-contracts/ai-review.md
 initial_movement: reviewers
 movements:
   - name: implement
@@ -57,7 +51,9 @@ movements:
       - name: ai_review
         edit: false
         persona: ai-antipattern-reviewer
-        policy: review
+        policy:
+          - review
+          - ai-antipattern
         report:
           name: 03-ai-review.md
           format: ai-review
@@ -194,3 +190,10 @@ movements:
       - condition: Cannot proceed, insufficient info
         next: implement
     instruction: fix-supervisor
+policies:
+  coding: ../policies/coding.md
+  review: ../policies/review.md
+  testing: ../policies/testing.md
+  ai-antipattern: ../policies/ai-antipattern.md
+output_contracts:
+  ai-review: ../output-contracts/ai-review.md
