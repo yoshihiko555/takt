@@ -221,11 +221,11 @@ async function callAI(
   display: StreamDisplay,
   systemPrompt: string,
 ): Promise<CallAIResult> {
-  const response = await provider.call('interactive', prompt, {
+  const agent = provider.setup({ name: 'interactive', systemPrompt });
+  const response = await agent.call(prompt, {
     cwd,
     model,
     sessionId,
-    systemPrompt,
     allowedTools: ['Read', 'Glob', 'Grep', 'Bash', 'WebSearch', 'WebFetch'],
     onStream: display.createHandler(),
   });

@@ -4,11 +4,6 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
-import {
-  callClaudeAgent,
-  callClaudeSkill,
-  type ClaudeCallOptions,
-} from '../infra/claude/index.js';
 import { loadCustomAgents, loadAgentPrompt, loadGlobalConfig, loadProjectConfig } from '../infra/config/index.js';
 import { getProvider, type ProviderType, type ProviderCallOptions } from '../infra/providers/index.js';
 import type { AgentResponse, CustomAgentConfig } from '../core/models/index.js';
@@ -46,9 +41,13 @@ export class AgentRunner {
     return 'claude';
   }
 
-  /** Resolve model from options, agent config, global config */
+  /**
+   * Resolve model from options, agent config, global config.
+   * Global config model is only used when its provider matches the resolved provider,
+   * preventing cross-provider model mismatches (e.g., 'opus' sent to Codex).
+   */
   private static resolveModel(
-    cwd: string,
+    resolvedProvider: ProviderType,
     options?: RunAgentOptions,
     agentConfig?: CustomAgentConfig,
   ): string | undefined {
@@ -56,7 +55,10 @@ export class AgentRunner {
     if (agentConfig?.model) return agentConfig.model;
     try {
       const globalConfig = loadGlobalConfig();
-      if (globalConfig.model) return globalConfig.model;
+      if (globalConfig.model) {
+        const globalProvider = globalConfig.provider ?? 'claude';
+        if (globalProvider === resolvedProvider) return globalConfig.model;
+      }
     } catch {
       // Ignore missing global config
     }
@@ -90,88 +92,45 @@ export class AgentRunner {
     return `${dir}/${name}`;
   }
 
+  /** Build ProviderCallOptions from RunAgentOptions */
+  private static buildCallOptions(
+    resolvedProvider: ProviderType,
+    options: RunAgentOptions,
+    agentConfig?: CustomAgentConfig,
+  ): ProviderCallOptions {
+    return {
+      cwd: options.cwd,
+      sessionId: options.sessionId,
+      allowedTools: options.allowedTools ?? agentConfig?.allowedTools,
+      maxTurns: options.maxTurns,
+      model: AgentRunner.resolveModel(resolvedProvider, options, agentConfig),
+      permissionMode: options.permissionMode,
+      onStream: options.onStream,
+      onPermissionRequest: options.onPermissionRequest,
+      onAskUserQuestion: options.onAskUserQuestion,
+      bypassPermissions: options.bypassPermissions,
+    };
+  }
+
   /** Run a custom agent */
   async runCustom(
     agentConfig: CustomAgentConfig,
     task: string,
     options: RunAgentOptions,
   ): Promise<AgentResponse> {
-    const allowedTools = options.allowedTools ?? agentConfig.allowedTools;
-
-    // If agent references a Claude Code agent
-    if (agentConfig.claudeAgent) {
-      const callOptions: ClaudeCallOptions = {
-        cwd: options.cwd,
-        sessionId: options.sessionId,
-        allowedTools,
-        maxTurns: options.maxTurns,
-        model: AgentRunner.resolveModel(options.cwd, options, agentConfig),
-        permissionMode: options.permissionMode,
-        onStream: options.onStream,
-        onPermissionRequest: options.onPermissionRequest,
-        onAskUserQuestion: options.onAskUserQuestion,
-        bypassPermissions: options.bypassPermissions,
-      };
-      return callClaudeAgent(agentConfig.claudeAgent, task, callOptions);
-    }
-
-    // If agent references a Claude Code skill
-    if (agentConfig.claudeSkill) {
-      const callOptions: ClaudeCallOptions = {
-        cwd: options.cwd,
-        sessionId: options.sessionId,
-        allowedTools,
-        maxTurns: options.maxTurns,
-        model: AgentRunner.resolveModel(options.cwd, options, agentConfig),
-        permissionMode: options.permissionMode,
-        onStream: options.onStream,
-        onPermissionRequest: options.onPermissionRequest,
-        onAskUserQuestion: options.onAskUserQuestion,
-        bypassPermissions: options.bypassPermissions,
-      };
-      return callClaudeSkill(agentConfig.claudeSkill, task, callOptions);
-    }
-
-    // Custom agent with prompt
-    const systemPrompt = loadAgentPrompt(agentConfig);
-
     const providerType = AgentRunner.resolveProvider(options.cwd, options, agentConfig);
     const provider = getProvider(providerType);
 
-    const callOptions: ProviderCallOptions = {
-      cwd: options.cwd,
-      sessionId: options.sessionId,
-      allowedTools,
-      maxTurns: options.maxTurns,
-      model: AgentRunner.resolveModel(options.cwd, options, agentConfig),
-      permissionMode: options.permissionMode,
-      onStream: options.onStream,
-      onPermissionRequest: options.onPermissionRequest,
-      onAskUserQuestion: options.onAskUserQuestion,
-      bypassPermissions: options.bypassPermissions,
-    };
+    const agent = provider.setup({
+      name: agentConfig.name,
+      systemPrompt: agentConfig.claudeAgent || agentConfig.claudeSkill
+        ? undefined
+        : loadAgentPrompt(agentConfig),
+      claudeAgent: agentConfig.claudeAgent,
+      claudeSkill: agentConfig.claudeSkill,
+    });
 
-    return provider.callCustom(agentConfig.name, task, systemPrompt, callOptions);
-  }
-
-  /** Build ProviderCallOptions from RunAgentOptions with optional systemPrompt override */
-  private static buildProviderCallOptions(
-    options: RunAgentOptions,
-    systemPrompt?: string,
-  ): ProviderCallOptions {
-    return {
-      cwd: options.cwd,
-      sessionId: options.sessionId,
-      allowedTools: options.allowedTools,
-      maxTurns: options.maxTurns,
-      model: AgentRunner.resolveModel(options.cwd, options),
-      systemPrompt,
-      permissionMode: options.permissionMode,
-      onStream: options.onStream,
-      onPermissionRequest: options.onPermissionRequest,
-      onAskUserQuestion: options.onAskUserQuestion,
-      bypassPermissions: options.bypassPermissions,
-    };
+    return agent.call(task, AgentRunner.buildCallOptions(providerType, options, agentConfig));
   }
 
   /** Run an agent by name, path, inline prompt string, or no agent at all */
@@ -191,6 +150,10 @@ export class AgentRunner {
       permissionMode: options.permissionMode,
     });
 
+    const providerType = AgentRunner.resolveProvider(options.cwd, options);
+    const provider = getProvider(providerType);
+    const callOptions = AgentRunner.buildCallOptions(providerType, options);
+
     // 1. If personaPath is provided (resolved file exists), load prompt from file
     //    and wrap it through the perform_agent_system_prompt template
     if (options.personaPath) {
@@ -198,7 +161,6 @@ export class AgentRunner {
       const language = options.language ?? 'en';
       const templateVars: Record<string, string> = { agentDefinition };
 
-      // Add piece meta information if available
       if (options.pieceMeta) {
         templateVars.pieceName = options.pieceMeta.pieceName;
         templateVars.pieceDescription = options.pieceMeta.pieceDescription ?? '';
@@ -210,9 +172,8 @@ export class AgentRunner {
       }
 
       const systemPrompt = loadTemplate('perform_agent_system_prompt', language, templateVars);
-      const providerType = AgentRunner.resolveProvider(options.cwd, options);
-      const provider = getProvider(providerType);
-      return provider.call(personaName, task, AgentRunner.buildProviderCallOptions(options, systemPrompt));
+      const agent = provider.setup({ name: personaName, systemPrompt });
+      return agent.call(task, callOptions);
     }
 
     // 2. If personaSpec is provided but no personaPath (file not found), try custom agent first,
@@ -224,16 +185,13 @@ export class AgentRunner {
         return this.runCustom(agentConfig, task, options);
       }
 
-      // Use personaSpec string as inline system prompt
-      const providerType = AgentRunner.resolveProvider(options.cwd, options);
-      const provider = getProvider(providerType);
-      return provider.call(personaName, task, AgentRunner.buildProviderCallOptions(options, personaSpec));
+      const agent = provider.setup({ name: personaName, systemPrompt: personaSpec });
+      return agent.call(task, callOptions);
     }
 
     // 3. No persona specified — run with instruction_template only (no system prompt)
-    const providerType = AgentRunner.resolveProvider(options.cwd, options);
-    const provider = getProvider(providerType);
-    return provider.call(personaName, task, AgentRunner.buildProviderCallOptions(options));
+    const agent = provider.setup({ name: personaName });
+    return agent.call(task, callOptions);
   }
 }
 

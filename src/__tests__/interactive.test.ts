@@ -105,18 +105,19 @@ function setupInputSequence(inputs: (string | null)[]): void {
 /** Create a mock provider that returns given responses */
 function setupMockProvider(responses: string[]): void {
   let callIndex = 0;
+  const mockCall = vi.fn(async () => {
+    const content = callIndex < responses.length ? responses[callIndex] : 'AI response';
+    callIndex++;
+    return {
+      persona: 'interactive',
+      status: 'done' as const,
+      content: content!,
+      timestamp: new Date(),
+    };
+  });
   const mockProvider = {
-    call: vi.fn(async () => {
-      const content = callIndex < responses.length ? responses[callIndex] : 'AI response';
-      callIndex++;
-      return {
-        persona: 'interactive',
-        status: 'done' as const,
-        content: content!,
-        timestamp: new Date(),
-      };
-    }),
-    callCustom: vi.fn(),
+    setup: () => ({ call: mockCall }),
+    _call: mockCall,
   };
   mockGetProvider.mockReturnValue(mockProvider);
 }
@@ -162,9 +163,8 @@ describe('interactiveMode', () => {
     await interactiveMode('/project');
 
     // Then
-    const mockProvider = mockGetProvider.mock.results[0]!.value as { call: ReturnType<typeof vi.fn> };
-    expect(mockProvider.call).toHaveBeenCalledWith(
-      'interactive',
+    const mockProvider = mockGetProvider.mock.results[0]!.value as { _call: ReturnType<typeof vi.fn> };
+    expect(mockProvider._call).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         cwd: '/project',
@@ -208,8 +208,8 @@ describe('interactiveMode', () => {
 
     // Then
     expect(result.action).toBe('execute');
-    const mockProvider = mockGetProvider.mock.results[0]!.value as { call: ReturnType<typeof vi.fn> };
-    expect(mockProvider.call).toHaveBeenCalledTimes(2);
+    const mockProvider = mockGetProvider.mock.results[0]!.value as { _call: ReturnType<typeof vi.fn> };
+    expect(mockProvider._call).toHaveBeenCalledTimes(2);
   });
 
   it('should accumulate conversation history across multiple turns', async () => {
@@ -223,8 +223,8 @@ describe('interactiveMode', () => {
     // Then: task should be a summary and prompt should include full history
     expect(result.action).toBe('execute');
     expect(result.task).toBe('Summarized task.');
-    const mockProvider = mockGetProvider.mock.results[0]!.value as { call: ReturnType<typeof vi.fn> };
-    const summaryPrompt = mockProvider.call.mock.calls[2]?.[1] as string;
+    const mockProvider = mockGetProvider.mock.results[0]!.value as { _call: ReturnType<typeof vi.fn> };
+    const summaryPrompt = mockProvider._call.mock.calls[2]?.[0] as string;
     expect(summaryPrompt).toContain('Conversation:');
     expect(summaryPrompt).toContain('User: first message');
     expect(summaryPrompt).toContain('Assistant: response to first');
@@ -241,9 +241,9 @@ describe('interactiveMode', () => {
     await interactiveMode('/project');
 
     // Then: each call receives only the current user input (session maintains context)
-    const mockProvider = mockGetProvider.mock.results[0]!.value as { call: ReturnType<typeof vi.fn> };
-    expect(mockProvider.call.mock.calls[0]?.[1]).toBe('first msg');
-    expect(mockProvider.call.mock.calls[1]?.[1]).toBe('second msg');
+    const mockProvider = mockGetProvider.mock.results[0]!.value as { _call: ReturnType<typeof vi.fn> };
+    expect(mockProvider._call.mock.calls[0]?.[0]).toBe('first msg');
+    expect(mockProvider._call.mock.calls[1]?.[0]).toBe('second msg');
   });
 
   it('should process initialInput as first message before entering loop', async () => {
@@ -255,9 +255,9 @@ describe('interactiveMode', () => {
     const result = await interactiveMode('/project', 'a');
 
     // Then: AI should have been called with initialInput
-    const mockProvider = mockGetProvider.mock.results[0]!.value as { call: ReturnType<typeof vi.fn> };
-    expect(mockProvider.call).toHaveBeenCalledTimes(2);
-    expect(mockProvider.call.mock.calls[0]?.[1]).toBe('a');
+    const mockProvider = mockGetProvider.mock.results[0]!.value as { _call: ReturnType<typeof vi.fn> };
+    expect(mockProvider._call).toHaveBeenCalledTimes(2);
+    expect(mockProvider._call.mock.calls[0]?.[0]).toBe('a');
 
     // /go should work because initialInput already started conversation
     expect(result.action).toBe('execute');
@@ -273,10 +273,10 @@ describe('interactiveMode', () => {
     const result = await interactiveMode('/project', 'a');
 
     // Then: each call receives only its own input (session handles history)
-    const mockProvider = mockGetProvider.mock.results[0]!.value as { call: ReturnType<typeof vi.fn> };
-    expect(mockProvider.call).toHaveBeenCalledTimes(3);
-    expect(mockProvider.call.mock.calls[0]?.[1]).toBe('a');
-    expect(mockProvider.call.mock.calls[1]?.[1]).toBe('fix the login page');
+    const mockProvider = mockGetProvider.mock.results[0]!.value as { _call: ReturnType<typeof vi.fn> };
+    expect(mockProvider._call).toHaveBeenCalledTimes(3);
+    expect(mockProvider._call.mock.calls[0]?.[0]).toBe('a');
+    expect(mockProvider._call.mock.calls[1]?.[0]).toBe('fix the login page');
 
     // Task still contains all history for downstream use
     expect(result.action).toBe('execute');
@@ -332,7 +332,7 @@ describe('interactiveMode', () => {
 
       // Then: provider should NOT have been called (no summary needed)
       const mockProvider = mockGetProvider.mock.results[0]?.value as { call: ReturnType<typeof vi.fn> };
-      expect(mockProvider.call).not.toHaveBeenCalled();
+      expect(mockProvider._call).not.toHaveBeenCalled();
       expect(result.action).toBe('execute');
       expect(result.task).toBe('quick task');
     });

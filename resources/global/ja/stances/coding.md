@@ -119,6 +119,50 @@ function processOrder(order) {
 - 独自の書き方より標準的な書き方を選ぶ
 - 不明なときはリサーチする。推測で実装しない
 
+### インターフェース設計
+
+インターフェースは利用側の都合で設計する。実装側の内部構造を露出しない。
+
+| 原則 | 基準 |
+|------|------|
+| 利用者視点 | 呼び出し側が必要としないものを押し付けない |
+| 構成と実行の分離 | 「何を使うか」はセットアップ時に決定し、実行APIはシンプルに保つ |
+| メソッド増殖の禁止 | 同じことをする複数メソッドは構成の違いで吸収する |
+
+```typescript
+// ❌ メソッド増殖 — 構成の違いを呼び出し側に押し付けている
+interface Provider {
+  call(name, prompt, options)
+  callCustom(name, prompt, systemPrompt, options)
+  callAgent(name, prompt, options)
+  callSkill(name, prompt, options)
+}
+
+// ✅ 構成と実行の分離
+interface Provider {
+  setup(config: Setup): Agent
+}
+interface Agent {
+  call(prompt, options): Promise<Response>
+}
+```
+
+### 抽象化の漏れ
+
+特定実装が汎用層に現れたら抽象化が漏れている。汎用層はインターフェースだけを知り、分岐は実装側で吸収する。
+
+```typescript
+// ❌ 汎用層に特定実装のインポートと分岐
+import { callSpecificImpl } from '../specific/index.js'
+if (config.specificFlag) {
+  return callSpecificImpl(config.name, task, options)
+}
+
+// ✅ 汎用層はインターフェースのみ。非対応は setup 時にエラー
+const agent = provider.setup({ specificFlag: config.specificFlag })
+return agent.call(task, options)
+```
+
 ## 構造
 
 ### 分割の基準

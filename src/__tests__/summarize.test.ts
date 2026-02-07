@@ -31,8 +31,7 @@ const mockLoadGlobalConfig = vi.mocked(loadGlobalConfig);
 
 const mockProviderCall = vi.fn();
 const mockProvider = {
-  call: mockProviderCall,
-  callCustom: vi.fn(),
+  setup: () => ({ call: mockProviderCall }),
 };
 
 beforeEach(() => {
@@ -65,7 +64,6 @@ describe('summarizeTaskName', () => {
     expect(result).toBe('add-auth');
     expect(mockGetProvider).toHaveBeenCalledWith('claude');
     expect(mockProviderCall).toHaveBeenCalledWith(
-      'summarizer',
       'long task name for testing',
       expect.objectContaining({
         cwd: '/project',
@@ -154,7 +152,6 @@ describe('summarizeTaskName', () => {
 
     // Then
     expect(mockProviderCall).toHaveBeenCalledWith(
-      'summarizer',
       expect.any(String),
       expect.objectContaining({
         model: 'sonnet',
@@ -185,7 +182,6 @@ describe('summarizeTaskName', () => {
     // Then
     expect(mockGetProvider).toHaveBeenCalledWith('codex');
     expect(mockProviderCall).toHaveBeenCalledWith(
-      'summarizer',
       expect.any(String),
       expect.objectContaining({
         model: 'gpt-4',
