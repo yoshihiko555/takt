@@ -104,6 +104,11 @@ export class InstructionBuilder {
     const stanceContent = hasStance ? stanceContents!.join('\n\n---\n\n') : '';
     const stanceReminder = ''; // Reminder text is in the template itself
 
+    // Knowledge injection (domain-specific knowledge, no reminder needed)
+    const knowledgeContents = this.context.knowledgeContents ?? this.step.knowledgeContents;
+    const hasKnowledge = !!(knowledgeContents && knowledgeContents.length > 0);
+    const knowledgeContent = hasKnowledge ? knowledgeContents!.join('\n\n---\n\n') : '';
+
     return loadTemplate('perform_phase1_message', language, {
       workingDirectory: this.context.cwd,
       editRule,
@@ -128,6 +133,8 @@ export class InstructionBuilder {
       hasStance,
       stanceContent,
       stanceReminder,
+      hasKnowledge,
+      knowledgeContent,
       instructions,
     });
   }

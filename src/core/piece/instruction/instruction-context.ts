@@ -44,6 +44,8 @@ export interface InstructionContext {
   retryNote?: string;
   /** Resolved stance content strings for injection into instruction */
   stanceContents?: string[];
+  /** Resolved knowledge content strings for injection into instruction */
+  knowledgeContents?: string[];
 }
 
 /**

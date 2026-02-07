@@ -106,6 +106,8 @@ interface PieceSections {
   personas?: Record<string, string>;
   /** Stance name → resolved content */
   resolvedStances?: Record<string, string>;
+  /** Knowledge name → resolved content */
+  resolvedKnowledge?: Record<string, string>;
   /** Instruction name → resolved content */
   resolvedInstructions?: Record<string, string>;
   /** Report format name → resolved content */
@@ -232,6 +234,9 @@ function normalizeStepFromRaw(
   const stanceRef = (step as Record<string, unknown>).stance as string | string[] | undefined;
   const stanceContents = resolveRefList(stanceRef, sections.resolvedStances, pieceDir);
 
+  const knowledgeRef = (step as Record<string, unknown>).knowledge as string | string[] | undefined;
+  const knowledgeContents = resolveRefList(knowledgeRef, sections.resolvedKnowledge, pieceDir);
+
   const expandedInstruction = step.instruction
     ? resolveRefToContent(step.instruction, sections.resolvedInstructions, pieceDir)
     : undefined;
@@ -253,6 +258,7 @@ function normalizeStepFromRaw(
     report: normalizeReport(step.report, pieceDir, sections.resolvedReportFormats),
     passPreviousResponse: step.pass_previous_response ?? true,
     stanceContents,
+    knowledgeContents,
   };
 
   if (step.parallel && step.parallel.length > 0) {
@@ -299,12 +305,14 @@ export function normalizePieceConfig(raw: unknown, pieceDir: string): PieceConfi
   const parsed = PieceConfigRawSchema.parse(raw);
 
   const resolvedStances = resolveSectionMap(parsed.stances, pieceDir);
+  const resolvedKnowledge = resolveSectionMap(parsed.knowledge, pieceDir);
   const resolvedInstructions = resolveSectionMap(parsed.instructions, pieceDir);
   const resolvedReportFormats = resolveSectionMap(parsed.report_formats, pieceDir);
 
   const sections: PieceSections = {
     personas: parsed.personas,
     resolvedStances,
+    resolvedKnowledge,
     resolvedInstructions,
     resolvedReportFormats,
   };
@@ -321,6 +329,7 @@ export function normalizePieceConfig(raw: unknown, pieceDir: string): PieceConfi
     description: parsed.description,
     personas: parsed.personas,
     stances: resolvedStances,
+    knowledge: resolvedKnowledge,
     instructions: resolvedInstructions,
     reportFormats: resolvedReportFormats,
     movements,

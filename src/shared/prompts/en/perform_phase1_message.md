@@ -5,7 +5,7 @@
         pieceStructure, iteration, movementIteration, movement, hasReport, reportInfo,
         phaseNote, hasTaskSection, userRequest, hasPreviousResponse, previousResponse,
         hasUserInputs, userInputs, hasRetryNote, retryNote, hasStance, stanceContent,
-        stanceReminder, instructions
+        stanceReminder, hasKnowledge, knowledgeContent, instructions
   builder: InstructionBuilder
 -->
 ## Execution Context
@@ -24,6 +24,13 @@ Note: This section is metadata. Follow the language used in the rest of the prom
 The following stances are behavioral standards applied to this movement. You MUST comply with them.
 
 {{stanceContent}}
+{{/if}}
+{{#if hasKnowledge}}
+
+## Knowledge
+The following knowledge is domain-specific information for this movement. Use it as reference.
+
+{{knowledgeContent}}
 {{/if}}
 
 ## Piece Context

@@ -78,6 +78,7 @@ export class MovementExecutor {
       pieceDescription: this.deps.getPieceDescription(),
       retryNote: this.deps.getRetryNote(),
       stanceContents: step.stanceContents,
+      knowledgeContents: step.knowledgeContents,
     }).build();
   }
 

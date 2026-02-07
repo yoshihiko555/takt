@@ -5,7 +5,7 @@
         pieceStructure, iteration, movementIteration, movement, hasReport, reportInfo,
         phaseNote, hasTaskSection, userRequest, hasPreviousResponse, previousResponse,
         hasUserInputs, userInputs, hasRetryNote, retryNote, hasStance, stanceContent,
-        stanceReminder, instructions
+        stanceReminder, hasKnowledge, knowledgeContent, instructions
   builder: InstructionBuilder
 -->
 ## 実行コンテキスト
@@ -23,6 +23,13 @@
 以下のスタンスはこのムーブメントに適用される行動規範です。必ず遵守してください。
 
 {{stanceContent}}
+{{/if}}
+{{#if hasKnowledge}}
+
+## Knowledge
+以下のナレッジはこのムーブメントに適用されるドメイン固有の知識です。参考にしてください。
+
+{{knowledgeContent}}
 {{/if}}
 
 ## Piece Context

@@ -83,6 +83,8 @@ export interface PieceMovement {
   parallel?: PieceMovement[];
   /** Resolved stance content strings (from piece-level stances map, resolved at parse time) */
   stanceContents?: string[];
+  /** Resolved knowledge content strings (from piece-level knowledge map, resolved at parse time) */
+  knowledgeContents?: string[];
 }
 
 /** Loop detection configuration */
@@ -131,6 +133,8 @@ export interface PieceConfig {
   personas?: Record<string, string>;
   /** Resolved stance definitions — map of name to file content (resolved at parse time) */
   stances?: Record<string, string>;
+  /** Resolved knowledge definitions — map of name to file content (resolved at parse time) */
+  knowledge?: Record<string, string>;
   /** Resolved instruction definitions — map of name to file content (resolved at parse time) */
   instructions?: Record<string, string>;
   /** Resolved report format definitions — map of name to file content (resolved at parse time) */

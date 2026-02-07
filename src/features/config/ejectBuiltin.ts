@@ -132,7 +132,7 @@ interface ResourceRef {
 }
 
 /** Known resource type directories that can be referenced from piece YAML */
-const RESOURCE_TYPES = ['personas', 'stances', 'instructions', 'report-formats'];
+const RESOURCE_TYPES = ['personas', 'stances', 'knowledge', 'instructions', 'report-formats'];
 
 /**
  * Extract resource relative paths from a builtin piece YAML.
