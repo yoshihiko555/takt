@@ -548,9 +548,57 @@ describe('interactiveMode', () => {
       expect(result.action).toBe('cancel');
     });
 
+    it('should handle Ctrl+C (Kitty CSI-u) to cancel input', async () => {
+      // Given: Ctrl+C reported as Kitty keyboard protocol sequence
+      setupRawStdin(['\x1B[99;5u']);
+      setupMockProvider([]);
+
+      // When
+      const result = await interactiveMode('/project');
+
+      // Then: should cancel
+      expect(result.action).toBe('cancel');
+    });
+
     it('should handle Ctrl+D to cancel input', async () => {
       // Given: Ctrl+D during input
       setupRawStdin(['\x04']);
+      setupMockProvider([]);
+
+      // When
+      const result = await interactiveMode('/project');
+
+      // Then: should cancel
+      expect(result.action).toBe('cancel');
+    });
+
+    it('should handle Ctrl+D (Kitty CSI-u) to cancel input', async () => {
+      // Given: Ctrl+D reported as Kitty keyboard protocol sequence
+      setupRawStdin(['\x1B[100;5u']);
+      setupMockProvider([]);
+
+      // When
+      const result = await interactiveMode('/project');
+
+      // Then: should cancel
+      expect(result.action).toBe('cancel');
+    });
+
+    it('should handle Ctrl+C (xterm modifyOtherKeys) to cancel input', async () => {
+      // Given: Ctrl+C reported as xterm modifyOtherKeys sequence
+      setupRawStdin(['\x1B[27;5;99~']);
+      setupMockProvider([]);
+
+      // When
+      const result = await interactiveMode('/project');
+
+      // Then: should cancel
+      expect(result.action).toBe('cancel');
+    });
+
+    it('should handle Ctrl+D (xterm modifyOtherKeys) to cancel input', async () => {
+      // Given: Ctrl+D reported as xterm modifyOtherKeys sequence
+      setupRawStdin(['\x1B[27;5;100~']);
       setupMockProvider([]);
 
       // When

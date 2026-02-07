@@ -191,6 +191,45 @@ const ESC_SHIFT_ENTER = '[13;2u';
 type InputState = 'normal' | 'paste';
 
 /**
+ * Decode Kitty CSI-u key sequence into a control character.
+ * Example: "[99;5u" (Ctrl+C) -> "\x03"
+ */
+function decodeCtrlKey(rest: string): { ch: string; consumed: number } | null {
+  // Kitty CSI-u: [codepoint;modifiersu
+  const kittyMatch = rest.match(/^\[(\d+);(\d+)u/);
+  if (kittyMatch) {
+    const codepoint = Number.parseInt(kittyMatch[1]!, 10);
+    const modifiers = Number.parseInt(kittyMatch[2]!, 10);
+    // Kitty modifiers are 1-based; Ctrl bit is 4 in 0-based flags.
+    const ctrlPressed = (((modifiers - 1) & 4) !== 0);
+    if (!ctrlPressed) return null;
+
+    const key = String.fromCodePoint(codepoint);
+    if (!/^[A-Za-z]$/.test(key)) return null;
+
+    const upper = key.toUpperCase();
+    const controlCode = upper.charCodeAt(0) & 0x1f;
+    return { ch: String.fromCharCode(controlCode), consumed: kittyMatch[0].length };
+  }
+
+  // xterm modifyOtherKeys: [27;modifiers;codepoint~
+  const xtermMatch = rest.match(/^\[27;(\d+);(\d+)~/);
+  if (!xtermMatch) return null;
+
+  const modifiers = Number.parseInt(xtermMatch[1]!, 10);
+  const codepoint = Number.parseInt(xtermMatch[2]!, 10);
+  const ctrlPressed = (((modifiers - 1) & 4) !== 0);
+  if (!ctrlPressed) return null;
+
+  const key = String.fromCodePoint(codepoint);
+  if (!/^[A-Za-z]$/.test(key)) return null;
+
+  const upper = key.toUpperCase();
+  const controlCode = upper.charCodeAt(0) & 0x1f;
+  return { ch: String.fromCharCode(controlCode), consumed: xtermMatch[0].length };
+}
+
+/**
  * Parse raw stdin data and process each character/sequence.
  *
  * Handles escape sequences for paste bracket mode (start/end),
@@ -227,6 +266,12 @@ function parseInputData(
       if (rest.startsWith(ESC_SHIFT_ENTER)) {
         callbacks.onShiftEnter();
         i += 1 + ESC_SHIFT_ENTER.length;
+        continue;
+      }
+      const ctrlKey = decodeCtrlKey(rest);
+      if (ctrlKey) {
+        callbacks.onChar(ctrlKey.ch);
+        i += 1 + ctrlKey.consumed;
         continue;
       }
       // Arrow keys and other CSI sequences: skip \x1B[ + letter/params
