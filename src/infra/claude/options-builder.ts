@@ -63,6 +63,7 @@ export class SdkOptionsBuilder {
     if (this.options.maxTurns != null) sdkOptions.maxTurns = this.options.maxTurns;
     if (this.options.allowedTools) sdkOptions.allowedTools = this.options.allowedTools;
     if (this.options.agents) sdkOptions.agents = this.options.agents;
+    if (this.options.mcpServers) sdkOptions.mcpServers = this.options.mcpServers;
     if (this.options.systemPrompt) sdkOptions.systemPrompt = this.options.systemPrompt;
     if (canUseTool) sdkOptions.canUseTool = canUseTool;
     if (hooks) sdkOptions.hooks = hooks;
@@ -82,6 +83,10 @@ export class SdkOptionsBuilder {
       sdkOptions.resume = this.options.sessionId;
     } else {
       sdkOptions.continue = false;
+    }
+
+    if (this.options.onStderr) {
+      sdkOptions.stderr = this.options.onStderr;
     }
 
     return sdkOptions;

@@ -6,6 +6,9 @@
 
 import { z } from 'zod/v4';
 import { DEFAULT_LANGUAGE } from '../../shared/constants.js';
+import { McpServersSchema } from './mcp-schemas.js';
+
+export { McpServerConfigSchema, McpServersSchema } from './mcp-schemas.js';
 
 /** Agent model schema (opus, sonnet, haiku) */
 export const AgentModelSchema = z.enum(['opus', 'sonnet', 'haiku']).default('sonnet');
@@ -137,6 +140,7 @@ export const ParallelSubMovementRawSchema = z.object({
   /** Knowledge reference(s) — key name(s) from piece-level knowledge map */
   knowledge: z.union([z.string(), z.array(z.string())]).optional(),
   allowed_tools: z.array(z.string()).optional(),
+  mcp_servers: McpServersSchema,
   provider: z.enum(['claude', 'codex', 'mock']).optional(),
   model: z.string().optional(),
   permission_mode: PermissionModeSchema.optional(),
@@ -166,6 +170,7 @@ export const PieceMovementRawSchema = z.object({
   /** Knowledge reference(s) — key name(s) from piece-level knowledge map */
   knowledge: z.union([z.string(), z.array(z.string())]).optional(),
   allowed_tools: z.array(z.string()).optional(),
+  mcp_servers: McpServersSchema,
   provider: z.enum(['claude', 'codex', 'mock']).optional(),
   model: z.string().optional(),
   /** Permission mode for tool execution in this movement */
@@ -311,6 +316,12 @@ export const GlobalConfigSchema = z.object({
   branch_name_strategy: z.enum(['romaji', 'ai']).optional(),
   /** Prevent macOS idle sleep during takt execution using caffeinate (default: false) */
   prevent_sleep: z.boolean().optional(),
+  /** Enable notification sounds (default: true when undefined) */
+  notification_sound: z.boolean().optional(),
+  /** Number of movement previews to inject into interactive mode (0 to disable, max 10) */
+  interactive_preview_movements: z.number().int().min(0).max(10).optional().default(3),
+  /** Number of tasks to run concurrently in takt run (default: 1 = sequential, max: 10) */
+  concurrency: z.number().int().min(1).max(10).optional().default(1),
 });
 
 /** Project config schema */

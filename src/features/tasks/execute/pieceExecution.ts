@@ -51,13 +51,14 @@ import {
   notifySuccess,
   notifyError,
   preventSleep,
+  playWarningSound,
   isDebugEnabled,
   writePromptLog,
 } from '../../../shared/utils/index.js';
 import type { PromptLogRecord } from '../../../shared/utils/index.js';
 import { selectOption, promptInput } from '../../../shared/prompt/index.js';
-import { EXIT_SIGINT } from '../../../shared/exitCodes.js';
 import { getLabel } from '../../../shared/i18n/index.js';
+import { installSigIntHandler } from './sigintHandler.js';
 
 const log = createLogger('piece');
 
@@ -150,6 +151,7 @@ export async function executePiece(
   // Load saved agent sessions for continuity (from project root or clone-specific storage)
   const isWorktree = cwd !== projectCwd;
   const globalConfig = loadGlobalConfig();
+  const shouldNotify = globalConfig.notificationSound !== false;
   const currentProvider = globalConfig.provider ?? 'claude';
 
   // Prevent macOS idle sleep if configured
@@ -186,6 +188,10 @@ export async function executePiece(
       })
     );
     info(getLabel('piece.iterationLimit.currentMovement', undefined, { currentMovement: request.currentMovement }));
+
+    if (shouldNotify) {
+      playWarningSound();
+    }
 
     const action = await selectOption(getLabel('piece.iterationLimit.continueQuestion'), [
       {
@@ -316,8 +322,10 @@ export async function executePiece(
     const movementIndex = pieceConfig.movements.findIndex((m) => m.name === step.name);
     const totalMovements = pieceConfig.movements.length;
 
-    // Use quiet mode from CLI (already resolved CLI flag + config in preAction)
-    displayRef.current = new StreamDisplay(step.personaDisplayName, isQuietMode(), {
+    const quiet = isQuietMode();
+    const prefix = options.taskPrefix;
+    const agentLabel = prefix ? `${prefix}:${step.personaDisplayName}` : step.personaDisplayName;
+    displayRef.current = new StreamDisplay(agentLabel, quiet, {
       iteration,
       maxIterations: pieceConfig.maxIterations,
       movementIndex: movementIndex >= 0 ? movementIndex : 0,
@@ -439,7 +447,9 @@ export async function executePiece(
 
     success(`Piece completed (${state.iteration} iterations${elapsedDisplay})`);
     info(`Session log: ${ndjsonLogPath}`);
-    notifySuccess('TAKT', getLabel('piece.notifyComplete', undefined, { iteration: String(state.iteration) }));
+    if (shouldNotify) {
+      notifySuccess('TAKT', getLabel('piece.notifyComplete', undefined, { iteration: String(state.iteration) }));
+    }
   });
 
   engine.on('piece:abort', (state, reason) => {
@@ -484,7 +494,9 @@ export async function executePiece(
 
     error(`Piece aborted after ${state.iteration} iterations${elapsedDisplay}: ${reason}`);
     info(`Session log: ${ndjsonLogPath}`);
-    notifyError('TAKT', getLabel('piece.notifyAbort', undefined, { reason }));
+    if (shouldNotify) {
+      notifyError('TAKT', getLabel('piece.notifyAbort', undefined, { reason }));
+    }
   });
 
   // Suppress EPIPE errors from SDK child process stdin after interrupt.
@@ -496,23 +508,25 @@ export async function executePiece(
     throw err;
   };
 
-  // SIGINT handler: 1st Ctrl+C = graceful abort, 2nd = force exit
-  let sigintCount = 0;
-  const onSigInt = () => {
-    sigintCount++;
-    if (sigintCount === 1) {
-      blankLine();
-      warn(getLabel('piece.sigintGraceful'));
-      process.on('uncaughtException', onEpipe);
-      interruptAllQueries();
-      engine.abort();
-    } else {
-      blankLine();
-      error(getLabel('piece.sigintForce'));
-      process.exit(EXIT_SIGINT);
-    }
+  const abortEngine = () => {
+    process.on('uncaughtException', onEpipe);
+    interruptAllQueries();
+    engine.abort();
   };
-  process.on('SIGINT', onSigInt);
+
+  // SIGINT handling: when abortSignal is provided (parallel mode), delegate to caller
+  const useExternalAbort = Boolean(options.abortSignal);
+
+  let onAbortSignal: (() => void) | undefined;
+  let sigintCleanup: (() => void) | undefined;
+
+  if (useExternalAbort) {
+    onAbortSignal = abortEngine;
+    options.abortSignal!.addEventListener('abort', onAbortSignal, { once: true });
+  } else {
+    const handler = installSigIntHandler(abortEngine);
+    sigintCleanup = handler.cleanup;
+  }
 
   try {
     const finalState = await engine.run();
@@ -522,7 +536,10 @@ export async function executePiece(
       reason: abortReason,
     };
   } finally {
-    process.removeListener('SIGINT', onSigInt);
+    sigintCleanup?.();
+    if (onAbortSignal && options.abortSignal) {
+      options.abortSignal.removeEventListener('abort', onAbortSignal);
+    }
     process.removeListener('uncaughtException', onEpipe);
   }
 }

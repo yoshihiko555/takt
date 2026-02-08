@@ -6,7 +6,7 @@
  */
 
 import type { PermissionUpdate, AgentDefinition } from '@anthropic-ai/claude-agent-sdk';
-import type { PermissionMode } from '../../core/models/index.js';
+import type { PermissionMode, McpServerConfig } from '../../core/models/index.js';
 import type { PermissionResult } from '../../core/piece/index.js';
 
 // Re-export PermissionResult for convenience
@@ -121,6 +121,8 @@ export interface ClaudeCallOptions {
   cwd: string;
   sessionId?: string;
   allowedTools?: string[];
+  /** MCP servers configuration */
+  mcpServers?: Record<string, McpServerConfig>;
   model?: string;
   maxTurns?: number;
   systemPrompt?: string;
@@ -145,6 +147,8 @@ export interface ClaudeSpawnOptions {
   cwd: string;
   sessionId?: string;
   allowedTools?: string[];
+  /** MCP servers configuration */
+  mcpServers?: Record<string, McpServerConfig>;
   model?: string;
   maxTurns?: number;
   systemPrompt?: string;
@@ -162,4 +166,6 @@ export interface ClaudeSpawnOptions {
   bypassPermissions?: boolean;
   /** Anthropic API key to inject via env (bypasses CLI auth) */
   anthropicApiKey?: string;
+  /** Callback for stderr output from the Claude Code process */
+  onStderr?: (data: string) => void;
 }

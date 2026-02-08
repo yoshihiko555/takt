@@ -3,7 +3,7 @@
  */
 
 import { loadPieceByIdentifier, isPiecePath, loadGlobalConfig } from '../../../infra/config/index.js';
-import { TaskRunner, type TaskInfo, createSharedClone, autoCommitAndPush, summarizeTaskName } from '../../../infra/task/index.js';
+import { TaskRunner, type TaskInfo, autoCommitAndPush } from '../../../infra/task/index.js';
 import {
   header,
   info,
@@ -16,17 +16,43 @@ import { createLogger, getErrorMessage } from '../../../shared/utils/index.js';
 import { executePiece } from './pieceExecution.js';
 import { DEFAULT_PIECE_NAME } from '../../../shared/constants.js';
 import type { TaskExecutionOptions, ExecuteTaskOptions } from './types.js';
-import { createPullRequest, buildPrBody, pushBranch } from '../../../infra/github/index.js';
+import { createPullRequest, buildPrBody, pushBranch, fetchIssue, checkGhCli } from '../../../infra/github/index.js';
+import { runWithWorkerPool } from './parallelExecution.js';
+import { resolveTaskExecution } from './resolveTask.js';
 
 export type { TaskExecutionOptions, ExecuteTaskOptions };
 
 const log = createLogger('task');
 
 /**
+ * Resolve a GitHub issue from task data's issue number.
+ * Returns issue array for buildPrBody, or undefined if no issue or gh CLI unavailable.
+ */
+function resolveTaskIssue(issueNumber: number | undefined): ReturnType<typeof fetchIssue>[] | undefined {
+  if (issueNumber === undefined) {
+    return undefined;
+  }
+
+  const ghStatus = checkGhCli();
+  if (!ghStatus.available) {
+    log.info('gh CLI unavailable, skipping issue resolution for PR body', { issueNumber });
+    return undefined;
+  }
+
+  try {
+    const issue = fetchIssue(issueNumber);
+    return [issue];
+  } catch (e) {
+    log.info('Failed to fetch issue for PR body, continuing without issue info', { issueNumber, error: getErrorMessage(e) });
+    return undefined;
+  }
+}
+
+/**
  * Execute a single task with piece.
  */
 export async function executeTask(options: ExecuteTaskOptions): Promise<boolean> {
-  const { task, cwd, pieceIdentifier, projectCwd, agentOverrides, interactiveUserInput, interactiveMetadata, startMovement, retryNote } = options;
+  const { task, cwd, pieceIdentifier, projectCwd, agentOverrides, interactiveUserInput, interactiveMetadata, startMovement, retryNote, abortSignal, taskPrefix } = options;
   const pieceConfig = loadPieceByIdentifier(pieceIdentifier, projectCwd);
 
   if (!pieceConfig) {
@@ -55,6 +81,8 @@ export async function executeTask(options: ExecuteTaskOptions): Promise<boolean>
     interactiveMetadata,
     startMovement,
     retryNote,
+    abortSignal,
+    taskPrefix,
   });
   return result.success;
 }
@@ -73,12 +101,13 @@ export async function executeAndCompleteTask(
   cwd: string,
   pieceName: string,
   options?: TaskExecutionOptions,
+  parallelOptions?: { abortSignal?: AbortSignal; taskPrefix?: string },
 ): Promise<boolean> {
   const startedAt = new Date().toISOString();
   const executionLog: string[] = [];
 
   try {
-    const { execCwd, execPiece, isWorktree, branch, startMovement, retryNote, autoPr } = await resolveTaskExecution(task, cwd, pieceName);
+    const { execCwd, execPiece, isWorktree, branch, baseBranch, startMovement, retryNote, autoPr, issueNumber } = await resolveTaskExecution(task, cwd, pieceName);
 
     // cwd is always the project root; pass it as projectCwd so reports/sessions go there
     const taskSuccess = await executeTask({
@@ -89,6 +118,8 @@ export async function executeAndCompleteTask(
       agentOverrides: options,
       startMovement,
       retryNote,
+      abortSignal: parallelOptions?.abortSignal,
+      taskPrefix: parallelOptions?.taskPrefix,
     });
     const completedAt = new Date().toISOString();
 
@@ -110,11 +141,13 @@ export async function executeAndCompleteTask(
           // Branch may already be pushed, continue to PR creation
           log.info('Branch push from project cwd failed (may already exist)', { error: pushError });
         }
-        const prBody = buildPrBody(undefined, `Task "${task.name}" completed successfully.`);
+        const issues = resolveTaskIssue(issueNumber);
+        const prBody = buildPrBody(issues, `Piece \`${execPiece}\` completed successfully.`);
         const prResult = createPullRequest(cwd, {
           branch,
           title: task.name.length > 100 ? `${task.name.slice(0, 97)}...` : task.name,
           body: prBody,
+          base: baseBranch,
         });
         if (prResult.success) {
           success(`PR created: ${prResult.url}`);
@@ -162,8 +195,8 @@ export async function executeAndCompleteTask(
 /**
  * Run all pending tasks from .takt/tasks/
  *
- * タスクを動的に取得する。各タスク実行前に次のタスクを取得するため、
- * 実行中にタスクファイルが追加・削除されても反映される。
+ * Uses a worker pool for both sequential (concurrency=1) and parallel
+ * (concurrency>1) execution through the same code path.
  */
 export async function runAllTasks(
   cwd: string,
@@ -171,105 +204,33 @@ export async function runAllTasks(
   options?: TaskExecutionOptions,
 ): Promise<void> {
   const taskRunner = new TaskRunner(cwd);
+  const globalConfig = loadGlobalConfig();
+  const concurrency = globalConfig.concurrency;
 
-  // 最初のタスクを取得
-  let task = taskRunner.getNextTask();
+  const initialTasks = taskRunner.claimNextTasks(concurrency);
 
-  if (!task) {
+  if (initialTasks.length === 0) {
     info('No pending tasks in .takt/tasks/');
     info('Create task files as .takt/tasks/*.yaml or use takt add');
     return;
   }
 
   header('Running tasks');
-
-  let successCount = 0;
-  let failCount = 0;
-
-  while (task) {
-    blankLine();
-    info(`=== Task: ${task.name} ===`);
-    blankLine();
-
-    const taskSuccess = await executeAndCompleteTask(task, taskRunner, cwd, pieceName, options);
-
-    if (taskSuccess) {
-      successCount++;
-    } else {
-      failCount++;
-    }
-
-    // 次のタスクを動的に取得（新しく追加されたタスクも含む）
-    task = taskRunner.getNextTask();
+  if (concurrency > 1) {
+    info(`Concurrency: ${concurrency}`);
   }
 
-  const totalCount = successCount + failCount;
+  const result = await runWithWorkerPool(taskRunner, initialTasks, concurrency, cwd, pieceName, options);
+
+  const totalCount = result.success + result.fail;
   blankLine();
   header('Tasks Summary');
   status('Total', String(totalCount));
-  status('Success', String(successCount), successCount === totalCount ? 'green' : undefined);
-  if (failCount > 0) {
-    status('Failed', String(failCount), 'red');
+  status('Success', String(result.success), result.success === totalCount ? 'green' : undefined);
+  if (result.fail > 0) {
+    status('Failed', String(result.fail), 'red');
   }
 }
 
-/**
- * Resolve execution directory and piece from task data.
- * If the task has worktree settings, create a shared clone and use it as cwd.
- * Task name is summarized to English by AI for use in branch/clone names.
- */
-export async function resolveTaskExecution(
-  task: TaskInfo,
-  defaultCwd: string,
-  defaultPiece: string
-): Promise<{ execCwd: string; execPiece: string; isWorktree: boolean; branch?: string; startMovement?: string; retryNote?: string; autoPr?: boolean }> {
-  const data = task.data;
-
-  // No structured data: use defaults
-  if (!data) {
-    return { execCwd: defaultCwd, execPiece: defaultPiece, isWorktree: false };
-  }
-
-  let execCwd = defaultCwd;
-  let isWorktree = false;
-  let branch: string | undefined;
-
-  // Handle worktree (now creates a shared clone)
-  if (data.worktree) {
-    // Summarize task content to English slug using AI
-    info('Generating branch name...');
-    const taskSlug = await summarizeTaskName(task.content, { cwd: defaultCwd });
-
-    info('Creating clone...');
-    const result = createSharedClone(defaultCwd, {
-      worktree: data.worktree,
-      branch: data.branch,
-      taskSlug,
-      issueNumber: data.issue,
-    });
-    execCwd = result.path;
-    branch = result.branch;
-    isWorktree = true;
-    info(`Clone created: ${result.path} (branch: ${result.branch})`);
-  }
-
-  // Handle piece override
-  const execPiece = data.piece || defaultPiece;
-
-  // Handle start_movement override
-  const startMovement = data.start_movement;
-
-  // Handle retry_note
-  const retryNote = data.retry_note;
-
-  // Handle auto_pr (task YAML > global config)
-  let autoPr: boolean | undefined;
-  if (data.auto_pr !== undefined) {
-    autoPr = data.auto_pr;
-  } else {
-    const globalConfig = loadGlobalConfig();
-    autoPr = globalConfig.autoPr;
-  }
-
-  return { execCwd, execPiece, isWorktree, branch, startMovement, retryNote, autoPr };
-}
+// Re-export for backward compatibility with existing consumers
+export { resolveTaskExecution } from './resolveTask.js';
