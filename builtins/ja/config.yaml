@@ -1,34 +1,85 @@
 # TAKT グローバル設定
-# takt のデフォルト設定ファイルです。
+# 配置場所: ~/.takt/config.yaml
 
-# 言語設定 (en または ja)
+# ── 基本設定 ──
+
+# 言語 (en | ja)
 language: ja
 
-# デフォルトのピース - 指定がない場合に使用します
+# デフォルトピース（指定なし時に使用）
 default_piece: default
 
-# ログレベル: debug, info, warn, error
+# ログレベル (debug | info | warn | error)
 log_level: info
 
-# プロバイダー: claude または codex
+# ── プロバイダー & モデル ──
+
+# プロバイダー (claude | codex)
 provider: claude
 
-# ビルトインピースの読み込み (resources/global/{lang}/pieces)
-# enable_builtin_pieces: true
-
-# デフォルトモデル (オプション)
-# Claude: opus, sonnet, haiku, opusplan, default, またはフルモデル名
+# デフォルトモデル（オプション）
+# Claude: opus, sonnet, haiku
 # Codex: gpt-5.2-codex, gpt-5.1-codex など
 # model: sonnet
 
-# Anthropic APIキー (オプション、環境変数 TAKT_ANTHROPIC_API_KEY で上書き可能)
-# anthropic_api_key: ""
+# ペルソナ単位のプロバイダー上書き（オプション）
+# 特定ペルソナだけプロバイダーを変更。未指定のペルソナはグローバル設定を使用。
+# persona_providers:
+#   coder: codex
 
-# OpenAI APIキー (オプション、環境変数 TAKT_OPENAI_API_KEY で上書き可能)
+# ── APIキー ──
+# オプション。環境変数が優先:
+#   TAKT_ANTHROPIC_API_KEY, TAKT_OPENAI_API_KEY
+
+# anthropic_api_key: ""
 # openai_api_key: ""
 
-# パイプライン実行設定 (オプション)
-# パイプラインモード (--task) のブランチ名、コミットメッセージ、PRの本文をカスタマイズできます。
+# ── 実行設定 ──
+
+# ワークツリー（shared clone）ディレクトリ（デフォルト: プロジェクトの ../{clone-name}）
+# worktree_dir: ~/takt-worktrees
+
+# ワークツリー実行後に自動PR作成（デフォルト: 対話モードで確認）
+# auto_pr: false
+
+# macOS のアイドルスリープを防止（デフォルト: false）
+# prevent_sleep: false
+
+# ── 並列実行 (takt run) ──
+
+# タスクの同時実行数（1 = 逐次実行、最大: 10）
+# concurrency: 1
+
+# 新規タスクのポーリング間隔 ms（100-5000、デフォルト: 500）
+# task_poll_interval_ms: 500
+
+# ── 対話モード ──
+
+# ムーブメントプレビューの表示数（0 で無効、最大: 10）
+# interactive_preview_movements: 3
+
+# ブランチ名の生成方式（romaji: 高速デフォルト | ai: 低速）
+# branch_name_strategy: romaji
+
+# ── 出力 ──
+
+# 通知音（デフォルト: true）
+# notification_sound: true
+
+# CI 向け最小出力 - AI 出力を抑制（デフォルト: false）
+# minimal_output: false
+
+# ── ビルトインピース ──
+
+# ビルトインピースの有効化（デフォルト: true）
+# enable_builtin_pieces: true
+
+# 特定のビルトインを除外
+# disabled_builtins:
+#   - magi
+
+# ── パイプラインモード (--pipeline) ──
+
 # pipeline:
 #   default_branch_prefix: "takt/"
 #   commit_message_template: "feat: {title} (#{issue})"
@@ -37,10 +88,14 @@ provider: claude
 #     {issue_body}
 #     Closes #{issue}
 
-# 通知音 (true: 有効 / false: 無効、デフォルト: true)
-# notification_sound: true
+# ── プリファレンス ──
 
-# デバッグ設定 (オプション)
+# プリファレンスファイルのカスタムパス
+# bookmarks_file: ~/.takt/preferences/bookmarks.yaml
+# piece_categories_file: ~/.takt/preferences/piece-categories.yaml
+
+# ── デバッグ ──
+
 # debug:
 #   enabled: false
 #   log_file: ~/.takt/logs/debug.log
