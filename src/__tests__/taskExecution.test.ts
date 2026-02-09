@@ -491,4 +491,24 @@ describe('resolveTaskExecution', () => {
     // Then
     expect(result.issueNumber).toBeUndefined();
   });
+
+  it('should not start clone creation when abortSignal is already aborted', async () => {
+    // Given: Worktree task with pre-aborted signal
+    const task: TaskInfo = {
+      name: 'aborted-before-clone',
+      content: 'Task content',
+      filePath: '/tasks/task.yaml',
+      data: {
+        task: 'Task content',
+        worktree: true,
+      },
+    };
+    const controller = new AbortController();
+    controller.abort();
+
+    // When / Then
+    await expect(resolveTaskExecution(task, '/project', 'default', controller.signal)).rejects.toThrow('Task execution aborted');
+    expect(mockSummarizeTaskName).not.toHaveBeenCalled();
+    expect(mockCreateSharedClone).not.toHaveBeenCalled();
+  });
 });

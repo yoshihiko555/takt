@@ -107,17 +107,13 @@ export async function runWithWorkerPool(
 
   try {
     while (queue.length > 0 || active.size > 0) {
-      if (abortController.signal.aborted) {
-        break;
+      if (!abortController.signal.aborted) {
+        fillSlots(queue, active, concurrency, taskRunner, cwd, pieceName, options, abortController, colorCounter);
       }
-
-      fillSlots(queue, active, concurrency, taskRunner, cwd, pieceName, options, abortController, colorCounter);
 
       if (active.size === 0) {
         break;
       }
-
-      const pollTimer = createPollTimer(pollIntervalMs, abortController.signal);
 
       const completionPromises: Promise<RaceResult>[] = [...active.keys()].map((p) =>
         p.then(
@@ -126,9 +122,18 @@ export async function runWithWorkerPool(
         ),
       );
 
-      const settled = await Promise.race([...completionPromises, pollTimer.promise]);
-
-      pollTimer.cancel();
+      let settled: RaceResult;
+      if (abortController.signal.aborted) {
+        // Graceful shutdown: stop scheduling new work but wait for in-flight tasks to settle.
+        settled = await Promise.race(completionPromises);
+      } else {
+        const pollTimer = createPollTimer(pollIntervalMs, abortController.signal);
+        try {
+          settled = await Promise.race([...completionPromises, pollTimer.promise]);
+        } finally {
+          pollTimer.cancel();
+        }
+      }
 
       if (settled.type === 'completion') {
         const task = active.get(settled.promise);
@@ -189,7 +194,7 @@ function fillSlots(
     }
 
     const promise = executeAndCompleteTask(task, taskRunner, cwd, pieceName, options, {
-      abortSignal: isParallel ? abortController.signal : undefined,
+      abortSignal: abortController.signal,
       taskPrefix: isParallel ? task.name : undefined,
       taskColorIndex: isParallel ? colorIndex : undefined,
     });

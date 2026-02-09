@@ -449,7 +449,7 @@ describe('runAllTasks concurrency', () => {
       expect(pieceOptions).toHaveProperty('taskPrefix', 'parallel-task');
     });
 
-    it('should not pass abortSignal or taskPrefix in sequential mode', async () => {
+    it('should pass abortSignal but not taskPrefix in sequential mode', async () => {
       // Given: Sequential mode
       mockLoadGlobalConfig.mockReturnValue({
         language: 'en',
@@ -470,11 +470,11 @@ describe('runAllTasks concurrency', () => {
       // When
       await runAllTasks('/project');
 
-      // Then: executePiece should not have abortSignal or taskPrefix
+      // Then: executePiece should have abortSignal but not taskPrefix
       expect(mockExecutePiece).toHaveBeenCalledTimes(1);
       const callArgs = mockExecutePiece.mock.calls[0];
       const pieceOptions = callArgs?.[3];
-      expect(pieceOptions?.abortSignal).toBeUndefined();
+      expect(pieceOptions?.abortSignal).toBeInstanceOf(AbortSignal);
       expect(pieceOptions?.taskPrefix).toBeUndefined();
     });
   });
