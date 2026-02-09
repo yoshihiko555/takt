@@ -61,6 +61,8 @@ export interface GlobalConfig {
   bookmarksFile?: string;
   /** Path to piece categories file (default: ~/.takt/preferences/piece-categories.yaml) */
   pieceCategoriesFile?: string;
+  /** Per-persona provider overrides (e.g., { coder: 'codex' }) */
+  personaProviders?: Record<string, 'claude' | 'codex' | 'mock'>;
   /** Branch name generation strategy: 'romaji' (fast, default) or 'ai' (slow) */
   branchNameStrategy?: 'romaji' | 'ai';
   /** Prevent macOS idle sleep during takt execution using caffeinate (default: false) */
@@ -71,6 +73,8 @@ export interface GlobalConfig {
   interactivePreviewMovements?: number;
   /** Number of tasks to run concurrently in takt run (default: 1 = sequential) */
   concurrency: number;
+  /** Polling interval in ms for picking up new tasks during takt run (default: 500, range: 100-5000) */
+  taskPollIntervalMs: number;
 }
 
 /** Project-level configuration */

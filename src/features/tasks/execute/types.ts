@@ -30,6 +30,8 @@ export interface PieceExecutionOptions {
   language?: Language;
   provider?: ProviderType;
   model?: string;
+  /** Per-persona provider overrides (e.g., { coder: 'codex' }) */
+  personaProviders?: Record<string, ProviderType>;
   /** Enable interactive user input during step transitions */
   interactiveUserInput?: boolean;
   /** Interactive mode result metadata for NDJSON logging */
@@ -42,6 +44,8 @@ export interface PieceExecutionOptions {
   abortSignal?: AbortSignal;
   /** Task name prefix for parallel execution output (e.g. "[task-name] output...") */
   taskPrefix?: string;
+  /** Color index for task prefix (cycled mod 4 across concurrent tasks) */
+  taskColorIndex?: number;
 }
 
 export interface TaskExecutionOptions {
@@ -72,6 +76,8 @@ export interface ExecuteTaskOptions {
   abortSignal?: AbortSignal;
   /** Task name prefix for parallel execution output (e.g. "[task-name] output...") */
   taskPrefix?: string;
+  /** Color index for task prefix (cycled mod 4 across concurrent tasks) */
+  taskColorIndex?: number;
 }
 
 export interface PipelineExecutionOptions {

@@ -1,34 +1,85 @@
 # TAKT Global Configuration
-# This file contains default settings for takt.
+# Location: ~/.takt/config.yaml
 
-# Language setting (en or ja)
+# ── Basic ──
+
+# Language (en | ja)
 language: en
 
-# Default piece to use when no piece is specified
+# Default piece when no piece is specified
 default_piece: default
 
-# Log level: debug, info, warn, error
+# Log level (debug | info | warn | error)
 log_level: info
 
-# Provider runtime: claude or codex
+# ── Provider & Model ──
+
+# Provider runtime (claude | codex)
 provider: claude
 
-# Builtin pieces (resources/global/{lang}/pieces)
-# enable_builtin_pieces: true
-
 # Default model (optional)
-# Claude: opus, sonnet, haiku, opusplan, default, or full model name
+# Claude: opus, sonnet, haiku
 # Codex: gpt-5.2-codex, gpt-5.1-codex, etc.
 # model: sonnet
 
-# Anthropic API key (optional, overridden by TAKT_ANTHROPIC_API_KEY env var)
-# anthropic_api_key: ""
+# Per-persona provider override (optional)
+# Override provider for specific personas. Others use the global provider.
+# persona_providers:
+#   coder: codex
 
-# OpenAI API key (optional, overridden by TAKT_OPENAI_API_KEY env var)
+# ── API Keys ──
+# Optional. Environment variables take priority:
+#   TAKT_ANTHROPIC_API_KEY, TAKT_OPENAI_API_KEY
+
+# anthropic_api_key: ""
 # openai_api_key: ""
 
-# Pipeline execution settings (optional)
-# Customize branch naming, commit messages, and PR body for pipeline mode (--task).
+# ── Execution ──
+
+# Worktree (shared clone) directory (default: ../{clone-name} relative to project)
+# worktree_dir: ~/takt-worktrees
+
+# Auto-create PR after worktree execution (default: prompt in interactive mode)
+# auto_pr: false
+
+# Prevent macOS idle sleep during execution using caffeinate (default: false)
+# prevent_sleep: false
+
+# ── Parallel Execution (takt run) ──
+
+# Number of tasks to run concurrently (1 = sequential, max: 10)
+# concurrency: 1
+
+# Polling interval in ms for picking up new tasks (100-5000, default: 500)
+# task_poll_interval_ms: 500
+
+# ── Interactive Mode ──
+
+# Number of movement previews shown in interactive mode (0 to disable, max: 10)
+# interactive_preview_movements: 3
+
+# Branch name generation strategy (romaji: fast default | ai: slow)
+# branch_name_strategy: romaji
+
+# ── Output ──
+
+# Notification sounds (default: true)
+# notification_sound: true
+
+# Minimal output for CI - suppress AI output (default: false)
+# minimal_output: false
+
+# ── Builtin Pieces ──
+
+# Enable builtin pieces (default: true)
+# enable_builtin_pieces: true
+
+# Exclude specific builtins from loading
+# disabled_builtins:
+#   - magi
+
+# ── Pipeline Mode (--pipeline) ──
+
 # pipeline:
 #   default_branch_prefix: "takt/"
 #   commit_message_template: "feat: {title} (#{issue})"
@@ -37,10 +88,14 @@ provider: claude
 #     {issue_body}
 #     Closes #{issue}
 
-# Notification sounds (true: enabled, false: disabled, default: true)
-# notification_sound: true
+# ── Preferences ──
 
-# Debug settings (optional)
+# Custom paths for preference files
+# bookmarks_file: ~/.takt/preferences/bookmarks.yaml
+# piece_categories_file: ~/.takt/preferences/piece-categories.yaml
+
+# ── Debug ──
+
 # debug:
 #   enabled: false
 #   log_file: ~/.takt/logs/debug.log

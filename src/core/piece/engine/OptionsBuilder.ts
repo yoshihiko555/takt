@@ -33,8 +33,9 @@ export class OptionsBuilder {
 
     return {
       cwd: this.getCwd(),
+      abortSignal: this.engineOptions.abortSignal,
       personaPath: step.personaPath,
-      provider: step.provider ?? this.engineOptions.provider,
+      provider: step.provider ?? this.engineOptions.personaProviders?.[step.personaDisplayName] ?? this.engineOptions.provider,
       model: step.model ?? this.engineOptions.model,
       permissionMode: step.permissionMode,
       language: this.getLanguage(),

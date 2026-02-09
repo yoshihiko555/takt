@@ -52,7 +52,7 @@ function resolveTaskIssue(issueNumber: number | undefined): ReturnType<typeof fe
  * Execute a single task with piece.
  */
 export async function executeTask(options: ExecuteTaskOptions): Promise<boolean> {
-  const { task, cwd, pieceIdentifier, projectCwd, agentOverrides, interactiveUserInput, interactiveMetadata, startMovement, retryNote, abortSignal, taskPrefix } = options;
+  const { task, cwd, pieceIdentifier, projectCwd, agentOverrides, interactiveUserInput, interactiveMetadata, startMovement, retryNote, abortSignal, taskPrefix, taskColorIndex } = options;
   const pieceConfig = loadPieceByIdentifier(pieceIdentifier, projectCwd);
 
   if (!pieceConfig) {
@@ -77,12 +77,14 @@ export async function executeTask(options: ExecuteTaskOptions): Promise<boolean>
     language: globalConfig.language,
     provider: agentOverrides?.provider,
     model: agentOverrides?.model,
+    personaProviders: globalConfig.personaProviders,
     interactiveUserInput,
     interactiveMetadata,
     startMovement,
     retryNote,
     abortSignal,
     taskPrefix,
+    taskColorIndex,
   });
   return result.success;
 }
@@ -101,16 +103,31 @@ export async function executeAndCompleteTask(
   cwd: string,
   pieceName: string,
   options?: TaskExecutionOptions,
-  parallelOptions?: { abortSignal?: AbortSignal; taskPrefix?: string },
+  parallelOptions?: { abortSignal?: AbortSignal; taskPrefix?: string; taskColorIndex?: number },
 ): Promise<boolean> {
   const startedAt = new Date().toISOString();
   const executionLog: string[] = [];
+  const taskAbortController = new AbortController();
+  const externalAbortSignal = parallelOptions?.abortSignal;
+  const taskAbortSignal = externalAbortSignal ? taskAbortController.signal : undefined;
+
+  const onExternalAbort = (): void => {
+    taskAbortController.abort();
+  };
+
+  if (externalAbortSignal) {
+    if (externalAbortSignal.aborted) {
+      taskAbortController.abort();
+    } else {
+      externalAbortSignal.addEventListener('abort', onExternalAbort, { once: true });
+    }
+  }
 
   try {
     const { execCwd, execPiece, isWorktree, branch, baseBranch, startMovement, retryNote, autoPr, issueNumber } = await resolveTaskExecution(task, cwd, pieceName);
 
     // cwd is always the project root; pass it as projectCwd so reports/sessions go there
-    const taskSuccess = await executeTask({
+    const taskRunPromise = executeTask({
       task: task.content,
       cwd: execCwd,
       pieceIdentifier: execPiece,
@@ -118,9 +135,12 @@ export async function executeAndCompleteTask(
       agentOverrides: options,
       startMovement,
       retryNote,
-      abortSignal: parallelOptions?.abortSignal,
+      abortSignal: taskAbortSignal,
       taskPrefix: parallelOptions?.taskPrefix,
+      taskColorIndex: parallelOptions?.taskColorIndex,
     });
+
+    const taskSuccess = await taskRunPromise;
     const completedAt = new Date().toISOString();
 
     if (taskSuccess && isWorktree) {
@@ -189,6 +209,10 @@ export async function executeAndCompleteTask(
 
     error(`Task "${task.name}" error: ${getErrorMessage(err)}`);
     return false;
+  } finally {
+    if (externalAbortSignal) {
+      externalAbortSignal.removeEventListener('abort', onExternalAbort);
+    }
   }
 }
 
@@ -220,7 +244,7 @@ export async function runAllTasks(
     info(`Concurrency: ${concurrency}`);
   }
 
-  const result = await runWithWorkerPool(taskRunner, initialTasks, concurrency, cwd, pieceName, options);
+  const result = await runWithWorkerPool(taskRunner, initialTasks, concurrency, cwd, pieceName, options, globalConfig.taskPollIntervalMs);
 
   const totalCount = result.success + result.fail;
   blankLine();

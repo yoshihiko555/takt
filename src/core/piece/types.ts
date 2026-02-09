@@ -153,6 +153,7 @@ export type IterationLimitCallback = (request: IterationLimitRequest) => Promise
 
 /** Options for piece engine */
 export interface PieceEngineOptions {
+  abortSignal?: AbortSignal;
   /** Callback for streaming real-time output */
   onStream?: StreamCallback;
   /** Callback for requesting user input when an agent is blocked */
@@ -177,6 +178,8 @@ export interface PieceEngineOptions {
   language?: Language;
   provider?: ProviderType;
   model?: string;
+  /** Per-persona provider overrides (e.g., { coder: 'codex' }) */
+  personaProviders?: Record<string, ProviderType>;
   /** Enable interactive-only rules and user-input transitions */
   interactive?: boolean;
   /** Rule tag index detector (required for rules evaluation) */
@@ -187,6 +190,10 @@ export interface PieceEngineOptions {
   startMovement?: string;
   /** Retry note explaining why task is being retried */
   retryNote?: string;
+  /** Task name prefix for parallel task execution output */
+  taskPrefix?: string;
+  /** Color index for task prefix (cycled across tasks) */
+  taskColorIndex?: number;
 }
 
 /** Loop detection result */

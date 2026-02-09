@@ -23,6 +23,8 @@ import {
 export type { CodexCallOptions } from './types.js';
 
 const log = createLogger('codex-sdk');
+const CODEX_STREAM_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+const CODEX_STREAM_ABORTED_MESSAGE = 'Codex execution aborted';
 
 /**
  * Client for Codex SDK agent interactions.
@@ -55,6 +57,34 @@ export class CodexClient {
       ? `${options.systemPrompt}\n\n${prompt}`
       : prompt;
 
+    let idleTimeoutId: ReturnType<typeof setTimeout> | undefined;
+    const streamAbortController = new AbortController();
+    const timeoutMessage = `Codex stream timed out after ${Math.floor(CODEX_STREAM_IDLE_TIMEOUT_MS / 60000)} minutes of inactivity`;
+    let abortCause: 'timeout' | 'external' | undefined;
+
+    const resetIdleTimeout = (): void => {
+      if (idleTimeoutId !== undefined) {
+        clearTimeout(idleTimeoutId);
+      }
+      idleTimeoutId = setTimeout(() => {
+        abortCause = 'timeout';
+        streamAbortController.abort();
+      }, CODEX_STREAM_IDLE_TIMEOUT_MS);
+    };
+
+    const onExternalAbort = (): void => {
+      abortCause = 'external';
+      streamAbortController.abort();
+    };
+
+    if (options.abortSignal) {
+      if (options.abortSignal.aborted) {
+        streamAbortController.abort();
+      } else {
+        options.abortSignal.addEventListener('abort', onExternalAbort, { once: true });
+      }
+    }
+
     try {
       log.debug('Executing Codex thread', {
         agentType,
@@ -62,7 +92,10 @@ export class CodexClient {
         hasSystemPrompt: !!options.systemPrompt,
       });
 
-      const { events } = await thread.runStreamed(fullPrompt);
+      const { events } = await thread.runStreamed(fullPrompt, {
+        signal: streamAbortController.signal,
+      });
+      resetIdleTimeout();
       let content = '';
       const contentOffsets = new Map<string, number>();
       let success = true;
@@ -70,6 +103,7 @@ export class CodexClient {
       const state = createStreamTrackingState();
 
       for await (const event of events as AsyncGenerator<CodexEvent>) {
+        resetIdleTimeout();
         if (event.type === 'thread.started') {
           threadId = typeof event.thread_id === 'string' ? event.thread_id : threadId;
           emitInit(options.onStream, options.model, threadId);
@@ -172,15 +206,27 @@ export class CodexClient {
       };
     } catch (error) {
       const message = getErrorMessage(error);
-      emitResult(options.onStream, false, message, threadId);
+      const errorMessage = streamAbortController.signal.aborted
+        ? abortCause === 'timeout'
+          ? timeoutMessage
+          : CODEX_STREAM_ABORTED_MESSAGE
+        : message;
+      emitResult(options.onStream, false, errorMessage, threadId);
 
       return {
         persona: agentType,
         status: 'blocked',
-        content: message,
+        content: errorMessage,
         timestamp: new Date(),
         sessionId: threadId,
       };
+    } finally {
+      if (idleTimeoutId !== undefined) {
+        clearTimeout(idleTimeoutId);
+      }
+      if (options.abortSignal) {
+        options.abortSignal.removeEventListener('abort', onExternalAbort);
+      }
     }
   }
 

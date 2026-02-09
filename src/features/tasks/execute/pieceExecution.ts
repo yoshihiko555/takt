@@ -21,15 +21,16 @@ import {
 } from '../../../infra/config/index.js';
 import { isQuietMode } from '../../../shared/context.js';
 import {
-  header,
-  info,
-  warn,
-  error,
-  success,
-  status,
-  blankLine,
+  header as rawHeader,
+  info as rawInfo,
+  warn as rawWarn,
+  error as rawError,
+  success as rawSuccess,
+  status as rawStatus,
+  blankLine as rawBlankLine,
   StreamDisplay,
 } from '../../../shared/ui/index.js';
+import { TaskPrefixWriter } from '../../../shared/ui/TaskPrefixWriter.js';
 import {
   generateSessionId,
   createSessionLog,
@@ -61,6 +62,91 @@ import { getLabel } from '../../../shared/i18n/index.js';
 import { installSigIntHandler } from './sigintHandler.js';
 
 const log = createLogger('piece');
+
+/**
+ * Output facade — routes through TaskPrefixWriter when task prefix is active,
+ * or falls through to the raw module functions for single-task execution.
+ */
+interface OutputFns {
+  header: (title: string) => void;
+  info: (message: string) => void;
+  warn: (message: string) => void;
+  error: (message: string) => void;
+  success: (message: string) => void;
+  status: (label: string, value: string, color?: 'green' | 'yellow' | 'red') => void;
+  blankLine: () => void;
+  logLine: (text: string) => void;
+}
+
+function assertTaskPrefixPair(
+  taskPrefix: string | undefined,
+  taskColorIndex: number | undefined
+): void {
+  const hasTaskPrefix = taskPrefix != null;
+  const hasTaskColorIndex = taskColorIndex != null;
+  if (hasTaskPrefix !== hasTaskColorIndex) {
+    throw new Error('taskPrefix and taskColorIndex must be provided together');
+  }
+}
+
+function createOutputFns(prefixWriter: TaskPrefixWriter | undefined): OutputFns {
+  if (!prefixWriter) {
+    return {
+      header: rawHeader,
+      info: rawInfo,
+      warn: rawWarn,
+      error: rawError,
+      success: rawSuccess,
+      status: rawStatus,
+      blankLine: rawBlankLine,
+      logLine: (text: string) => console.log(text),
+    };
+  }
+  return {
+    header: (title: string) => prefixWriter.writeLine(`=== ${title} ===`),
+    info: (message: string) => prefixWriter.writeLine(`[INFO] ${message}`),
+    warn: (message: string) => prefixWriter.writeLine(`[WARN] ${message}`),
+    error: (message: string) => prefixWriter.writeLine(`[ERROR] ${message}`),
+    success: (message: string) => prefixWriter.writeLine(message),
+    status: (label: string, value: string) => prefixWriter.writeLine(`${label}: ${value}`),
+    blankLine: () => prefixWriter.writeLine(''),
+    logLine: (text: string) => prefixWriter.writeLine(text),
+  };
+}
+
+/**
+ * Create a stream handler that routes all stream events through TaskPrefixWriter.
+ * Text and tool_output are line-buffered; block events are output per-line with prefix.
+ */
+function createPrefixedStreamHandler(
+  writer: TaskPrefixWriter,
+): (event: Parameters<ReturnType<StreamDisplay['createHandler']>>[0]) => void {
+  return (event) => {
+    switch (event.type) {
+      case 'text':
+        writer.writeChunk(event.data.text);
+        break;
+      case 'tool_use':
+        writer.writeLine(`[tool] ${event.data.tool}`);
+        break;
+      case 'tool_result': {
+        const label = event.data.isError ? '✗' : '✓';
+        writer.writeLine(`  ${label} ${event.data.content}`);
+        break;
+      }
+      case 'tool_output':
+        writer.writeChunk(event.data.output);
+        break;
+      case 'thinking':
+        writer.writeChunk(event.data.thinking);
+        break;
+      case 'init':
+      case 'result':
+      case 'error':
+        break;
+    }
+  };
+}
 
 /**
  * Truncate string to maximum length
@@ -106,11 +192,18 @@ export async function executePiece(
 
   // projectCwd is where .takt/ lives (project root, not the clone)
   const projectCwd = options.projectCwd;
+  assertTaskPrefixPair(options.taskPrefix, options.taskColorIndex);
+
+  // When taskPrefix is set (parallel execution), route all output through TaskPrefixWriter
+  const prefixWriter = options.taskPrefix != null
+    ? new TaskPrefixWriter({ taskName: options.taskPrefix, colorIndex: options.taskColorIndex! })
+    : undefined;
+  const out = createOutputFns(prefixWriter);
 
   // Always continue from previous sessions (use /clear to reset)
   log.debug('Continuing session (use /clear to reset)');
 
-  header(`${headerPrefix} ${pieceConfig.name}`);
+  out.header(`${headerPrefix} ${pieceConfig.name}`);
 
   const pieceSessionId = generateSessionId();
   let sessionLog = createSessionLog(task, projectCwd, pieceConfig.name);
@@ -139,14 +232,16 @@ export async function executePiece(
   // Track current display for streaming
   const displayRef: { current: StreamDisplay | null } = { current: null };
 
-  // Create stream handler that delegates to UI display
-  const streamHandler = (
-    event: Parameters<ReturnType<StreamDisplay['createHandler']>>[0]
-  ): void => {
-    if (!displayRef.current) return;
-    if (event.type === 'result') return;
-    displayRef.current.createHandler()(event);
-  };
+  // Create stream handler — when prefixWriter is active, use it for line-buffered
+  // output to prevent mid-line interleaving between concurrent tasks.
+  // When not in parallel mode, delegate to StreamDisplay as before.
+  const streamHandler = prefixWriter
+    ? createPrefixedStreamHandler(prefixWriter)
+    : (event: Parameters<ReturnType<StreamDisplay['createHandler']>>[0]): void => {
+        if (!displayRef.current) return;
+        if (event.type === 'result') return;
+        displayRef.current.createHandler()(event);
+      };
 
   // Load saved agent sessions for continuity (from project root or clone-specific storage)
   const isWorktree = cwd !== projectCwd;
@@ -180,14 +275,14 @@ export async function executePiece(
       displayRef.current = null;
     }
 
-    blankLine();
-    warn(
+    out.blankLine();
+    out.warn(
       getLabel('piece.iterationLimit.maxReached', undefined, {
         currentIteration: String(request.currentIteration),
         maxIterations: String(request.maxIterations),
       })
     );
-    info(getLabel('piece.iterationLimit.currentMovement', undefined, { currentMovement: request.currentMovement }));
+    out.info(getLabel('piece.iterationLimit.currentMovement', undefined, { currentMovement: request.currentMovement }));
 
     if (shouldNotify) {
       playWarningSound();
@@ -214,11 +309,11 @@ export async function executePiece(
 
       const additionalIterations = Number.parseInt(input, 10);
       if (Number.isInteger(additionalIterations) && additionalIterations > 0) {
-        pieceConfig.maxIterations += additionalIterations;
+        pieceConfig.maxIterations = request.maxIterations + additionalIterations;
         return additionalIterations;
       }
 
-      warn(getLabel('piece.iterationLimit.invalidInput'));
+      out.warn(getLabel('piece.iterationLimit.invalidInput'));
     }
   };
 
@@ -228,14 +323,15 @@ export async function executePiece(
           displayRef.current.flush();
           displayRef.current = null;
         }
-        blankLine();
-        info(request.prompt.trim());
+        out.blankLine();
+        out.info(request.prompt.trim());
         const input = await promptInput(getLabel('piece.iterationLimit.userInputPrompt'));
         return input && input.trim() ? input.trim() : null;
       }
     : undefined;
 
   const engine = new PieceEngine(pieceConfig, cwd, task, {
+    abortSignal: options.abortSignal,
     onStream: streamHandler,
     onUserInput,
     initialSessions: savedSessions,
@@ -245,11 +341,14 @@ export async function executePiece(
     language: options.language,
     provider: options.provider,
     model: options.model,
+    personaProviders: options.personaProviders,
     interactive: interactiveUserInput,
     detectRuleIndex,
     callAiJudge,
     startMovement: options.startMovement,
     retryNote: options.retryNote,
+    taskPrefix: options.taskPrefix,
+    taskColorIndex: options.taskColorIndex,
   });
 
   let abortReason: string | undefined;
@@ -257,6 +356,7 @@ export async function executePiece(
   let lastMovementName: string | undefined;
   let currentIteration = 0;
   const phasePrompts = new Map<string, string>();
+  const movementIterations = new Map<string, number>();
 
   engine.on('phase:start', (step, phase, phaseName, instruction) => {
     log.debug('Phase starting', { step: step.name, phase, phaseName });
@@ -311,7 +411,15 @@ export async function executePiece(
   engine.on('movement:start', (step, iteration, instruction) => {
     log.debug('Movement starting', { step: step.name, persona: step.personaDisplayName, iteration });
     currentIteration = iteration;
-    info(`[${iteration}/${pieceConfig.maxIterations}] ${step.name} (${step.personaDisplayName})`);
+    const movementIteration = (movementIterations.get(step.name) ?? 0) + 1;
+    movementIterations.set(step.name, movementIteration);
+    prefixWriter?.setMovementContext({
+      movementName: step.name,
+      iteration,
+      maxIterations: pieceConfig.maxIterations,
+      movementIteration,
+    });
+    out.info(`[${iteration}/${pieceConfig.maxIterations}] ${step.name} (${step.personaDisplayName})`);
 
     // Log prompt content for debugging
     if (instruction) {
@@ -322,15 +430,18 @@ export async function executePiece(
     const movementIndex = pieceConfig.movements.findIndex((m) => m.name === step.name);
     const totalMovements = pieceConfig.movements.length;
 
-    const quiet = isQuietMode();
-    const prefix = options.taskPrefix;
-    const agentLabel = prefix ? `${prefix}:${step.personaDisplayName}` : step.personaDisplayName;
-    displayRef.current = new StreamDisplay(agentLabel, quiet, {
-      iteration,
-      maxIterations: pieceConfig.maxIterations,
-      movementIndex: movementIndex >= 0 ? movementIndex : 0,
-      totalMovements,
-    });
+    // In parallel mode, StreamDisplay is not used (prefixWriter handles output).
+    // In single mode, StreamDisplay renders stream events directly.
+    if (!prefixWriter) {
+      const quiet = isQuietMode();
+      const agentLabel = step.personaDisplayName;
+      displayRef.current = new StreamDisplay(agentLabel, quiet, {
+        iteration,
+        maxIterations: pieceConfig.maxIterations,
+        movementIndex: movementIndex >= 0 ? movementIndex : 0,
+        totalMovements,
+      });
+    }
 
     // Write step_start record to NDJSON log
     const record: NdjsonStepStart = {
@@ -364,25 +475,26 @@ export async function executePiece(
       displayRef.current.flush();
       displayRef.current = null;
     }
-    blankLine();
+    prefixWriter?.flush();
+    out.blankLine();
 
     if (response.matchedRuleIndex != null && step.rules) {
       const rule = step.rules[response.matchedRuleIndex];
       if (rule) {
         const methodLabel = response.matchedRuleMethod ? ` (${response.matchedRuleMethod})` : '';
-        status('Status', `${rule.condition}${methodLabel}`);
+        out.status('Status', `${rule.condition}${methodLabel}`);
       } else {
-        status('Status', response.status);
+        out.status('Status', response.status);
       }
     } else {
-      status('Status', response.status);
+      out.status('Status', response.status);
     }
 
     if (response.error) {
-      error(`Error: ${response.error}`);
+      out.error(`Error: ${response.error}`);
     }
     if (response.sessionId) {
-      status('Session', response.sessionId);
+      out.status('Session', response.sessionId);
     }
 
     // Write step_complete record to NDJSON log
@@ -408,8 +520,8 @@ export async function executePiece(
 
   engine.on('movement:report', (_step, filePath, fileName) => {
     const content = readFileSync(filePath, 'utf-8');
-    console.log(`\n📄 Report: ${fileName}\n`);
-    console.log(content);
+    out.logLine(`\n📄 Report: ${fileName}\n`);
+    out.logLine(content);
   });
 
   engine.on('piece:complete', (state) => {
@@ -445,8 +557,8 @@ export async function executePiece(
       : '';
     const elapsedDisplay = elapsed ? `, ${elapsed}` : '';
 
-    success(`Piece completed (${state.iteration} iterations${elapsedDisplay})`);
-    info(`Session log: ${ndjsonLogPath}`);
+    out.success(`Piece completed (${state.iteration} iterations${elapsedDisplay})`);
+    out.info(`Session log: ${ndjsonLogPath}`);
     if (shouldNotify) {
       notifySuccess('TAKT', getLabel('piece.notifyComplete', undefined, { iteration: String(state.iteration) }));
     }
@@ -459,6 +571,7 @@ export async function executePiece(
       displayRef.current.flush();
       displayRef.current = null;
     }
+    prefixWriter?.flush();
     abortReason = reason;
     sessionLog = finalizeSessionLog(sessionLog, 'aborted');
 
@@ -492,8 +605,8 @@ export async function executePiece(
       : '';
     const elapsedDisplay = elapsed ? ` (${elapsed})` : '';
 
-    error(`Piece aborted after ${state.iteration} iterations${elapsedDisplay}: ${reason}`);
-    info(`Session log: ${ndjsonLogPath}`);
+    out.error(`Piece aborted after ${state.iteration} iterations${elapsedDisplay}: ${reason}`);
+    out.info(`Session log: ${ndjsonLogPath}`);
     if (shouldNotify) {
       notifyError('TAKT', getLabel('piece.notifyAbort', undefined, { reason }));
     }
@@ -536,6 +649,7 @@ export async function executePiece(
       reason: abortReason,
     };
   } finally {
+    prefixWriter?.flush();
     sigintCleanup?.();
     if (onAbortSignal && options.abortSignal) {
       options.abortSignal.removeEventListener('abort', onAbortSignal);

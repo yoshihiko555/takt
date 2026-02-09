@@ -1,37 +1,32 @@
-# Auto-generated from default.yaml by tools/generate-hybrid-codex.mjs
-# Do not edit manually. Edit the source piece and re-run the generator.
-
-name: default-hybrid-codex
-description: Standard development piece with planning and specialized reviews
-max_iterations: 30
+name: unit-test
+description: 単体テスト追加に特化したピース（テスト分析→テスト実装→レビュー→修正）
+max_iterations: 20
+policies:
+  coding: ../policies/coding.md
+  review: ../policies/review.md
+  testing: ../policies/testing.md
+  ai-antipattern: ../policies/ai-antipattern.md
+  qa: ../policies/qa.md
 knowledge:
   architecture: ../knowledge/architecture.md
   backend: ../knowledge/backend.md
 personas:
-  planner: ../personas/planner.md
+  test-planner: ../personas/test-planner.md
   coder: ../personas/coder.md
   ai-antipattern-reviewer: ../personas/ai-antipattern-reviewer.md
   architecture-reviewer: ../personas/architecture-reviewer.md
   qa-reviewer: ../personas/qa-reviewer.md
   supervisor: ../personas/supervisor.md
 instructions:
-  plan: ../instructions/plan.md
-  implement: ../instructions/implement.md
+  plan-test: ../instructions/plan-test.md
+  implement-test: ../instructions/implement-test.md
   ai-review: ../instructions/ai-review.md
   ai-fix: ../instructions/ai-fix.md
   arbitrate: ../instructions/arbitrate.md
-  review-arch: ../instructions/review-arch.md
-  review-qa: ../instructions/review-qa.md
+  review-test: ../instructions/review-test.md
   fix: ../instructions/fix.md
   supervise: ../instructions/supervise.md
-report_formats:
-  plan: ../output-contracts/plan.md
-  ai-review: ../output-contracts/ai-review.md
-  architecture-review: ../output-contracts/architecture-review.md
-  qa-review: ../output-contracts/qa-review.md
-  validation: ../output-contracts/validation.md
-  summary: ../output-contracts/summary.md
-initial_movement: plan
+initial_movement: plan_test
 loop_monitors:
   - cycle:
       - ai_review
@@ -56,12 +51,15 @@ loop_monitors:
         - condition: 健全（進捗あり）
           next: ai_review
         - condition: 非生産的（改善なし）
-          next: reviewers
+          next: review_test
 movements:
-  - name: plan
+  - name: plan_test
     edit: false
-    persona: planner
-    knowledge: architecture
+    persona: test-planner
+    policy: testing
+    knowledge:
+      - architecture
+      - backend
     allowed_tools:
       - Read
       - Glob
@@ -70,9 +68,9 @@ movements:
       - WebSearch
       - WebFetch
     rules:
-      - condition: 要件が明確で実装可能
-        next: implement
-      - condition: ユーザーが質問をしている（実装タスクではない）
+      - condition: テスト計画が完了
+        next: implement_test
+      - condition: ユーザーが質問をしている（テスト追加タスクではない）
         next: COMPLETE
       - condition: 要件が不明確、情報不足
         next: ABORT
@@ -80,15 +78,15 @@ movements:
           確認事項:
           - {質問1}
           - {質問2}
-    instruction: plan
+    instruction: plan-test
     output_contracts:
       report:
-        - name: 00-plan.md
-          format: plan
-  - name: implement
+        - name: 00-test-plan.md
+          format: test-plan
+
+  - name: implement_test
     edit: true
     persona: coder
-    provider: codex
     policy:
       - coding
       - testing
@@ -107,21 +105,22 @@ movements:
       - WebFetch
     permission_mode: edit
     rules:
-      - condition: 実装完了
+      - condition: テスト実装完了
         next: ai_review
       - condition: 実装未着手（レポートのみ）
         next: ai_review
       - condition: 判断できない、情報不足
         next: ai_review
       - condition: ユーザー入力が必要
-        next: implement
+        next: implement_test
         requires_user_input: true
         interactive_only: true
-    instruction: implement
+    instruction: implement-test
     output_contracts:
       report:
         - Scope: 02-coder-scope.md
         - Decisions: 03-coder-decisions.md
+
   - name: ai_review
     edit: false
     persona: ai-antipattern-reviewer
@@ -136,7 +135,7 @@ movements:
       - WebFetch
     rules:
       - condition: AI特有の問題なし
-        next: reviewers
+        next: review_test
       - condition: AI特有の問題あり
         next: ai_fix
     instruction: ai-review
@@ -144,10 +143,10 @@ movements:
       report:
         - name: 04-ai-review.md
           format: ai-review
+
   - name: ai_fix
     edit: true
     persona: coder
-    provider: codex
     policy:
       - coding
       - testing
@@ -173,6 +172,7 @@ movements:
       - condition: 判断できない、情報不足
         next: ai_no_fix
     instruction: ai-fix
+
   - name: ai_no_fix
     edit: false
     persona: architecture-reviewer
@@ -185,63 +185,39 @@ movements:
       - condition: ai_reviewの指摘が妥当（修正すべき）
         next: ai_fix
       - condition: ai_fixの判断が妥当（修正不要）
-        next: reviewers
+        next: review_test
     instruction: arbitrate
-  - name: reviewers
-    parallel:
-      - name: arch-review
-        edit: false
-        persona: architecture-reviewer
-        policy: review
-        knowledge:
-          - architecture
-          - backend
-        allowed_tools:
-          - Read
-          - Glob
-          - Grep
-          - WebSearch
-          - WebFetch
-        rules:
-          - condition: approved
-          - condition: needs_fix
-        instruction: review-arch
-        output_contracts:
-          report:
-            - name: 05-architect-review.md
-              format: architecture-review
-      - name: qa-review
-        edit: false
-        persona: qa-reviewer
-        policy:
-          - review
-          - qa
-        allowed_tools:
-          - Read
-          - Glob
-          - Grep
-          - WebSearch
-          - WebFetch
-        rules:
-          - condition: approved
-          - condition: needs_fix
-        instruction: review-qa
-        output_contracts:
-          report:
-            - name: 06-qa-review.md
-              format: qa-review
+
+  - name: review_test
+    edit: false
+    persona: qa-reviewer
+    policy:
+      - review
+      - qa
+    allowed_tools:
+      - Read
+      - Glob
+      - Grep
+      - WebSearch
+      - WebFetch
     rules:
-      - condition: all("approved")
+      - condition: approved
         next: supervise
-      - condition: any("needs_fix")
+      - condition: needs_fix
         next: fix
+    instruction: review-test
+    output_contracts:
+      report:
+        - name: 05-qa-review.md
+          format: qa-review
+
   - name: fix
     edit: true
     persona: coder
-    provider: codex
     policy:
       - coding
       - testing
+    session: refresh
     knowledge:
       - backend
       - architecture
@@ -257,10 +233,11 @@ movements:
     permission_mode: edit
     rules:
       - condition: 修正完了
-        next: reviewers
+        next: review_test
       - condition: 判断できない、情報不足
-        next: plan
+        next: plan_test
     instruction: fix
+
   - name: supervise
     edit: false
     persona: supervisor
@@ -276,15 +253,15 @@ movements:
       - condition: すべて問題なし
         next: COMPLETE
       - condition: 要求未達成、テスト失敗、ビルドエラー
-        next: plan
+        next: plan_test
     instruction: supervise
     output_contracts:
       report:
-        - Validation: 07-supervisor-validation.md
+        - Validation: 06-supervisor-validation.md
         - Summary: summary.md
-policies:
-  coding: ../policies/coding.md
-  review: ../policies/review.md
-  testing: ../policies/testing.md
-  ai-antipattern: ../policies/ai-antipattern.md
-  qa: ../policies/qa.md
+report_formats:
+  test-plan: ../output-contracts/test-plan.md
+  ai-review: ../output-contracts/ai-review.md
+  qa-review: ../output-contracts/qa-review.md
+  validation: ../output-contracts/validation.md
+  summary: ../output-contracts/summary.md
