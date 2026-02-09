@@ -76,6 +76,10 @@ takt --pipeline --task "バグを修正して" --auto-pr
 
 ## 使い方
 
+## 実装メモ
+
+- failed タスクの retry とセッション再開: [`docs/implements/retry-and-session.ja.md`](./implements/retry-and-session.ja.md)
+
 ### 対話モード
 
 AI との会話でタスク内容を詰めてから実行するモード。タスクの要件が曖昧な場合や、AI と相談しながら内容を整理したい場合に便利です。
