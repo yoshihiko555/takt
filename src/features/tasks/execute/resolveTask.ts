@@ -71,7 +71,7 @@ export async function resolveTaskExecution(
       'Creating clone...',
       (cloneResult) => `Clone created: ${cloneResult.path} (branch: ${cloneResult.branch})`,
       async () => createSharedClone(defaultCwd, {
-        worktree: data.worktree,
+        worktree: data.worktree!,
         branch: data.branch,
         taskSlug,
         issueNumber: data.issue,
