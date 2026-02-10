@@ -82,8 +82,8 @@ export class OptionsBuilder {
   ): RunAgentOptions {
     return {
       ...this.buildBaseOptions(step),
-      // Do not pass permission mode in report/status phases.
-      permissionMode: undefined,
+      // Report/status phases are read-only regardless of movement settings.
+      permissionMode: 'readonly',
       sessionId,
       allowedTools: overrides.allowedTools,
       maxTurns: overrides.maxTurns,
