@@ -46,6 +46,7 @@ function resolveIssueInput(
       throw new Error(ghStatus.error);
     }
     const issue = fetchIssue(issueOption);
+    info(`GitHub Issue fetched: #${issue.number} ${issue.title}`);
     return { issues: [issue], initialInput: formatIssueAsTask(issue) };
   }
 
@@ -61,6 +62,7 @@ function resolveIssueInput(
       throw new Error(`Invalid issue reference: ${task}`);
     }
     const issues = issueNumbers.map((n) => fetchIssue(n));
+    info(`GitHub Issues fetched: ${issues.map((issue) => `#${issue.number}`).join(', ')}`);
     return { issues, initialInput: issues.map(formatIssueAsTask).join('\n\n---\n\n') };
   }
 

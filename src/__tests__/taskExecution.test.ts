@@ -193,6 +193,7 @@ describe('resolveTaskExecution', () => {
 
     // Then
     expect(mockInfo).toHaveBeenCalledWith('Generating branch name...');
+    expect(mockInfo).toHaveBeenCalledWith('Branch name generated: test-task');
   });
 
   it('should use task content (not name) for AI summarization', async () => {

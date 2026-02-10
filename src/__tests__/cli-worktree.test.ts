@@ -199,6 +199,7 @@ describe('confirmAndCreateWorktree', () => {
 
     // Then
     expect(mockInfo).toHaveBeenCalledWith('Generating branch name...');
+    expect(mockInfo).toHaveBeenCalledWith('Branch name generated: test-task');
   });
 
   it('should skip prompt when override is false', async () => {

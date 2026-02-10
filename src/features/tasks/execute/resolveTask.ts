@@ -62,6 +62,7 @@ export async function resolveTaskExecution(
     baseBranch = getCurrentBranch(defaultCwd);
     info('Generating branch name...');
     const taskSlug = await summarizeTaskName(task.content, { cwd: defaultCwd });
+    info(`Branch name generated: ${taskSlug}`);
 
     throwIfAborted(abortSignal);
     info('Creating clone...');

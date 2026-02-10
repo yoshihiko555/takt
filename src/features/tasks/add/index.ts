@@ -183,6 +183,7 @@ export async function addTask(cwd: string, task?: string): Promise<void> {
       const numbers = parseIssueNumbers([trimmedTask]);
       if (numbers.length > 0) {
         issueNumber = numbers[0];
+        info(`GitHub Issue fetched: #${issueNumber}`);
       }
     } catch (e) {
       const msg = getErrorMessage(e);
