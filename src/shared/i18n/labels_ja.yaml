@@ -36,6 +36,7 @@ interactive:
     passthrough: "パススルー"
     passthroughDescription: "入力をそのままタスクとして渡す"
   sessionSelector:
+    confirm: "前回セッションを選択しますか？"
     prompt: "直近のセッションを引き継ぎますか？"
     newSession: "新しいセッション"
     newSessionDescription: "新しい会話を始める"

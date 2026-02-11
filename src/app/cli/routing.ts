@@ -6,6 +6,7 @@
  */
 
 import { info, error, withProgress } from '../../shared/ui/index.js';
+import { confirm } from '../../shared/prompt/index.js';
 import { getErrorMessage } from '../../shared/utils/index.js';
 import { getLabel } from '../../shared/i18n/index.js';
 import { fetchIssue, formatIssueAsTask, checkGhCli, parseIssueNumbers, type GitHubIssue } from '../../infra/github/index.js';
@@ -167,9 +168,15 @@ export async function executeDefaultAction(task?: string): Promise<void> {
       let selectedSessionId: string | undefined;
       const provider = globalConfig.provider;
       if (provider === 'claude') {
-        const sessionId = await selectRecentSession(resolvedCwd, lang);
-        if (sessionId) {
-          selectedSessionId = sessionId;
+        const shouldSelectSession = await confirm(
+          getLabel('interactive.sessionSelector.confirm', lang),
+          false,
+        );
+        if (shouldSelectSession) {
+          const sessionId = await selectRecentSession(resolvedCwd, lang);
+          if (sessionId) {
+            selectedSessionId = sessionId;
+          }
         }
       }
       result = await interactiveMode(resolvedCwd, initialInput, pieceContext, selectedSessionId);

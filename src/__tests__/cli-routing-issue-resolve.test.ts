@@ -329,6 +329,7 @@ describe('Issue resolution in routing', () => {
     it('should pass selected session ID to interactiveMode when provider is claude', async () => {
       // Given
       mockLoadGlobalConfig.mockReturnValue({ interactivePreviewMovements: 3, provider: 'claude' });
+      mockConfirm.mockResolvedValue(true);
       mockSelectRecentSession.mockResolvedValue('session-xyz');
 
       // When
@@ -343,6 +344,27 @@ describe('Issue resolution in routing', () => {
         undefined,
         expect.anything(),
         'session-xyz',
+      );
+
+      expect(mockConfirm).toHaveBeenCalledWith('Choose a previous session?', false);
+    });
+
+    it('should not call selectRecentSession when user selects no in confirmation', async () => {
+      // Given
+      mockLoadGlobalConfig.mockReturnValue({ interactivePreviewMovements: 3, provider: 'claude' });
+      mockConfirm.mockResolvedValue(false);
+
+      // When
+      await executeDefaultAction();
+
+      // Then
+      expect(mockConfirm).toHaveBeenCalledWith('Choose a previous session?', false);
+      expect(mockSelectRecentSession).not.toHaveBeenCalled();
+      expect(mockInteractiveMode).toHaveBeenCalledWith(
+        '/test/cwd',
+        undefined,
+        expect.anything(),
+        undefined,
       );
     });
 
