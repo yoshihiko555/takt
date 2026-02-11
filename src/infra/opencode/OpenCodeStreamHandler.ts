@@ -47,11 +47,31 @@ export interface OpenCodeSessionIdleEvent {
   properties: { sessionID: string };
 }
 
+export interface OpenCodeSessionStatusEvent {
+  type: 'session.status';
+  properties: {
+    sessionID: string;
+    status: { type: 'idle' | 'busy' | 'retry'; attempt?: number; message?: string; next?: number };
+  };
+}
+
 export interface OpenCodeSessionErrorEvent {
   type: 'session.error';
   properties: {
     sessionID?: string;
     error?: { name: string; data: { message: string } };
+  };
+}
+
+export interface OpenCodeMessageUpdatedEvent {
+  type: 'message.updated';
+  properties: {
+    info: {
+      sessionID: string;
+      role: 'assistant' | 'user';
+      time?: { created?: number; completed?: number };
+      error?: unknown;
+    };
   };
 }
 
@@ -69,6 +89,8 @@ export interface OpenCodePermissionAskedEvent {
 
 export type OpenCodeStreamEvent =
   | OpenCodeMessagePartUpdatedEvent
+  | OpenCodeMessageUpdatedEvent
+  | OpenCodeSessionStatusEvent
   | OpenCodeSessionIdleEvent
   | OpenCodeSessionErrorEvent
   | OpenCodePermissionAskedEvent

@@ -41,7 +41,7 @@ vi.mock('../features/tasks/index.js', () => ({
   selectAndExecuteTask: vi.fn(),
   determinePiece: vi.fn(),
   saveTaskFromInteractive: vi.fn(),
-  createIssueAndSaveTask: vi.fn(),
+  createIssueFromTask: vi.fn(),
 }));
 
 vi.mock('../features/pipeline/index.js', () => ({
@@ -89,7 +89,7 @@ vi.mock('../app/cli/helpers.js', () => ({
 }));
 
 import { checkGhCli, fetchIssue, formatIssueAsTask, parseIssueNumbers } from '../infra/github/issue.js';
-import { selectAndExecuteTask, determinePiece, createIssueAndSaveTask } from '../features/tasks/index.js';
+import { selectAndExecuteTask, determinePiece, createIssueFromTask, saveTaskFromInteractive } from '../features/tasks/index.js';
 import { interactiveMode, selectRecentSession } from '../features/interactive/index.js';
 import { loadGlobalConfig } from '../infra/config/index.js';
 import { confirm } from '../shared/prompt/index.js';
@@ -103,7 +103,8 @@ const mockFormatIssueAsTask = vi.mocked(formatIssueAsTask);
 const mockParseIssueNumbers = vi.mocked(parseIssueNumbers);
 const mockSelectAndExecuteTask = vi.mocked(selectAndExecuteTask);
 const mockDeterminePiece = vi.mocked(determinePiece);
-const mockCreateIssueAndSaveTask = vi.mocked(createIssueAndSaveTask);
+const mockCreateIssueFromTask = vi.mocked(createIssueFromTask);
+const mockSaveTaskFromInteractive = vi.mocked(saveTaskFromInteractive);
 const mockInteractiveMode = vi.mocked(interactiveMode);
 const mockSelectRecentSession = vi.mocked(selectRecentSession);
 const mockLoadGlobalConfig = vi.mocked(loadGlobalConfig);
@@ -280,38 +281,41 @@ describe('Issue resolution in routing', () => {
   });
 
   describe('create_issue action', () => {
-    it('should delegate to createIssueAndSaveTask with cwd, task, and pieceId when confirmed', async () => {
+    it('should create issue first, then delegate final confirmation to saveTaskFromInteractive', async () => {
       // Given
       mockInteractiveMode.mockResolvedValue({ action: 'create_issue', task: 'New feature request' });
-      mockConfirm.mockResolvedValue(true);
+      mockCreateIssueFromTask.mockReturnValue(226);
 
       // When
       await executeDefaultAction();
 
-      // Then: createIssueAndSaveTask should be called with correct args
-      expect(mockCreateIssueAndSaveTask).toHaveBeenCalledWith(
+      // Then: issue is created first
+      expect(mockCreateIssueFromTask).toHaveBeenCalledWith('New feature request');
+      // Then: saveTaskFromInteractive receives final confirmation message
+      expect(mockSaveTaskFromInteractive).toHaveBeenCalledWith(
         '/test/cwd',
         'New feature request',
         'default',
+        { issue: 226, confirmAtEndMessage: 'Add this issue to tasks?' },
       );
     });
 
-    it('should skip createIssueAndSaveTask when not confirmed', async () => {
+    it('should skip confirmation and task save when issue creation fails', async () => {
       // Given
       mockInteractiveMode.mockResolvedValue({ action: 'create_issue', task: 'New feature request' });
-      mockConfirm.mockResolvedValue(false);
+      mockCreateIssueFromTask.mockReturnValue(undefined);
 
       // When
       await executeDefaultAction();
 
-      // Then: task should not be added when user declines
-      expect(mockCreateIssueAndSaveTask).not.toHaveBeenCalled();
+      // Then
+      expect(mockCreateIssueFromTask).toHaveBeenCalledWith('New feature request');
+      expect(mockSaveTaskFromInteractive).not.toHaveBeenCalled();
     });
 
     it('should not call selectAndExecuteTask when create_issue action is chosen', async () => {
       // Given
       mockInteractiveMode.mockResolvedValue({ action: 'create_issue', task: 'New feature request' });
-      mockConfirm.mockResolvedValue(true);
 
       // When
       await executeDefaultAction();

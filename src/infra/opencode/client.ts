@@ -41,6 +41,23 @@ const OPENCODE_RETRYABLE_ERROR_PATTERNS = [
   'failed to start server on port',
 ];
 
+function extractOpenCodeErrorMessage(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') {
+    return undefined;
+  }
+  const value = error as { message?: unknown; data?: { message?: unknown }; name?: unknown };
+  if (typeof value.message === 'string' && value.message.length > 0) {
+    return value.message;
+  }
+  if (typeof value.data?.message === 'string' && value.data.message.length > 0) {
+    return value.data.message;
+  }
+  if (typeof value.name === 'string' && value.name.length > 0) {
+    return value.name;
+  }
+  return undefined;
+}
+
 function getCommonPrefixLength(a: string, b: string): number {
   const max = Math.min(a.length, b.length);
   let i = 0;
@@ -149,6 +166,7 @@ export class OpenCodeClient {
       const timeoutMessage = `OpenCode stream timed out after ${Math.floor(OPENCODE_STREAM_IDLE_TIMEOUT_MS / 60000)} minutes of inactivity`;
       let abortCause: 'timeout' | 'external' | undefined;
       let serverClose: (() => void) | undefined;
+      let opencodeApiClient: Awaited<ReturnType<typeof createOpencode>>['client'] | undefined;
 
       const resetIdleTimeout = (): void => {
         if (idleTimeoutId !== undefined) {
@@ -196,6 +214,7 @@ export class OpenCodeClient {
           signal: streamAbortController.signal,
           config,
         });
+        opencodeApiClient = client;
         serverClose = server.close;
 
         const sessionResult = options.sessionId
@@ -206,16 +225,21 @@ export class OpenCodeClient {
         if (!sessionId) {
           throw new Error('Failed to create OpenCode session');
         }
-
-        const { stream } = await client.event.subscribe({ directory: options.cwd });
+        const { stream } = await client.event.subscribe(
+          { directory: options.cwd },
+          { signal: streamAbortController.signal },
+        );
         resetIdleTimeout();
 
-        await client.session.promptAsync({
-          sessionID: sessionId,
-          directory: options.cwd,
-          model: parsedModel,
-          parts: [{ type: 'text' as const, text: fullPrompt }],
-        });
+        await client.session.promptAsync(
+          {
+            sessionID: sessionId,
+            directory: options.cwd,
+            model: parsedModel,
+            parts: [{ type: 'text' as const, text: fullPrompt }],
+          },
+          { signal: streamAbortController.signal },
+        );
 
         emitInit(options.onStream, options.model, sessionId);
 
@@ -232,7 +256,6 @@ export class OpenCodeClient {
           resetIdleTimeout();
 
           const sseEvent = event as OpenCodeStreamEvent;
-
           if (sseEvent.type === 'message.part.updated') {
             const props = sseEvent.properties as { part: OpenCodePart; delta?: string };
             const part = props.part;
@@ -275,6 +298,40 @@ export class OpenCodeClient {
                 directory: options.cwd,
                 reply,
               });
+            }
+            continue;
+          }
+
+          if (sseEvent.type === 'message.updated') {
+            const messageProps = sseEvent.properties as {
+              info?: {
+                sessionID?: string;
+                role?: 'assistant' | 'user';
+                time?: { completed?: number };
+                error?: unknown;
+              };
+            };
+            const info = messageProps.info;
+            const isCurrentAssistantMessage = info?.sessionID === sessionId && info.role === 'assistant';
+            const isCompleted = typeof info?.time?.completed === 'number';
+            if (isCurrentAssistantMessage && isCompleted) {
+              const streamError = extractOpenCodeErrorMessage(info.error);
+              if (streamError) {
+                success = false;
+                failureMessage = streamError;
+              }
+              break;
+            }
+            continue;
+          }
+
+          if (sseEvent.type === 'session.status') {
+            const statusProps = sseEvent.properties as {
+              sessionID?: string;
+              status?: { type?: string };
+            };
+            if (statusProps.sessionID === sessionId && statusProps.status?.type === 'idle') {
+              break;
             }
             continue;
           }
@@ -365,8 +422,27 @@ export class OpenCodeClient {
         if (options.abortSignal) {
           options.abortSignal.removeEventListener('abort', onExternalAbort);
         }
+        if (opencodeApiClient) {
+          const disposeAbortController = new AbortController();
+          const disposeTimeoutId = setTimeout(() => {
+            disposeAbortController.abort();
+          }, 3000);
+          try {
+            await opencodeApiClient.instance.dispose(
+              { directory: options.cwd },
+              { signal: disposeAbortController.signal },
+            );
+          } catch {
+            // Ignore dispose errors during cleanup.
+          } finally {
+            clearTimeout(disposeTimeoutId);
+          }
+        }
         if (serverClose) {
           serverClose();
+        }
+        if (!streamAbortController.signal.aborted) {
+          streamAbortController.abort();
         }
       }
     }

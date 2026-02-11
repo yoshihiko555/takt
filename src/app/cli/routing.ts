@@ -6,11 +6,10 @@
  */
 
 import { info, error, withProgress } from '../../shared/ui/index.js';
-import { confirm } from '../../shared/prompt/index.js';
 import { getErrorMessage } from '../../shared/utils/index.js';
 import { getLabel } from '../../shared/i18n/index.js';
 import { fetchIssue, formatIssueAsTask, checkGhCli, parseIssueNumbers, type GitHubIssue } from '../../infra/github/index.js';
-import { selectAndExecuteTask, determinePiece, saveTaskFromInteractive, createIssueAndSaveTask, type SelectAndExecuteOptions } from '../../features/tasks/index.js';
+import { selectAndExecuteTask, determinePiece, saveTaskFromInteractive, createIssueFromTask, type SelectAndExecuteOptions } from '../../features/tasks/index.js';
 import { executePipeline } from '../../features/pipeline/index.js';
 import {
   interactiveMode,
@@ -205,8 +204,14 @@ export async function executeDefaultAction(task?: string): Promise<void> {
       break;
 
     case 'create_issue':
-      if (await confirm('Add this issue to tasks?', true)) {
-        await createIssueAndSaveTask(resolvedCwd, result.task, pieceId);
+      {
+        const issueNumber = createIssueFromTask(result.task);
+        if (issueNumber !== undefined) {
+          await saveTaskFromInteractive(resolvedCwd, result.task, pieceId, {
+            issue: issueNumber,
+            confirmAtEndMessage: 'Add this issue to tasks?',
+          });
+        }
       }
       break;
 

@@ -35,6 +35,13 @@ import { executeDefaultAction } from './routing.js';
 
   // Normal parsing for all other cases (including '#' prefixed inputs)
   await program.parseAsync();
+
+  // Some providers/SDKs may leave active handles even after command completion.
+  // Keep only watch mode as a long-running command; all others should exit explicitly.
+  const rootArg = process.argv.slice(2)[0];
+  if (rootArg !== 'watch') {
+    process.exit(0);
+  }
 })().catch((err) => {
   console.error(err);
   process.exit(1);

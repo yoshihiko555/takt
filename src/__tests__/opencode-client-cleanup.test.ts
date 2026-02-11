@@ -1,0 +1,248 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+class MockEventStream implements AsyncGenerator<unknown, void, unknown> {
+  private index = 0;
+  private readonly events: unknown[];
+  readonly returnSpy = vi.fn(async () => ({ done: true as const, value: undefined }));
+
+  constructor(events: unknown[]) {
+    this.events = events;
+  }
+
+  [Symbol.asyncIterator](): AsyncGenerator<unknown, void, unknown> {
+    return this;
+  }
+
+  async next(): Promise<IteratorResult<unknown, void>> {
+    if (this.index >= this.events.length) {
+      return { done: true, value: undefined };
+    }
+    const value = this.events[this.index];
+    this.index += 1;
+    return { done: false, value };
+  }
+
+  async return(): Promise<IteratorResult<unknown, void>> {
+    return this.returnSpy();
+  }
+
+  async throw(e?: unknown): Promise<IteratorResult<unknown, void>> {
+    throw e;
+  }
+}
+
+class HangingAfterEventsStream implements AsyncGenerator<unknown, void, unknown> {
+  private index = 0;
+  private closed = false;
+  private pendingResolve: ((value: IteratorResult<unknown, void>) => void) | undefined;
+  readonly returnSpy = vi.fn(async () => {
+    this.closed = true;
+    this.pendingResolve?.({ done: true, value: undefined });
+    return { done: true as const, value: undefined };
+  });
+
+  constructor(private readonly events: unknown[]) {}
+
+  [Symbol.asyncIterator](): AsyncGenerator<unknown, void, unknown> {
+    return this;
+  }
+
+  async next(): Promise<IteratorResult<unknown, void>> {
+    if (this.closed) {
+      return { done: true, value: undefined };
+    }
+    if (this.index < this.events.length) {
+      const value = this.events[this.index];
+      this.index += 1;
+      return { done: false, value };
+    }
+    return new Promise<IteratorResult<unknown, void>>((resolve) => {
+      this.pendingResolve = resolve;
+    });
+  }
+
+  async return(): Promise<IteratorResult<unknown, void>> {
+    return this.returnSpy();
+  }
+
+  async throw(e?: unknown): Promise<IteratorResult<unknown, void>> {
+    throw e;
+  }
+}
+
+const { createOpencodeMock } = vi.hoisted(() => ({
+  createOpencodeMock: vi.fn(),
+}));
+
+vi.mock('node:net', () => ({
+  createServer: () => {
+    const handlers = new Map<string, (...args: unknown[]) => void>();
+    return {
+      unref: vi.fn(),
+      on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+        handlers.set(event, handler);
+      }),
+      listen: vi.fn((_port: number, _host: string, cb: () => void) => {
+        cb();
+      }),
+      address: vi.fn(() => ({ port: 62000 })),
+      close: vi.fn((cb?: (err?: Error) => void) => cb?.()),
+    };
+  },
+}));
+
+vi.mock('@opencode-ai/sdk/v2', () => ({
+  createOpencode: createOpencodeMock,
+}));
+
+describe('OpenCodeClient stream cleanup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should close SSE stream when session.idle is received', async () => {
+    const { OpenCodeClient } = await import('../infra/opencode/client.js');
+    const stream = new MockEventStream([
+      {
+        type: 'session.idle',
+        properties: { sessionID: 'session-1' },
+      },
+    ]);
+
+    const promptAsync = vi.fn().mockResolvedValue(undefined);
+    const sessionCreate = vi.fn().mockResolvedValue({ data: { id: 'session-1' } });
+    const disposeInstance = vi.fn().mockResolvedValue({ data: {} });
+
+    const subscribe = vi.fn().mockResolvedValue({ stream });
+    createOpencodeMock.mockResolvedValue({
+      client: {
+        instance: { dispose: disposeInstance },
+        session: { create: sessionCreate, promptAsync },
+        event: { subscribe },
+        permission: { reply: vi.fn() },
+      },
+      server: { close: vi.fn() },
+    });
+
+    const client = new OpenCodeClient();
+    const result = await client.call('interactive', 'hello', {
+      cwd: '/tmp',
+      model: 'opencode/big-pickle',
+    });
+
+    expect(result.status).toBe('done');
+    expect(stream.returnSpy).toHaveBeenCalled();
+    expect(disposeInstance).toHaveBeenCalledWith(
+      { directory: '/tmp' },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(subscribe).toHaveBeenCalledWith(
+      { directory: '/tmp' },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
+  it('should close SSE stream when session.error is received', async () => {
+    const { OpenCodeClient } = await import('../infra/opencode/client.js');
+    const stream = new MockEventStream([
+      {
+        type: 'session.error',
+        properties: {
+          sessionID: 'session-2',
+          error: { name: 'Error', data: { message: 'boom' } },
+        },
+      },
+    ]);
+
+    const promptAsync = vi.fn().mockResolvedValue(undefined);
+    const sessionCreate = vi.fn().mockResolvedValue({ data: { id: 'session-2' } });
+    const disposeInstance = vi.fn().mockResolvedValue({ data: {} });
+
+    const subscribe = vi.fn().mockResolvedValue({ stream });
+    createOpencodeMock.mockResolvedValue({
+      client: {
+        instance: { dispose: disposeInstance },
+        session: { create: sessionCreate, promptAsync },
+        event: { subscribe },
+        permission: { reply: vi.fn() },
+      },
+      server: { close: vi.fn() },
+    });
+
+    const client = new OpenCodeClient();
+    const result = await client.call('interactive', 'hello', {
+      cwd: '/tmp',
+      model: 'opencode/big-pickle',
+    });
+
+    expect(result.status).toBe('error');
+    expect(result.content).toContain('boom');
+    expect(stream.returnSpy).toHaveBeenCalled();
+    expect(disposeInstance).toHaveBeenCalledWith(
+      { directory: '/tmp' },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(subscribe).toHaveBeenCalledWith(
+      { directory: '/tmp' },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
+  it('should complete without hanging when assistant message is completed', async () => {
+    const { OpenCodeClient } = await import('../infra/opencode/client.js');
+    const stream = new HangingAfterEventsStream([
+      {
+        type: 'message.part.updated',
+        properties: {
+          part: { id: 'p-1', type: 'text', text: 'done' },
+          delta: 'done',
+        },
+      },
+      {
+        type: 'message.updated',
+        properties: {
+          info: {
+            sessionID: 'session-3',
+            role: 'assistant',
+            time: { created: Date.now(), completed: Date.now() + 1 },
+          },
+        },
+      },
+    ]);
+
+    const promptAsync = vi.fn().mockResolvedValue(undefined);
+    const sessionCreate = vi.fn().mockResolvedValue({ data: { id: 'session-3' } });
+    const disposeInstance = vi.fn().mockResolvedValue({ data: {} });
+
+    const subscribe = vi.fn().mockResolvedValue({ stream });
+    createOpencodeMock.mockResolvedValue({
+      client: {
+        instance: { dispose: disposeInstance },
+        session: { create: sessionCreate, promptAsync },
+        event: { subscribe },
+        permission: { reply: vi.fn() },
+      },
+      server: { close: vi.fn() },
+    });
+
+    const client = new OpenCodeClient();
+    const result = await Promise.race([
+      client.call('interactive', 'hello', {
+        cwd: '/tmp',
+        model: 'opencode/big-pickle',
+      }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timed out')), 500)),
+    ]);
+
+    expect(result.status).toBe('done');
+    expect(result.content).toBe('done');
+    expect(disposeInstance).toHaveBeenCalledWith(
+      { directory: '/tmp' },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(subscribe).toHaveBeenCalledWith(
+      { directory: '/tmp' },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+});
