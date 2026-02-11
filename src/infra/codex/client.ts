@@ -6,7 +6,7 @@
 
 import { Codex } from '@openai/codex-sdk';
 import type { AgentResponse } from '../../core/models/index.js';
-import { createLogger, getErrorMessage } from '../../shared/utils/index.js';
+import { createLogger, getErrorMessage, createStreamDiagnostics, type StreamDiagnostics } from '../../shared/utils/index.js';
 import { mapToCodexSandboxMode, type CodexCallOptions } from './types.js';
 import {
   type CodexEvent,
@@ -113,12 +113,14 @@ export class CodexClient {
       const streamAbortController = new AbortController();
       const timeoutMessage = `Codex stream timed out after ${Math.floor(CODEX_STREAM_IDLE_TIMEOUT_MS / 60000)} minutes of inactivity`;
       let abortCause: 'timeout' | 'external' | undefined;
+      let diagRef: StreamDiagnostics | undefined;
 
       const resetIdleTimeout = (): void => {
         if (idleTimeoutId !== undefined) {
           clearTimeout(idleTimeoutId);
         }
         idleTimeoutId = setTimeout(() => {
+          diagRef?.onIdleTimeoutFired();
           abortCause = 'timeout';
           streamAbortController.abort();
         }, CODEX_STREAM_IDLE_TIMEOUT_MS);
@@ -145,10 +147,14 @@ export class CodexClient {
           attempt,
         });
 
+        const diag = createStreamDiagnostics('codex-sdk', { agentType, model: options.model, attempt });
+        diagRef = diag;
+
         const { events } = await thread.runStreamed(fullPrompt, {
           signal: streamAbortController.signal,
         });
         resetIdleTimeout();
+        diag.onConnected();
 
         let content = '';
         const contentOffsets = new Map<string, number>();
@@ -158,6 +164,8 @@ export class CodexClient {
 
         for await (const event of events as AsyncGenerator<CodexEvent>) {
           resetIdleTimeout();
+          diag.onFirstEvent(event.type);
+          diag.onEvent(event.type);
 
           if (event.type === 'thread.started') {
             currentThreadId = typeof event.thread_id === 'string' ? event.thread_id : currentThreadId;
@@ -170,12 +178,14 @@ export class CodexClient {
             if (event.error && typeof event.error === 'object' && 'message' in event.error) {
               failureMessage = String((event.error as { message?: unknown }).message ?? '');
             }
+            diag.onStreamError('turn.failed', failureMessage);
             break;
           }
 
           if (event.type === 'error') {
             success = false;
             failureMessage = typeof event.message === 'string' ? event.message : 'Unknown error';
+            diag.onStreamError('error', failureMessage);
             break;
           }
 
@@ -237,6 +247,8 @@ export class CodexClient {
           }
         }
 
+        diag.onCompleted(success ? 'normal' : 'error', success ? undefined : failureMessage);
+
         if (!success) {
           const message = failureMessage || 'Codex execution failed';
           const retriable = this.isRetriableError(message, streamAbortController.signal.aborted, abortCause);
@@ -274,6 +286,11 @@ export class CodexClient {
             ? timeoutMessage
             : CODEX_STREAM_ABORTED_MESSAGE
           : message;
+
+        diagRef?.onCompleted(
+          abortCause === 'timeout' ? 'timeout' : streamAbortController.signal.aborted ? 'abort' : 'error',
+          errorMessage,
+        );
 
         const retriable = this.isRetriableError(errorMessage, streamAbortController.signal.aborted, abortCause);
         if (retriable && attempt < CODEX_RETRY_MAX_ATTEMPTS) {

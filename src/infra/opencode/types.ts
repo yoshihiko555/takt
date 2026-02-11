@@ -127,8 +127,11 @@ const BUILTIN_TOOL_MAP: Record<string, string> = {
 };
 
 export function mapToOpenCodeTools(allowedTools?: string[]): Record<string, boolean> | undefined {
-  if (!allowedTools || allowedTools.length === 0) {
+  if (!allowedTools) {
     return undefined;
+  }
+  if (allowedTools.length === 0) {
+    return {};
   }
 
   const mapped = new Set<string>();
@@ -142,7 +145,7 @@ export function mapToOpenCodeTools(allowedTools?: string[]): Record<string, bool
   }
 
   if (mapped.size === 0) {
-    return undefined;
+    return {};
   }
 
   const tools: Record<string, boolean> = {};

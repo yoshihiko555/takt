@@ -8,7 +8,7 @@
 import { createOpencode } from '@opencode-ai/sdk/v2';
 import { createServer } from 'node:net';
 import type { AgentResponse } from '../../core/models/index.js';
-import { createLogger, getErrorMessage } from '../../shared/utils/index.js';
+import { createLogger, getErrorMessage, createStreamDiagnostics, type StreamDiagnostics } from '../../shared/utils/index.js';
 import { parseProviderModel } from '../../shared/utils/providerModel.js';
 import {
   buildOpenCodePermissionConfig,
@@ -251,6 +251,7 @@ export class OpenCodeClient {
       const streamAbortController = new AbortController();
       const timeoutMessage = `OpenCode stream timed out after ${Math.floor(OPENCODE_STREAM_IDLE_TIMEOUT_MS / 60000)} minutes of inactivity`;
       let abortCause: 'timeout' | 'external' | undefined;
+      let diagRef: StreamDiagnostics | undefined;
       let serverClose: (() => void) | undefined;
       let opencodeApiClient: Awaited<ReturnType<typeof createOpencode>>['client'] | undefined;
 
@@ -259,6 +260,7 @@ export class OpenCodeClient {
           clearTimeout(idleTimeoutId);
         }
         idleTimeoutId = setTimeout(() => {
+          diagRef?.onIdleTimeoutFired();
           abortCause = 'timeout';
           streamAbortController.abort();
         }, OPENCODE_STREAM_IDLE_TIMEOUT_MS);
@@ -284,6 +286,9 @@ export class OpenCodeClient {
           hasSystemPrompt: !!options.systemPrompt,
           attempt,
         });
+
+        const diag = createStreamDiagnostics('opencode-sdk', { agentType, model: options.model, attempt });
+        diagRef = diag;
 
         const parsedModel = parseProviderModel(options.model, 'OpenCode model');
         const fullModel = `${parsedModel.providerID}/${parsedModel.modelID}`;
@@ -321,6 +326,7 @@ export class OpenCodeClient {
           { signal: streamAbortController.signal },
         );
         resetIdleTimeout();
+        diag.onConnected();
 
         const tools = mapToOpenCodeTools(options.allowedTools);
         await client.session.promptAsync(
@@ -349,6 +355,8 @@ export class OpenCodeClient {
           resetIdleTimeout();
 
           const sseEvent = event as OpenCodeStreamEvent;
+          diag.onFirstEvent(sseEvent.type);
+          diag.onEvent(sseEvent.type);
           if (sseEvent.type === 'message.part.updated') {
             const props = sseEvent.properties as { part: OpenCodePart; delta?: string };
             const part = props.part;
@@ -458,6 +466,7 @@ export class OpenCodeClient {
               if (streamError) {
                 success = false;
                 failureMessage = streamError;
+                diag.onStreamError('message.updated', streamError);
                 break;
               }
             }
@@ -479,6 +488,7 @@ export class OpenCodeClient {
               if (streamError) {
                 success = false;
                 failureMessage = streamError;
+                diag.onStreamError('message.completed', streamError);
                 break;
               }
             }
@@ -498,6 +508,7 @@ export class OpenCodeClient {
             if (isCurrentAssistantMessage) {
               success = false;
               failureMessage = extractOpenCodeErrorMessage(info?.error) ?? 'OpenCode message failed';
+              diag.onStreamError('message.failed', failureMessage);
               break;
             }
             continue;
@@ -530,6 +541,7 @@ export class OpenCodeClient {
             if (!errorProps.sessionID || errorProps.sessionID === sessionId) {
               success = false;
               failureMessage = errorProps.error?.data?.message ?? 'OpenCode session error';
+              diag.onStreamError('session.error', failureMessage);
               break;
             }
             continue;
@@ -537,6 +549,7 @@ export class OpenCodeClient {
         }
 
         content = [...textContentParts.values()].join('\n');
+        diag.onCompleted(success ? 'normal' : 'error', success ? undefined : failureMessage);
 
         if (!success) {
           const message = failureMessage || 'OpenCode execution failed';
@@ -574,6 +587,11 @@ export class OpenCodeClient {
             ? timeoutMessage
             : OPENCODE_STREAM_ABORTED_MESSAGE
           : message;
+
+        diagRef?.onCompleted(
+          abortCause === 'timeout' ? 'timeout' : streamAbortController.signal.aborted ? 'abort' : 'error',
+          errorMessage,
+        );
 
         const retriable = this.isRetriableError(errorMessage, streamAbortController.signal.aborted, abortCause);
         if (retriable && attempt < OPENCODE_RETRY_MAX_ATTEMPTS) {
