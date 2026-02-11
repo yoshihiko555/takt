@@ -54,7 +54,10 @@ describe('mapToOpenCodeTools', () => {
 
   it('should return undefined when tools are not provided', () => {
     expect(mapToOpenCodeTools(undefined)).toBeUndefined();
-    expect(mapToOpenCodeTools([])).toBeUndefined();
+  });
+
+  it('should return empty tool map when explicit empty tools are provided', () => {
+    expect(mapToOpenCodeTools([])).toEqual({});
   });
 });
 
