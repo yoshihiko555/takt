@@ -83,6 +83,60 @@ function stripPromptEcho(
   return chunk;
 }
 
+type OpenCodeQuestionOption = {
+  label: string;
+  description: string;
+};
+
+type OpenCodeQuestionInfo = {
+  question: string;
+  header: string;
+  options: OpenCodeQuestionOption[];
+  multiple?: boolean;
+};
+
+type OpenCodeQuestionAskedProperties = {
+  id: string;
+  sessionID: string;
+  questions: OpenCodeQuestionInfo[];
+};
+
+function toQuestionInput(props: OpenCodeQuestionAskedProperties): {
+  questions: Array<{
+    question: string;
+    header?: string;
+    options?: Array<{
+      label: string;
+      description?: string;
+    }>;
+    multiSelect?: boolean;
+  }>;
+} {
+  return {
+    questions: props.questions.map((item) => ({
+      question: item.question,
+      header: item.header,
+      options: item.options.map((opt) => ({
+        label: opt.label,
+        description: opt.description,
+      })),
+      multiSelect: item.multiple,
+    })),
+  };
+}
+
+function toQuestionAnswers(
+  props: OpenCodeQuestionAskedProperties,
+  answers: Record<string, string>,
+): Array<Array<string>> {
+  return props.questions.map((item) => {
+    const key = item.header || item.question;
+    const value = answers[key];
+    if (!value) return [];
+    return [value];
+  });
+}
+
 async function getFreePort(): Promise<number> {
   return new Promise<number>((resolve, reject) => {
     const server = createServer();
@@ -205,6 +259,7 @@ export class OpenCodeClient {
         const config = {
           model: fullModel,
           small_model: fullModel,
+          permission: { question: 'deny' as const },
           ...(options.opencodeApiKey
             ? { provider: { opencode: { options: { apiKey: options.opencodeApiKey } } } }
             : {}),
@@ -298,6 +353,39 @@ export class OpenCodeClient {
                 directory: options.cwd,
                 reply,
               });
+            }
+            continue;
+          }
+
+          if (sseEvent.type === 'question.asked') {
+            const questionProps = sseEvent.properties as OpenCodeQuestionAskedProperties;
+            if (questionProps.sessionID === sessionId) {
+              if (!options.onAskUserQuestion) {
+                await client.question.reject({
+                  requestID: questionProps.id,
+                  directory: options.cwd,
+                });
+                success = false;
+                failureMessage = 'OpenCode asked a question, but no question handler is configured';
+                break;
+              }
+
+              try {
+                const answers = await options.onAskUserQuestion(toQuestionInput(questionProps));
+                await client.question.reply({
+                  requestID: questionProps.id,
+                  directory: options.cwd,
+                  answers: toQuestionAnswers(questionProps, answers),
+                });
+              } catch {
+                await client.question.reject({
+                  requestID: questionProps.id,
+                  directory: options.cwd,
+                });
+                success = false;
+                failureMessage = 'OpenCode question handling failed';
+                break;
+              }
             }
             continue;
           }

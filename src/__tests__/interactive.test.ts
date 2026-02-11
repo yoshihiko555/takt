@@ -387,6 +387,34 @@ describe('interactiveMode', () => {
     );
   });
 
+  it('should abort in-flight provider call on SIGINT during initial input', async () => {
+    mockGetProvider.mockReturnValue({
+      setup: () => ({
+        call: vi.fn((_prompt: string, options: { abortSignal?: AbortSignal }) => {
+          return new Promise((resolve) => {
+            options.abortSignal?.addEventListener('abort', () => {
+              resolve({
+                persona: 'interactive',
+                status: 'error',
+                content: 'aborted',
+                timestamp: new Date(),
+              });
+            }, { once: true });
+          });
+        }),
+      }),
+    } as unknown as ReturnType<typeof getProvider>);
+
+    const promise = interactiveMode('/project', 'trigger');
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    const listeners = process.rawListeners('SIGINT') as Array<() => void>;
+    listeners[listeners.length - 1]?.();
+
+    const result = await promise;
+    expect(result.action).toBe('cancel');
+  });
+
   it('should use saved sessionId from initializeSession when no sessionId parameter is given', async () => {
     // Given
     setupRawStdin(toRawInputs(['hello', '/cancel']));

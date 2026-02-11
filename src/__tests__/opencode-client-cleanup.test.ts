@@ -245,4 +245,115 @@ describe('OpenCodeClient stream cleanup', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });
+
+  it('should fail fast when question.asked is received without handler', async () => {
+    const { OpenCodeClient } = await import('../infra/opencode/client.js');
+    const stream = new MockEventStream([
+      {
+        type: 'question.asked',
+        properties: {
+          id: 'q-1',
+          sessionID: 'session-4',
+          questions: [
+            {
+              question: 'Select one',
+              header: 'Question',
+              options: [{ label: 'A', description: 'A desc' }],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const promptAsync = vi.fn().mockResolvedValue(undefined);
+    const sessionCreate = vi.fn().mockResolvedValue({ data: { id: 'session-4' } });
+    const disposeInstance = vi.fn().mockResolvedValue({ data: {} });
+    const questionReject = vi.fn().mockResolvedValue({ data: true });
+
+    const subscribe = vi.fn().mockResolvedValue({ stream });
+    createOpencodeMock.mockResolvedValue({
+      client: {
+        instance: { dispose: disposeInstance },
+        session: { create: sessionCreate, promptAsync },
+        event: { subscribe },
+        permission: { reply: vi.fn() },
+        question: { reject: questionReject, reply: vi.fn() },
+      },
+      server: { close: vi.fn() },
+    });
+
+    const client = new OpenCodeClient();
+    const result = await client.call('interactive', 'hello', {
+      cwd: '/tmp',
+      model: 'opencode/big-pickle',
+    });
+
+    expect(result.status).toBe('error');
+    expect(result.content).toContain('no question handler');
+    expect(questionReject).toHaveBeenCalledWith({
+      requestID: 'q-1',
+      directory: '/tmp',
+    });
+  });
+
+  it('should answer question.asked when handler is configured', async () => {
+    const { OpenCodeClient } = await import('../infra/opencode/client.js');
+    const stream = new MockEventStream([
+      {
+        type: 'question.asked',
+        properties: {
+          id: 'q-2',
+          sessionID: 'session-5',
+          questions: [
+            {
+              question: 'Select one',
+              header: 'Question',
+              options: [{ label: 'A', description: 'A desc' }],
+            },
+          ],
+        },
+      },
+      {
+        type: 'message.updated',
+        properties: {
+          info: {
+            sessionID: 'session-5',
+            role: 'assistant',
+            time: { created: Date.now(), completed: Date.now() + 1 },
+          },
+        },
+      },
+    ]);
+
+    const promptAsync = vi.fn().mockResolvedValue(undefined);
+    const sessionCreate = vi.fn().mockResolvedValue({ data: { id: 'session-5' } });
+    const disposeInstance = vi.fn().mockResolvedValue({ data: {} });
+    const questionReply = vi.fn().mockResolvedValue({ data: true });
+
+    const subscribe = vi.fn().mockResolvedValue({ stream });
+    createOpencodeMock.mockResolvedValue({
+      client: {
+        instance: { dispose: disposeInstance },
+        session: { create: sessionCreate, promptAsync },
+        event: { subscribe },
+        permission: { reply: vi.fn() },
+        question: { reject: vi.fn(), reply: questionReply },
+      },
+      server: { close: vi.fn() },
+    });
+
+    const client = new OpenCodeClient();
+    const result = await client.call('interactive', 'hello', {
+      cwd: '/tmp',
+      model: 'opencode/big-pickle',
+      onAskUserQuestion: async () => ({ Question: 'A' }),
+    });
+
+    expect(result.status).toBe('done');
+    expect(questionReply).toHaveBeenCalledWith({
+      requestID: 'q-2',
+      directory: '/tmp',
+      answers: [['A']],
+    });
+  });
 });

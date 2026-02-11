@@ -3,6 +3,7 @@
  */
 
 import type { StreamCallback } from '../claude/index.js';
+import type { AskUserQuestionHandler } from '../../core/piece/types.js';
 import type { PermissionMode } from '../../core/models/index.js';
 
 /** OpenCode permission reply values */
@@ -29,6 +30,7 @@ export interface OpenCodeCallOptions {
   permissionMode?: PermissionMode;
   /** Enable streaming mode with callback (best-effort) */
   onStream?: StreamCallback;
+  onAskUserQuestion?: AskUserQuestionHandler;
   /** OpenCode API key */
   opencodeApiKey?: string;
 }

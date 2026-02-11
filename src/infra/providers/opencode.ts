@@ -19,6 +19,7 @@ function toOpenCodeOptions(options: ProviderCallOptions): OpenCodeCallOptions {
     model: options.model,
     permissionMode: options.permissionMode,
     onStream: options.onStream,
+    onAskUserQuestion: options.onAskUserQuestion,
     opencodeApiKey: options.opencodeApiKey ?? resolveOpencodeApiKey(),
   };
 }

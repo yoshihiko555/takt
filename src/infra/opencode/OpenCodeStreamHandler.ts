@@ -87,6 +87,23 @@ export interface OpenCodePermissionAskedEvent {
   };
 }
 
+export interface OpenCodeQuestionAskedEvent {
+  type: 'question.asked';
+  properties: {
+    id: string;
+    sessionID: string;
+    questions: Array<{
+      question: string;
+      header: string;
+      options: Array<{
+        label: string;
+        description: string;
+      }>;
+      multiple?: boolean;
+    }>;
+  };
+}
+
 export type OpenCodeStreamEvent =
   | OpenCodeMessagePartUpdatedEvent
   | OpenCodeMessageUpdatedEvent
@@ -94,6 +111,7 @@ export type OpenCodeStreamEvent =
   | OpenCodeSessionIdleEvent
   | OpenCodeSessionErrorEvent
   | OpenCodePermissionAskedEvent
+  | OpenCodeQuestionAskedEvent
   | { type: string; properties: Record<string, unknown> };
 
 /** Tracking state for stream offsets during a single OpenCode session */
