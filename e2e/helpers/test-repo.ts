@@ -54,6 +54,66 @@ function getGitHubUser(): string {
   return user;
 }
 
+function canUseGitHubRepo(): boolean {
+  try {
+    const user = getGitHubUser();
+    const repoName = `${user}/takt-testing`;
+    execFileSync('gh', ['repo', 'view', repoName], {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isGitHubE2EAvailable(): boolean {
+  return canUseGitHubRepo();
+}
+
+function createOfflineTestRepo(options?: CreateTestRepoOptions): TestRepo {
+  const sandboxPath = mkdtempSync(join(tmpdir(), 'takt-e2e-repo-'));
+  const originPath = join(sandboxPath, 'origin.git');
+  const repoPath = join(sandboxPath, 'work');
+
+  execFileSync('git', ['init', '--bare', originPath], { stdio: 'pipe' });
+  execFileSync('git', ['clone', originPath, repoPath], { stdio: 'pipe' });
+  execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repoPath, stdio: 'pipe' });
+  execFileSync('git', ['config', 'user.name', 'Test'], { cwd: repoPath, stdio: 'pipe' });
+  writeFileSync(join(repoPath, 'README.md'), '# test\n');
+  execFileSync('git', ['add', '.'], { cwd: repoPath, stdio: 'pipe' });
+  execFileSync('git', ['commit', '-m', 'init'], { cwd: repoPath, stdio: 'pipe' });
+  execFileSync('git', ['push', '-u', 'origin', 'HEAD'], { cwd: repoPath, stdio: 'pipe' });
+
+  const testBranch = options?.skipBranch ? undefined : `e2e-test-${Date.now()}`;
+  if (testBranch) {
+    execFileSync('git', ['checkout', '-b', testBranch], {
+      cwd: repoPath,
+      stdio: 'pipe',
+    });
+  }
+
+  const currentBranch = testBranch
+    ?? execFileSync('git', ['branch', '--show-current'], {
+      cwd: repoPath,
+      encoding: 'utf-8',
+    }).trim();
+
+  return {
+    path: repoPath,
+    repoName: 'local/takt-testing',
+    branch: currentBranch,
+    cleanup: () => {
+      try {
+        rmSync(sandboxPath, { recursive: true, force: true });
+      } catch {
+        // Best-effort cleanup
+      }
+    },
+  };
+}
+
 /**
  * Clone the takt-testing repository and create a test branch.
  *
@@ -63,6 +123,10 @@ function getGitHubUser(): string {
  *   3. Delete local directory
  */
 export function createTestRepo(options?: CreateTestRepoOptions): TestRepo {
+  if (!canUseGitHubRepo()) {
+    return createOfflineTestRepo(options);
+  }
+
   const user = getGitHubUser();
   const repoName = `${user}/takt-testing`;
 

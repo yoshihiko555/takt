@@ -11,7 +11,6 @@ import { createLogger } from '../../shared/utils/index.js';
 import { loadTemplate } from '../../shared/prompts/index.js';
 
 export type { ClaudeCallOptions } from './types.js';
-export { detectRuleIndex, isRegexSafe } from './utils.js';
 
 const log = createLogger('client');
 
@@ -52,6 +51,7 @@ export class ClaudeClient {
       onAskUserQuestion: options.onAskUserQuestion,
       bypassPermissions: options.bypassPermissions,
       anthropicApiKey: options.anthropicApiKey,
+      outputSchema: options.outputSchema,
     };
   }
 
@@ -76,6 +76,7 @@ export class ClaudeClient {
       timestamp: new Date(),
       sessionId: result.sessionId,
       error: result.error,
+      structuredOutput: result.structuredOutput,
     };
   }
 
@@ -104,6 +105,7 @@ export class ClaudeClient {
       timestamp: new Date(),
       sessionId: result.sessionId,
       error: result.error,
+      structuredOutput: result.structuredOutput,
     };
   }
 
@@ -153,6 +155,7 @@ export class ClaudeClient {
       timestamp: new Date(),
       sessionId: result.sessionId,
       error: result.error,
+      structuredOutput: result.structuredOutput,
     };
   }
 

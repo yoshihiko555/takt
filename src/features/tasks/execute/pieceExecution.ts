@@ -6,7 +6,8 @@ import { readFileSync } from 'node:fs';
 import { PieceEngine, type IterationLimitRequest, type UserInputRequest } from '../../../core/piece/index.js';
 import type { PieceConfig } from '../../../core/models/index.js';
 import type { PieceExecutionResult, PieceExecutionOptions } from './types.js';
-import { detectRuleIndex, interruptAllQueries } from '../../../infra/claude/index.js';
+import { detectRuleIndex } from '../../../shared/utils/ruleIndex.js';
+import { interruptAllQueries } from '../../../infra/claude/query-manager.js';
 import { callAiJudge } from '../../../agents/ai-judge.js';
 
 export type { PieceExecutionResult, PieceExecutionOptions };
@@ -111,6 +112,16 @@ function assertTaskPrefixPair(
   if (hasTaskPrefix !== hasTaskColorIndex) {
     throw new Error('taskPrefix and taskColorIndex must be provided together');
   }
+}
+
+function toJudgmentMatchMethod(
+  matchedRuleMethod: string | undefined,
+): string | undefined {
+  if (!matchedRuleMethod) return undefined;
+  if (matchedRuleMethod === 'structured_output') return 'structured_output';
+  if (matchedRuleMethod === 'ai_judge' || matchedRuleMethod === 'ai_judge_fallback') return 'ai_judge';
+  if (matchedRuleMethod === 'phase3_tag' || matchedRuleMethod === 'phase1_tag') return 'tag_fallback';
+  return undefined;
 }
 
 function createOutputFns(prefixWriter: TaskPrefixWriter | undefined): OutputFns {
@@ -587,6 +598,7 @@ export async function executePiece(
     }
 
     // Write step_complete record to NDJSON log
+    const matchMethod = toJudgmentMatchMethod(response.matchedRuleMethod);
     const record: NdjsonStepComplete = {
       type: 'step_complete',
       step: step.name,
@@ -596,6 +608,7 @@ export async function executePiece(
       instruction,
       ...(response.matchedRuleIndex != null ? { matchedRuleIndex: response.matchedRuleIndex } : {}),
       ...(response.matchedRuleMethod ? { matchedRuleMethod: response.matchedRuleMethod } : {}),
+      ...(matchMethod ? { matchMethod } : {}),
       ...(response.error ? { error: response.error } : {}),
       timestamp: response.timestamp.toISOString(),
     };
