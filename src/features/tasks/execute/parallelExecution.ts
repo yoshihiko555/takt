@@ -123,7 +123,11 @@ export async function runWithWorkerPool(
           selfSigintInjected = true;
           process.emit('SIGINT');
           if (selfSigintTwice) {
-            process.emit('SIGINT');
+            // E2E deterministic path: force-exit shortly after graceful SIGINT.
+            // Avoids intermittent hangs caused by listener ordering/races.
+            setTimeout(() => {
+              process.exit(EXIT_SIGINT);
+            }, 25);
           }
         }
       }
