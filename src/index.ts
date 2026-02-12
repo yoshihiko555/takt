@@ -5,12 +5,30 @@
  */
 
 // Models
-export * from './core/models/index.js';
+export type {
+  Status,
+  PieceRule,
+  PieceMovement,
+  PieceConfig,
+  PieceState,
+  Language,
+  PartDefinition,
+  PartResult,
+} from './core/models/types.js';
 
-// Configuration (PermissionMode excluded to avoid name conflict with core/models PermissionMode)
-export * from './infra/config/paths.js';
-export * from './infra/config/loaders/index.js';
-export * from './infra/config/global/index.js';
+// Configuration
+export {
+  loadPiece,
+  loadPieceByIdentifier,
+  listPieces,
+  listPieceEntries,
+  loadAllPieces,
+  loadAllPiecesWithSources,
+  getPieceDescription,
+  getBuiltinPiece,
+  isPiecePath,
+} from './infra/config/loaders/index.js';
+export type { PieceSource, PieceWithSource, PieceDirEntry } from './infra/config/loaders/index.js';
 export {
   loadProjectConfig,
   saveProjectConfig,
@@ -19,73 +37,7 @@ export {
   setCurrentPiece,
   isVerboseMode,
   type ProjectLocalConfig,
-  writeFileAtomic,
-  getInputHistoryPath,
-  MAX_INPUT_HISTORY,
-  loadInputHistory,
-  saveInputHistory,
-  addToInputHistory,
-  type PersonaSessionData,
-  getPersonaSessionsPath,
-  loadPersonaSessions,
-  savePersonaSessions,
-  updatePersonaSession,
-  clearPersonaSessions,
-  getWorktreeSessionsDir,
-  encodeWorktreePath,
-  getWorktreeSessionPath,
-  loadWorktreeSessions,
-  updateWorktreeSession,
-  getClaudeProjectSessionsDir,
-  clearClaudeProjectSessions,
 } from './infra/config/project/index.js';
-
-// Claude integration
-export {
-  ClaudeClient,
-  ClaudeProcess,
-  QueryExecutor,
-  QueryRegistry,
-  executeClaudeCli,
-  executeClaudeQuery,
-  generateQueryId,
-  hasActiveProcess,
-  isQueryActive,
-  getActiveQueryCount,
-  registerQuery,
-  unregisterQuery,
-  interruptQuery,
-  interruptAllQueries,
-  interruptCurrentProcess,
-  sdkMessageToStreamEvent,
-  createCanUseToolCallback,
-  createAskUserQuestionHooks,
-  buildSdkOptions,
-} from './infra/claude/index.js';
-export type {
-  StreamEvent,
-  StreamCallback,
-  PermissionRequest,
-  PermissionHandler,
-  AskUserQuestionInput,
-  AskUserQuestionHandler,
-  ClaudeResult,
-  ClaudeResultWithQueryId,
-  ClaudeCallOptions,
-  ClaudeSpawnOptions,
-  InitEventData,
-  ToolUseEventData,
-  ToolResultEventData,
-  ToolOutputEventData,
-  TextEventData,
-  ThinkingEventData,
-  ResultEventData,
-  ErrorEventData,
-} from './infra/claude/index.js';
-
-// Codex integration
-export { CodexClient, mapToCodexSandboxMode } from './infra/codex/index.js';
-export type { CodexCallOptions, CodexSandboxMode } from './infra/codex/index.js';
 
 // Piece engine
 export {
@@ -100,10 +52,7 @@ export {
   addUserInput,
   getPreviousOutput,
   handleBlocked,
-  ParallelLogger,
-  InstructionBuilder,
   isOutputContractItem,
-  ReportInstructionBuilder,
   executeAgent,
   generateReport,
   executePart,
@@ -123,14 +72,3 @@ export type {
   JudgeStatusResult,
   BlockedHandlerResult,
 } from './core/piece/index.js';
-
-// Utilities
-export * from './shared/utils/index.js';
-export * from './shared/ui/index.js';
-export * from './shared/prompt/index.js';
-export * from './shared/constants.js';
-export * from './shared/context.js';
-export * from './shared/exitCodes.js';
-
-// Resources (embedded prompts and templates)
-export * from './infra/resources/index.js';
