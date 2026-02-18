@@ -387,6 +387,63 @@ describe('interactiveMode', () => {
     );
   });
 
+  it('should include run session context in system prompt when provided', async () => {
+    // Given
+    setupRawStdin(toRawInputs(['hello', '/cancel']));
+    const mockSetup = vi.fn();
+    const mockCall = vi.fn(async () => ({
+      persona: 'interactive',
+      status: 'done' as const,
+      content: 'AI response',
+      timestamp: new Date(),
+    }));
+    mockSetup.mockReturnValue({ call: mockCall });
+    mockGetProvider.mockReturnValue({ setup: mockSetup, _call: mockCall } as unknown as ReturnType<typeof getProvider>);
+
+    const runSessionContext = {
+      task: 'Previous run task',
+      piece: 'default',
+      status: 'completed',
+      movementLogs: [{ step: 'implement', persona: 'coder', status: 'completed', content: 'Implementation done' }],
+      reports: [],
+    };
+
+    // When
+    await interactiveMode('/project', undefined, undefined, undefined, runSessionContext);
+
+    // Then: system prompt should contain run session content
+    expect(mockSetup).toHaveBeenCalled();
+    const setupArgs = mockSetup.mock.calls[0]![0] as { systemPrompt: string };
+    expect(setupArgs.systemPrompt).toContain('Previous run task');
+    expect(setupArgs.systemPrompt).toContain('default');
+    expect(setupArgs.systemPrompt).toContain('completed');
+    expect(setupArgs.systemPrompt).toContain('implement');
+    expect(setupArgs.systemPrompt).toContain('Implementation done');
+    expect(setupArgs.systemPrompt).toContain('Previous Run Reference');
+  });
+
+  it('should not include run session section in system prompt when not provided', async () => {
+    // Given
+    setupRawStdin(toRawInputs(['hello', '/cancel']));
+    const mockSetup = vi.fn();
+    const mockCall = vi.fn(async () => ({
+      persona: 'interactive',
+      status: 'done' as const,
+      content: 'AI response',
+      timestamp: new Date(),
+    }));
+    mockSetup.mockReturnValue({ call: mockCall });
+    mockGetProvider.mockReturnValue({ setup: mockSetup, _call: mockCall } as unknown as ReturnType<typeof getProvider>);
+
+    // When
+    await interactiveMode('/project');
+
+    // Then: system prompt should NOT contain run session section
+    expect(mockSetup).toHaveBeenCalled();
+    const setupArgs = mockSetup.mock.calls[0]![0] as { systemPrompt: string };
+    expect(setupArgs.systemPrompt).not.toContain('Previous Run Reference');
+  });
+
   it('should abort in-flight provider call on SIGINT during initial input', async () => {
     mockGetProvider.mockReturnValue({
       setup: () => ({

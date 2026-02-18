@@ -19,6 +19,7 @@ import {
   selectSummaryAction,
   type PieceContext,
 } from '../../interactive/interactive.js';
+import { type RunSessionContext, formatRunSessionForPrompt } from '../../interactive/runSessionReader.js';
 import { loadTemplate } from '../../../shared/prompts/index.js';
 import { getLabelObject } from '../../../shared/i18n/index.js';
 import { loadGlobalConfig } from '../../../infra/config/index.js';
@@ -68,6 +69,7 @@ export async function runInstructMode(
   branchContext: string,
   branchName: string,
   pieceContext?: PieceContext,
+  runSessionContext?: RunSessionContext,
 ): Promise<InstructModeResult> {
   const globalConfig = loadGlobalConfig();
   const lang = resolveLanguage(globalConfig.language);
@@ -83,10 +85,17 @@ export async function runInstructMode(
 
   const ui = getLabelObject<InstructUIText>('instruct.ui', ctx.lang);
 
+  const hasRunSession = !!runSessionContext;
+  const runPromptVars = hasRunSession
+    ? formatRunSessionForPrompt(runSessionContext)
+    : { runTask: '', runPiece: '', runStatus: '', runMovementLogs: '', runReports: '' };
+
   const systemPrompt = loadTemplate('score_interactive_system_prompt', ctx.lang, {
     hasPiecePreview: false,
     pieceStructure: '',
     movementDetails: '',
+    hasRunSession,
+    ...runPromptVars,
   });
 
   const branchIntro = ctx.lang === 'ja'

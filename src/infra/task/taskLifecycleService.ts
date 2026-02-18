@@ -4,6 +4,8 @@ import type { TaskInfo, TaskResult } from './types.js';
 import { toTaskInfo } from './mapper.js';
 import { TaskStore } from './store.js';
 import { firstLine, nowIso, sanitizeTaskName } from './naming.js';
+import { isStaleRunningTask } from './process.js';
+import type { TaskStatus } from './schema.js';
 
 export class TaskLifecycleService {
   constructor(
@@ -151,12 +153,25 @@ export class TaskLifecycleService {
   }
 
   requeueFailedTask(taskRef: string, startMovement?: string, retryNote?: string): string {
+    return this.requeueTask(taskRef, ['failed'], startMovement, retryNote);
+  }
+
+  requeueTask(
+    taskRef: string,
+    allowedStatuses: readonly TaskStatus[],
+    startMovement?: string,
+    retryNote?: string,
+  ): string {
     const taskName = this.normalizeTaskRef(taskRef);
 
     this.store.update((current) => {
-      const index = current.tasks.findIndex((task) => task.name === taskName && task.status === 'failed');
+      const index = current.tasks.findIndex((task) => (
+        task.name === taskName
+        && allowedStatuses.includes(task.status)
+      ));
       if (index === -1) {
-        throw new Error(`Failed task not found: ${taskRef}`);
+        const expectedStatuses = allowedStatuses.join(', ');
+        throw new Error(`Task not found for requeue: ${taskRef} (expected status: ${expectedStatuses})`);
       }
 
       const target = current.tasks[index]!;
@@ -197,26 +212,7 @@ export class TaskLifecycleService {
   }
 
   private isRunningTaskStale(task: TaskRecord): boolean {
-    if (task.owner_pid == null) {
-      return true;
-    }
-    return !this.isProcessAlive(task.owner_pid);
-  }
-
-  private isProcessAlive(pid: number): boolean {
-    try {
-      process.kill(pid, 0);
-      return true;
-    } catch (err) {
-      const nodeErr = err as NodeJS.ErrnoException;
-      if (nodeErr.code === 'ESRCH') {
-        return false;
-      }
-      if (nodeErr.code === 'EPERM') {
-        return true;
-      }
-      throw err;
-    }
+    return isStaleRunningTask(task.owner_pid ?? undefined);
   }
 
   private generateTaskName(content: string, existingNames: string[]): string {

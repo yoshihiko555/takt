@@ -76,10 +76,12 @@ import { getProvider } from '../infra/providers/index.js';
 import { runInstructMode } from '../features/tasks/list/instructMode.js';
 import { selectOption } from '../shared/prompt/index.js';
 import { info } from '../shared/ui/index.js';
+import { loadTemplate } from '../shared/prompts/index.js';
 
 const mockGetProvider = vi.mocked(getProvider);
 const mockSelectOption = vi.mocked(selectOption);
 const mockInfo = vi.mocked(info);
+const mockLoadTemplate = vi.mocked(loadTemplate);
 
 let savedIsTTY: boolean | undefined;
 let savedIsRaw: boolean | undefined;
@@ -278,5 +280,35 @@ describe('runInstructMode', () => {
     expect(values).toContain('save_task');
     expect(values).toContain('continue');
     expect(values).not.toContain('create_issue');
+  });
+
+  it('should inject selected run context into system prompt variables', async () => {
+    setupRawStdin(toRawInputs(['/cancel']));
+    setupMockProvider([]);
+
+    const runSessionContext = {
+      task: 'Previous run task',
+      piece: 'default',
+      status: 'completed',
+      movementLogs: [
+        { step: 'implement', persona: 'coder', status: 'completed', content: 'done' },
+      ],
+      reports: [
+        { filename: '00-plan.md', content: '# Plan' },
+      ],
+    };
+
+    await runInstructMode('/project', 'branch context', 'feature-branch', undefined, runSessionContext);
+
+    expect(mockLoadTemplate).toHaveBeenCalledWith(
+      'score_interactive_system_prompt',
+      'en',
+      expect.objectContaining({
+        hasRunSession: true,
+        runTask: 'Previous run task',
+        runPiece: 'default',
+        runStatus: 'completed',
+      }),
+    );
   });
 });

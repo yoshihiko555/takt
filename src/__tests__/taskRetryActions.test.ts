@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('../shared/prompt/index.js', () => ({
   selectOption: vi.fn(),
-  promptInput: vi.fn(),
+  confirm: vi.fn(),
 }));
 
 vi.mock('../shared/ui/index.js', () => ({
@@ -29,21 +29,44 @@ vi.mock('../shared/utils/index.js', async (importOriginal) => ({
 vi.mock('../infra/config/index.js', () => ({
   loadGlobalConfig: vi.fn(),
   loadPieceByIdentifier: vi.fn(),
+  getPieceDescription: vi.fn(() => ({
+    name: 'default',
+    description: 'desc',
+    pieceStructure: '',
+    movementPreviews: [],
+  })),
 }));
 
-import { selectOption, promptInput } from '../shared/prompt/index.js';
+vi.mock('../features/tasks/list/instructMode.js', () => ({
+  runInstructMode: vi.fn(),
+}));
+
+vi.mock('../features/interactive/index.js', () => ({
+  resolveLanguage: vi.fn(() => 'en'),
+  listRecentRuns: vi.fn(() => []),
+  selectRun: vi.fn(() => null),
+  loadRunSessionContext: vi.fn(),
+}));
+
+vi.mock('../shared/i18n/index.js', () => ({
+  getLabel: vi.fn(() => "Reference a previous run's results?"),
+}));
+
+import { selectOption, confirm } from '../shared/prompt/index.js';
 import { success, error as logError } from '../shared/ui/index.js';
 import { loadGlobalConfig, loadPieceByIdentifier } from '../infra/config/index.js';
 import { retryFailedTask } from '../features/tasks/list/taskRetryActions.js';
 import type { TaskListItem } from '../infra/task/types.js';
 import type { PieceConfig } from '../core/models/index.js';
+import { runInstructMode } from '../features/tasks/list/instructMode.js';
 
 const mockSelectOption = vi.mocked(selectOption);
-const mockPromptInput = vi.mocked(promptInput);
+const mockConfirm = vi.mocked(confirm);
 const mockSuccess = vi.mocked(success);
 const mockLogError = vi.mocked(logError);
 const mockLoadGlobalConfig = vi.mocked(loadGlobalConfig);
 const mockLoadPieceByIdentifier = vi.mocked(loadPieceByIdentifier);
+const mockRunInstructMode = vi.mocked(runInstructMode);
 
 let tmpDir: string;
 
@@ -107,7 +130,8 @@ describe('retryFailedTask', () => {
     mockLoadGlobalConfig.mockReturnValue({ defaultPiece: 'default' });
     mockLoadPieceByIdentifier.mockReturnValue(defaultPieceConfig);
     mockSelectOption.mockResolvedValue('implement');
-    mockPromptInput.mockResolvedValue('');
+    mockConfirm.mockResolvedValue(false);
+    mockRunInstructMode.mockResolvedValue({ action: 'execute', task: '追加指示A' });
 
     const result = await retryFailedTask(task, tmpDir);
 
@@ -117,6 +141,7 @@ describe('retryFailedTask', () => {
     const tasksYaml = fs.readFileSync(path.join(tmpDir, '.takt', 'tasks.yaml'), 'utf-8');
     expect(tasksYaml).toContain('status: pending');
     expect(tasksYaml).toContain('start_movement: implement');
+    expect(tasksYaml).toContain('retry_note: 追加指示A');
   });
 
   it('should not add start_movement when initial movement is selected', async () => {
@@ -125,13 +150,34 @@ describe('retryFailedTask', () => {
     mockLoadGlobalConfig.mockReturnValue({ defaultPiece: 'default' });
     mockLoadPieceByIdentifier.mockReturnValue(defaultPieceConfig);
     mockSelectOption.mockResolvedValue('plan');
-    mockPromptInput.mockResolvedValue('');
+    mockConfirm.mockResolvedValue(false);
+    mockRunInstructMode.mockResolvedValue({ action: 'execute', task: '追加指示A' });
 
     const result = await retryFailedTask(task, tmpDir);
 
     expect(result).toBe(true);
     const tasksYaml = fs.readFileSync(path.join(tmpDir, '.takt', 'tasks.yaml'), 'utf-8');
     expect(tasksYaml).not.toContain('start_movement');
+    expect(tasksYaml).toContain('retry_note: 追加指示A');
+  });
+
+  it('should append generated instruction to existing retry note', async () => {
+    const task = writeFailedTask(tmpDir, 'my-task');
+    task.data = { task: 'Do something', piece: 'default', retry_note: '既存ノート' };
+
+    mockLoadGlobalConfig.mockReturnValue({ defaultPiece: 'default' });
+    mockLoadPieceByIdentifier.mockReturnValue(defaultPieceConfig);
+    mockSelectOption.mockResolvedValue('plan');
+    mockConfirm.mockResolvedValue(false);
+    mockRunInstructMode.mockResolvedValue({ action: 'execute', task: '追加指示B' });
+
+    const result = await retryFailedTask(task, tmpDir);
+
+    expect(result).toBe(true);
+    const tasksYaml = fs.readFileSync(path.join(tmpDir, '.takt', 'tasks.yaml'), 'utf-8');
+    expect(tasksYaml).toContain('retry_note: |');
+    expect(tasksYaml).toContain('既存ノート');
+    expect(tasksYaml).toContain('追加指示B');
   });
 
   it('should return false and show error when piece not found', async () => {
