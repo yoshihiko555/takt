@@ -104,7 +104,7 @@ reset
   .command('categories')
   .description('Reset piece categories to builtin defaults')
   .action(async () => {
-    await resetCategoriesToDefault();
+    await resetCategoriesToDefault(resolvedCwd);
   });
 
 program

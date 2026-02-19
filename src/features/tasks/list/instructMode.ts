@@ -23,7 +23,7 @@ import {
 import { type RunSessionContext, formatRunSessionForPrompt } from '../../interactive/runSessionReader.js';
 import { loadTemplate } from '../../../shared/prompts/index.js';
 import { getLabelObject } from '../../../shared/i18n/index.js';
-import { loadConfig } from '../../../infra/config/index.js';
+import { resolveConfigValues } from '../../../infra/config/index.js';
 
 export type InstructModeAction = 'execute' | 'save_task' | 'cancel';
 
@@ -109,7 +109,7 @@ export async function runInstructMode(
   pieceContext?: PieceContext,
   runSessionContext?: RunSessionContext,
 ): Promise<InstructModeResult> {
-  const { global: globalConfig } = loadConfig(cwd);
+  const globalConfig = resolveConfigValues(cwd, ['language', 'provider']);
   const lang = resolveLanguage(globalConfig.language);
 
   if (!globalConfig.provider) {

@@ -5,13 +5,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TaskInfo } from '../infra/task/index.js';
 
-const { mockResolveTaskExecution, mockExecutePiece, mockLoadPieceByIdentifier, mockLoadGlobalConfig, mockLoadProjectConfig, mockBuildTaskResult, mockPersistTaskResult, mockPersistTaskError, mockPostExecutionFlow } =
+const { mockResolveTaskExecution, mockExecutePiece, mockLoadPieceByIdentifier, mockResolveConfigValues, mockBuildTaskResult, mockPersistTaskResult, mockPersistTaskError, mockPostExecutionFlow } =
   vi.hoisted(() => ({
     mockResolveTaskExecution: vi.fn(),
     mockExecutePiece: vi.fn(),
     mockLoadPieceByIdentifier: vi.fn(),
-    mockLoadGlobalConfig: vi.fn(),
-    mockLoadProjectConfig: vi.fn(),
+    mockResolveConfigValues: vi.fn(),
     mockBuildTaskResult: vi.fn(),
     mockPersistTaskResult: vi.fn(),
     mockPersistTaskError: vi.fn(),
@@ -39,10 +38,7 @@ vi.mock('../features/tasks/execute/postExecution.js', () => ({
 vi.mock('../infra/config/index.js', () => ({
   loadPieceByIdentifier: (...args: unknown[]) => mockLoadPieceByIdentifier(...args),
   isPiecePath: () => false,
-  loadConfig: () => ({
-    global: mockLoadGlobalConfig(),
-    project: mockLoadProjectConfig(),
-  }),
+  resolveConfigValues: (...args: unknown[]) => mockResolveConfigValues(...args),
 }));
 
 vi.mock('../shared/ui/index.js', () => ({
@@ -87,21 +83,19 @@ describe('executeAndCompleteTask', () => {
       name: 'default',
       movements: [],
     });
-    mockLoadGlobalConfig.mockReturnValue({
+    mockResolveConfigValues.mockReturnValue({
       language: 'en',
       provider: 'claude',
+      model: undefined,
       personaProviders: {},
       providerProfiles: {},
       providerOptions: {
         claude: { sandbox: { allowUnsandboxedCommands: true } },
       },
-    });
-    mockLoadProjectConfig.mockReturnValue({
-      provider: 'claude',
-      providerProfiles: {},
-      providerOptions: {
-        opencode: { networkAccess: true },
-      },
+      notificationSound: true,
+      notificationSoundEvents: {},
+      concurrency: 1,
+      taskPollIntervalMs: 500,
     });
     mockBuildTaskResult.mockReturnValue({ success: true });
     mockResolveTaskExecution.mockResolvedValue({
@@ -140,16 +134,12 @@ describe('executeAndCompleteTask', () => {
     const pieceExecutionOptions = mockExecutePiece.mock.calls[0]?.[3] as {
       taskDisplayLabel?: string;
       taskPrefix?: string;
-      globalProviderOptions?: unknown;
-      projectProviderOptions?: unknown;
+      providerOptions?: unknown;
     };
     expect(pieceExecutionOptions?.taskDisplayLabel).toBe(taskDisplayLabel);
     expect(pieceExecutionOptions?.taskPrefix).toBe(taskDisplayLabel);
-    expect(pieceExecutionOptions?.globalProviderOptions).toEqual({
+    expect(pieceExecutionOptions?.providerOptions).toEqual({
       claude: { sandbox: { allowUnsandboxedCommands: true } },
-    });
-    expect(pieceExecutionOptions?.projectProviderOptions).toEqual({
-      opencode: { networkAccess: true },
     });
   });
 });

@@ -48,7 +48,7 @@ vi.mock('../infra/task/index.js', () => ({
 }));
 
 vi.mock('../infra/config/index.js', () => ({
-  loadGlobalConfig: vi.fn(() => ({ interactivePreviewMovements: 3, language: 'en' })),
+  resolveConfigValues: vi.fn(() => ({ interactivePreviewMovements: 3, language: 'en' })),
   getPieceDescription: vi.fn(() => ({
     name: 'default',
     description: 'desc',

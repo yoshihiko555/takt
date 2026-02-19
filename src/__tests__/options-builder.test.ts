@@ -16,8 +16,8 @@ function createMovement(overrides: Partial<PieceMovement> = {}): PieceMovement {
 function createBuilder(step: PieceMovement, engineOverrides: Partial<PieceEngineOptions> = {}): OptionsBuilder {
   const engineOptions: PieceEngineOptions = {
     projectCwd: '/project',
-    globalProvider: 'codex',
-    globalProviderProfiles: {
+    provider: 'codex',
+    providerProfiles: {
       codex: {
         defaultPermissionMode: 'full',
       },
@@ -60,10 +60,8 @@ describe('OptionsBuilder.buildBaseOptions', () => {
   it('uses default profile when provider_profiles are not provided', () => {
     const step = createMovement();
     const builder = createBuilder(step, {
-      globalProvider: undefined,
-      globalProviderProfiles: undefined,
-      projectProvider: undefined,
       provider: undefined,
+      providerProfiles: undefined,
     });
 
     const options = builder.buildBaseOptions(step);
@@ -78,11 +76,8 @@ describe('OptionsBuilder.buildBaseOptions', () => {
       },
     });
     const builder = createBuilder(step, {
-      globalProviderOptions: {
+      providerOptions: {
         codex: { networkAccess: true },
-        claude: { sandbox: { allowUnsandboxedCommands: false } },
-      },
-      projectProviderOptions: {
         claude: { sandbox: { allowUnsandboxedCommands: true } },
         opencode: { networkAccess: true },
       },
@@ -105,10 +100,7 @@ describe('OptionsBuilder.buildBaseOptions', () => {
   it('falls back to global/project provider options when movement has none', () => {
     const step = createMovement();
     const builder = createBuilder(step, {
-      globalProviderOptions: {
-        codex: { networkAccess: true },
-      },
-      projectProviderOptions: {
+      providerOptions: {
         codex: { networkAccess: false },
       },
     });

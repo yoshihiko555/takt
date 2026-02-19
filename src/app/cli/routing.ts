@@ -23,7 +23,7 @@ import {
   dispatchConversationAction,
   type InteractiveModeResult,
 } from '../../features/interactive/index.js';
-import { getPieceDescription, loadConfig } from '../../infra/config/index.js';
+import { getPieceDescription, resolveConfigValues } from '../../infra/config/index.js';
 import { DEFAULT_PIECE_NAME } from '../../shared/constants.js';
 import { program, resolvedCwd, pipelineMode } from './program.js';
 import { resolveAgentOverrides, parseCreateWorktreeOption, isDirectTask } from './helpers.js';
@@ -137,7 +137,7 @@ export async function executeDefaultAction(task?: string): Promise<void> {
   }
 
   // All paths below go through interactive mode
-  const { global: globalConfig } = loadConfig(resolvedCwd);
+  const globalConfig = resolveConfigValues(resolvedCwd, ['language', 'interactivePreviewMovements', 'provider']);
   const lang = resolveLanguage(globalConfig.language);
 
   const pieceId = await determinePiece(resolvedCwd, selectOptions.piece);

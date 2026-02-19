@@ -5,7 +5,7 @@
  * instructBranch (instruct mode from takt list).
  */
 
-import { loadConfig } from '../../../infra/config/index.js';
+import { resolveConfigValue } from '../../../infra/config/index.js';
 import { confirm } from '../../../shared/prompt/index.js';
 import { autoCommitAndPush } from '../../../infra/task/index.js';
 import { info, error, success } from '../../../shared/ui/index.js';
@@ -23,9 +23,9 @@ export async function resolveAutoPr(optionAutoPr: boolean | undefined, cwd: stri
     return optionAutoPr;
   }
 
-  const { global: globalConfig } = loadConfig(cwd);
-  if (typeof globalConfig.autoPr === 'boolean') {
-    return globalConfig.autoPr;
+  const autoPr = resolveConfigValue(cwd, 'autoPr');
+  if (typeof autoPr === 'boolean') {
+    return autoPr;
   }
 
   return confirm('Create pull request?', true);

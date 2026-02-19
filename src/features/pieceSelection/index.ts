@@ -521,7 +521,7 @@ export async function selectPiece(
   options?: SelectPieceOptions,
 ): Promise<string | null> {
   const fallbackToDefault = options?.fallbackToDefault !== false;
-  const categoryConfig = getPieceCategories();
+  const categoryConfig = getPieceCategories(cwd);
   const currentPiece = getCurrentPiece(cwd);
 
   if (categoryConfig) {
@@ -534,7 +534,7 @@ export async function selectPiece(
       info('No pieces found.');
       return null;
     }
-    const categorized = buildCategorizedPieces(allPieces, categoryConfig);
+    const categorized = buildCategorizedPieces(allPieces, categoryConfig, cwd);
     warnMissingPieces(categorized.missingPieces.filter((missing) => missing.source === 'user'));
     return selectPieceFromCategorizedPieces(categorized, currentPiece);
   }

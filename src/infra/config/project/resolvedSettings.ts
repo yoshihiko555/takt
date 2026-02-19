@@ -27,6 +27,6 @@ function loadEnvBooleanSetting(configKey: string): boolean | undefined {
 
 export function isVerboseMode(projectDir: string): boolean {
   const envValue = loadEnvBooleanSetting('verbose');
-  const { project, global } = loadConfig(projectDir);
-  return resolveValue(envValue, project.verbose, global.verbose, false);
+  const config = loadConfig(projectDir);
+  return resolveValue(envValue, undefined, config.verbose, false);
 }

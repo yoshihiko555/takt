@@ -6,4 +6,4 @@ export * from './paths.js';
 export * from './loaders/index.js';
 export * from './global/index.js';
 export * from './project/index.js';
-export * from './loadConfig.js';
+export * from './resolveConfigValue.js';

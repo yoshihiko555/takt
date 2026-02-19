@@ -179,21 +179,13 @@ export interface PieceEngineOptions {
   /** Language for instruction metadata. Defaults to 'en'. */
   language?: Language;
   provider?: ProviderType;
-  /** Project config provider (used for provider/profile resolution parity with AgentRunner) */
-  projectProvider?: ProviderType;
-  /** Global config provider (used for provider/profile resolution parity with AgentRunner) */
-  globalProvider?: ProviderType;
   model?: string;
-  /** Project-level provider options */
-  projectProviderOptions?: MovementProviderOptions;
-  /** Global-level provider options */
-  globalProviderOptions?: MovementProviderOptions;
+  /** Resolved provider options */
+  providerOptions?: MovementProviderOptions;
   /** Per-persona provider overrides (e.g., { coder: 'codex' }) */
   personaProviders?: Record<string, ProviderType>;
-  /** Project-level provider permission profiles */
-  projectProviderProfiles?: ProviderPermissionProfiles;
-  /** Global-level provider permission profiles */
-  globalProviderProfiles?: ProviderPermissionProfiles;
+  /** Resolved provider permission profiles */
+  providerProfiles?: ProviderPermissionProfiles;
   /** Enable interactive-only rules and user-input transitions */
   interactive?: boolean;
   /** Rule tag index detector (required for rules evaluation) */

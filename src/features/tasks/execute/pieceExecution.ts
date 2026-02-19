@@ -17,7 +17,7 @@ import {
   updatePersonaSession,
   loadWorktreeSessions,
   updateWorktreeSession,
-  loadConfig,
+  resolveConfigValues,
   saveSessionState,
   type SessionState,
 } from '../../../infra/config/index.js';
@@ -317,7 +317,10 @@ export async function executePiece(
 
   // Load saved agent sessions only on retry; normal runs start with empty sessions
   const isWorktree = cwd !== projectCwd;
-  const { global: globalConfig } = loadConfig(projectCwd);
+  const globalConfig = resolveConfigValues(
+    projectCwd,
+    ['notificationSound', 'notificationSoundEvents', 'provider', 'runtime', 'preventSleep', 'model', 'observability'],
+  );
   const shouldNotify = globalConfig.notificationSound !== false;
   const notificationSoundEvents = globalConfig.notificationSoundEvents;
   const shouldNotifyIterationLimit = shouldNotify && notificationSoundEvents?.iterationLimit !== false;
@@ -443,14 +446,10 @@ export async function executePiece(
       projectCwd,
       language: options.language,
       provider: options.provider,
-      projectProvider: options.projectProvider,
-      globalProvider: options.globalProvider,
       model: options.model,
-      projectProviderOptions: options.projectProviderOptions,
-      globalProviderOptions: options.globalProviderOptions,
+      providerOptions: options.providerOptions,
       personaProviders: options.personaProviders,
-      projectProviderProfiles: options.projectProviderProfiles,
-      globalProviderProfiles: options.globalProviderProfiles,
+      providerProfiles: options.providerProfiles,
       interactive: interactiveUserInput,
       detectRuleIndex,
       callAiJudge,

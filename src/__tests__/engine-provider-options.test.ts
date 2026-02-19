@@ -78,12 +78,9 @@ describe('PieceEngine provider_options resolution', () => {
     engine = new PieceEngine(config, tmpDir, 'test task', {
       projectCwd: tmpDir,
       provider: 'claude',
-      globalProviderOptions: {
+      providerOptions: {
         codex: { networkAccess: true },
         claude: { sandbox: { allowUnsandboxedCommands: false } },
-      },
-      projectProviderOptions: {
-        claude: { sandbox: { allowUnsandboxedCommands: true } },
         opencode: { networkAccess: true },
       },
     });
@@ -96,7 +93,7 @@ describe('PieceEngine provider_options resolution', () => {
       opencode: { networkAccess: true },
       claude: {
         sandbox: {
-          allowUnsandboxedCommands: true,
+          allowUnsandboxedCommands: false,
           excludedCommands: ['./gradlew'],
         },
       },
@@ -123,7 +120,7 @@ describe('PieceEngine provider_options resolution', () => {
     engine = new PieceEngine(config, tmpDir, 'test task', {
       projectCwd: tmpDir,
       provider: 'claude',
-      globalProviderOptions: {
+      providerOptions: {
         codex: { networkAccess: true },
       },
     });

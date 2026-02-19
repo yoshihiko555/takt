@@ -118,6 +118,10 @@ vi.mock('../infra/config/index.js', () => ({
   loadWorktreeSessions: vi.fn().mockReturnValue({}),
   updateWorktreeSession: vi.fn(),
   loadGlobalConfig: mockLoadGlobalConfig,
+  loadConfig: vi.fn().mockImplementation(() => ({
+    global: mockLoadGlobalConfig(),
+    project: {},
+  })),
   saveSessionState: vi.fn(),
   ensureDir: vi.fn(),
   writeFileAtomic: vi.fn(),

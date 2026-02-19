@@ -7,7 +7,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { getGlobalConfigDir } from '../paths.js';
-import { loadGlobalConfig } from './globalConfig.js';
+import { loadConfig } from '../loadConfig.js';
 
 const INITIAL_USER_CATEGORIES_CONTENT = 'piece_categories: {}\n';
 
@@ -16,8 +16,8 @@ function getDefaultPieceCategoriesPath(): string {
 }
 
 /** Get the path to the user's piece categories file. */
-export function getPieceCategoriesPath(): string {
-  const config = loadGlobalConfig();
+export function getPieceCategoriesPath(cwd: string): string {
+  const config = loadConfig(cwd);
   if (config.pieceCategoriesFile) {
     return config.pieceCategoriesFile;
   }
@@ -27,8 +27,8 @@ export function getPieceCategoriesPath(): string {
 /**
  * Reset user categories overlay file to initial content.
  */
-export function resetPieceCategories(): void {
-  const userPath = getPieceCategoriesPath();
+export function resetPieceCategories(cwd: string): void {
+  const userPath = getPieceCategoriesPath(cwd);
   const dir = dirname(userPath);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });

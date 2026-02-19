@@ -56,9 +56,7 @@ export class OptionsBuilder {
 
     const resolvedProviderForPermissions =
       this.engineOptions.provider
-      ?? this.engineOptions.projectProvider
       ?? resolved.provider
-      ?? this.engineOptions.globalProvider
       ?? 'claude';
 
     return {
@@ -73,12 +71,11 @@ export class OptionsBuilder {
         movementName: step.name,
         requiredPermissionMode: step.requiredPermissionMode,
         provider: resolvedProviderForPermissions,
-        projectProviderProfiles: this.engineOptions.projectProviderProfiles,
-        globalProviderProfiles: this.engineOptions.globalProviderProfiles ?? DEFAULT_PROVIDER_PERMISSION_PROFILES,
+        projectProviderProfiles: this.engineOptions.providerProfiles,
+        globalProviderProfiles: DEFAULT_PROVIDER_PERMISSION_PROFILES,
       }),
       providerOptions: mergeProviderOptions(
-        this.engineOptions.globalProviderOptions,
-        this.engineOptions.projectProviderOptions,
+        this.engineOptions.providerOptions,
         step.providerOptions,
       ),
       language: this.getLanguage(),

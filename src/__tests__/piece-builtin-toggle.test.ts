@@ -17,6 +17,17 @@ vi.mock('../infra/config/global/globalConfig.js', async (importOriginal) => {
   };
 });
 
+vi.mock('../infra/config/loadConfig.js', () => ({
+  loadConfig: () => ({
+    global: {
+      language: 'en',
+      enableBuiltinPieces: false,
+      disabledBuiltins: [],
+    },
+    project: {},
+  }),
+}));
+
 const { listPieces } = await import('../infra/config/loaders/pieceLoader.js');
 
 const SAMPLE_PIECE = `name: test-piece

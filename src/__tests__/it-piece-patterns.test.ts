@@ -57,6 +57,17 @@ vi.mock('../infra/config/project/projectConfig.js', () => ({
   loadProjectConfig: vi.fn().mockReturnValue({}),
 }));
 
+vi.mock('../infra/config/loadConfig.js', () => ({
+  loadConfig: vi.fn().mockReturnValue({
+    global: {
+      language: 'en',
+      enableBuiltinPieces: true,
+      disabledBuiltins: [],
+    },
+    project: {},
+  }),
+}));
+
 // --- Imports (after mocks) ---
 
 import { PieceEngine } from '../core/piece/index.js';
