@@ -17,7 +17,7 @@ import {
   updatePersonaSession,
   loadWorktreeSessions,
   updateWorktreeSession,
-  loadGlobalConfig,
+  loadConfig,
   saveSessionState,
   type SessionState,
 } from '../../../infra/config/index.js';
@@ -317,7 +317,7 @@ export async function executePiece(
 
   // Load saved agent sessions only on retry; normal runs start with empty sessions
   const isWorktree = cwd !== projectCwd;
-  const globalConfig = loadGlobalConfig();
+  const { global: globalConfig } = loadConfig(projectCwd);
   const shouldNotify = globalConfig.notificationSound !== false;
   const notificationSoundEvents = globalConfig.notificationSoundEvents;
   const shouldNotifyIterationLimit = shouldNotify && notificationSoundEvents?.iterationLimit !== false;
@@ -446,6 +446,8 @@ export async function executePiece(
       projectProvider: options.projectProvider,
       globalProvider: options.globalProvider,
       model: options.model,
+      projectProviderOptions: options.projectProviderOptions,
+      globalProviderOptions: options.globalProviderOptions,
       personaProviders: options.personaProviders,
       projectProviderProfiles: options.projectProviderProfiles,
       globalProviderProfiles: options.globalProviderProfiles,

@@ -2,7 +2,7 @@
  * Task execution logic
  */
 
-import { loadPieceByIdentifier, isPiecePath, loadGlobalConfig, loadProjectConfig } from '../../../infra/config/index.js';
+import { loadPieceByIdentifier, isPiecePath, loadConfig } from '../../../infra/config/index.js';
 import { TaskRunner, type TaskInfo } from '../../../infra/task/index.js';
 import {
   header,
@@ -86,8 +86,9 @@ async function executeTaskWithResult(options: ExecuteTaskOptions): Promise<Piece
     movements: pieceConfig.movements.map((s: { name: string }) => s.name),
   });
 
-  const globalConfig = loadGlobalConfig();
-  const projectConfig = loadProjectConfig(projectCwd);
+  const config = loadConfig(projectCwd);
+  const globalConfig = config.global;
+  const projectConfig = config.project;
   return await executePiece(pieceConfig, task, cwd, {
     projectCwd,
     language: globalConfig.language,
@@ -95,6 +96,8 @@ async function executeTaskWithResult(options: ExecuteTaskOptions): Promise<Piece
     projectProvider: projectConfig.provider,
     globalProvider: globalConfig.provider,
     model: agentOverrides?.model,
+    projectProviderOptions: projectConfig.providerOptions,
+    globalProviderOptions: globalConfig.providerOptions,
     personaProviders: globalConfig.personaProviders,
     projectProviderProfiles: projectConfig.providerProfiles,
     globalProviderProfiles: globalConfig.providerProfiles,
@@ -234,7 +237,7 @@ export async function runAllTasks(
   options?: TaskExecutionOptions,
 ): Promise<void> {
   const taskRunner = new TaskRunner(cwd);
-  const globalConfig = loadGlobalConfig();
+  const { global: globalConfig } = loadConfig(cwd);
   const shouldNotifyRunComplete = globalConfig.notificationSound !== false
     && globalConfig.notificationSoundEvents?.runComplete !== false;
   const shouldNotifyRunAbort = globalConfig.notificationSound !== false

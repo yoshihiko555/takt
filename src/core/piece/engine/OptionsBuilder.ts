@@ -1,11 +1,33 @@
 import { join } from 'node:path';
 import type { PieceMovement, PieceState, Language } from '../../models/types.js';
+import type { MovementProviderOptions } from '../../models/piece-types.js';
 import type { RunAgentOptions } from '../../../agents/runner.js';
 import type { PhaseRunnerContext } from '../phase-runner.js';
 import type { PieceEngineOptions, PhaseName } from '../types.js';
 import { buildSessionKey } from '../session-key.js';
 import { resolveMovementProviderModel } from '../provider-resolution.js';
 import { DEFAULT_PROVIDER_PERMISSION_PROFILES, resolveMovementPermissionMode } from '../permission-profile-resolution.js';
+
+function mergeProviderOptions(
+  ...layers: (MovementProviderOptions | undefined)[]
+): MovementProviderOptions | undefined {
+  const result: MovementProviderOptions = {};
+  for (const layer of layers) {
+    if (!layer) continue;
+    if (layer.codex) {
+      result.codex = { ...result.codex, ...layer.codex };
+    }
+    if (layer.opencode) {
+      result.opencode = { ...result.opencode, ...layer.opencode };
+    }
+    if (layer.claude?.sandbox) {
+      result.claude = {
+        sandbox: { ...result.claude?.sandbox, ...layer.claude.sandbox },
+      };
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
 
 export class OptionsBuilder {
   constructor(
@@ -54,7 +76,11 @@ export class OptionsBuilder {
         projectProviderProfiles: this.engineOptions.projectProviderProfiles,
         globalProviderProfiles: this.engineOptions.globalProviderProfiles ?? DEFAULT_PROVIDER_PERMISSION_PROFILES,
       }),
-      providerOptions: step.providerOptions,
+      providerOptions: mergeProviderOptions(
+        this.engineOptions.globalProviderOptions,
+        this.engineOptions.projectProviderOptions,
+        step.providerOptions,
+      ),
       language: this.getLanguage(),
       onStream: this.engineOptions.onStream,
       onPermissionRequest: this.engineOptions.onPermissionRequest,

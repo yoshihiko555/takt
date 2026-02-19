@@ -119,9 +119,11 @@ export {
   updateProjectConfig,
   getCurrentPiece,
   setCurrentPiece,
-  isVerboseMode,
   type ProjectLocalConfig,
 } from './project/projectConfig.js';
+export {
+  isVerboseMode,
+} from './project/resolvedSettings.js';
 
 // Re-export session storage functions
 export {

@@ -4,6 +4,7 @@
 
 import type { Language } from '../../../core/models/index.js';
 import type { ProviderPermissionProfiles } from '../../../core/models/provider-profiles.js';
+import type { MovementProviderOptions } from '../../../core/models/piece-types.js';
 import type { ProviderType } from '../../../infra/providers/index.js';
 import type { GitHubIssue } from '../../../infra/github/index.js';
 
@@ -37,6 +38,10 @@ export interface PieceExecutionOptions {
   /** Global config provider */
   globalProvider?: ProviderType;
   model?: string;
+  /** Project-level provider options */
+  projectProviderOptions?: MovementProviderOptions;
+  /** Global-level provider options */
+  globalProviderOptions?: MovementProviderOptions;
   /** Per-persona provider overrides (e.g., { coder: 'codex' }) */
   personaProviders?: Record<string, ProviderType>;
   /** Project-level provider permission profiles */

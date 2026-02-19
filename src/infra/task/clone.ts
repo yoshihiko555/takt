@@ -11,7 +11,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createLogger, slugify } from '../../shared/utils/index.js';
-import { loadGlobalConfig } from '../config/global/globalConfig.js';
+import { loadConfig } from '../config/index.js';
 import type { WorktreeOptions, WorktreeResult } from './types.js';
 
 export type { WorktreeOptions, WorktreeResult };
@@ -36,7 +36,7 @@ export class CloneManager {
    * Returns the configured worktree_dir (resolved to absolute), or ../
    */
   private static resolveCloneBaseDir(projectDir: string): string {
-    const globalConfig = loadGlobalConfig();
+    const { global: globalConfig } = loadConfig(projectDir);
     if (globalConfig.worktreeDir) {
       return path.isAbsolute(globalConfig.worktreeDir)
         ? globalConfig.worktreeDir

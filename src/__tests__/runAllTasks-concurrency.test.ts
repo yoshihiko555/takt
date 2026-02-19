@@ -5,25 +5,33 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TaskInfo } from '../infra/task/index.js';
 
-// Mock dependencies before importing the module under test
-vi.mock('../infra/config/index.js', () => ({
-  loadPieceByIdentifier: vi.fn(),
-  isPiecePath: vi.fn(() => false),
-  loadGlobalConfig: vi.fn(() => ({
+const { mockLoadConfigRaw } = vi.hoisted(() => ({
+  mockLoadConfigRaw: vi.fn(() => ({
     language: 'en',
     defaultPiece: 'default',
     logLevel: 'info',
     concurrency: 1,
     taskPollIntervalMs: 500,
   })),
-  loadProjectConfig: vi.fn(() => ({
-    piece: 'default',
-    permissionMode: 'default',
-  })),
 }));
 
-import { loadGlobalConfig } from '../infra/config/index.js';
-const mockLoadGlobalConfig = vi.mocked(loadGlobalConfig);
+// Mock dependencies before importing the module under test
+vi.mock('../infra/config/index.js', () => ({
+  loadPieceByIdentifier: vi.fn(),
+  isPiecePath: vi.fn(() => false),
+  loadConfig: (...args: unknown[]) => {
+    const raw = mockLoadConfigRaw(...args) as Record<string, unknown>;
+    if ('global' in raw && 'project' in raw) {
+      return raw;
+    }
+    return {
+      global: raw,
+      project: { piece: 'default' },
+    };
+  },
+}));
+
+const mockLoadConfig = mockLoadConfigRaw;
 
 const {
   mockClaimNextTasks,
@@ -167,7 +175,7 @@ beforeEach(() => {
 describe('runAllTasks concurrency', () => {
   describe('sequential execution (concurrency=1)', () => {
     beforeEach(() => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -210,7 +218,7 @@ describe('runAllTasks concurrency', () => {
 
   describe('parallel execution (concurrency>1)', () => {
     beforeEach(() => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -288,7 +296,7 @@ describe('runAllTasks concurrency', () => {
   describe('default concurrency', () => {
     it('should default to sequential when concurrency is not set', async () => {
       // Given: Config without explicit concurrency (defaults to 1)
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -324,7 +332,7 @@ describe('runAllTasks concurrency', () => {
     };
 
     beforeEach(() => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -371,7 +379,7 @@ describe('runAllTasks concurrency', () => {
 
     it('should fill slots immediately when a task completes (no batch waiting)', async () => {
       // Given: 3 tasks, concurrency=2, task1 finishes quickly, task2 takes longer
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -413,7 +421,7 @@ describe('runAllTasks concurrency', () => {
 
     it('should count partial failures correctly', async () => {
       // Given: 3 tasks, 1 fails, 2 succeed
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -495,7 +503,7 @@ describe('runAllTasks concurrency', () => {
 
     it('should pass abortSignal but not taskPrefix in sequential mode', async () => {
       // Given: Sequential mode
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -525,7 +533,7 @@ describe('runAllTasks concurrency', () => {
     });
 
     it('should only notify once at run completion when multiple tasks succeed', async () => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -550,7 +558,7 @@ describe('runAllTasks concurrency', () => {
     });
 
     it('should not notify run completion when runComplete is explicitly false', async () => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -572,7 +580,7 @@ describe('runAllTasks concurrency', () => {
     });
 
     it('should notify run completion by default when notification_sound_events is not set', async () => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -594,7 +602,7 @@ describe('runAllTasks concurrency', () => {
     });
 
     it('should notify run abort by default when notification_sound_events is not set', async () => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -617,7 +625,7 @@ describe('runAllTasks concurrency', () => {
     });
 
     it('should not notify run abort when runAbort is explicitly false', async () => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -640,7 +648,7 @@ describe('runAllTasks concurrency', () => {
     });
 
     it('should notify run abort and rethrow when worker pool throws', async () => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',
@@ -675,7 +683,7 @@ describe('runAllTasks concurrency', () => {
     };
 
     beforeEach(() => {
-      mockLoadGlobalConfig.mockReturnValue({
+      mockLoadConfig.mockReturnValue({
         language: 'en',
         defaultPiece: 'default',
         logLevel: 'info',

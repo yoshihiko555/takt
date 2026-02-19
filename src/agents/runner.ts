@@ -4,7 +4,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
-import { loadCustomAgents, loadAgentPrompt, loadGlobalConfig, loadProjectConfig } from '../infra/config/index.js';
+import { loadCustomAgents, loadAgentPrompt, loadConfig } from '../infra/config/index.js';
 import { getProvider, type ProviderType, type ProviderCallOptions } from '../infra/providers/index.js';
 import type { AgentResponse, CustomAgentConfig } from '../core/models/index.js';
 import { createLogger } from '../shared/utils/index.js';
@@ -29,12 +29,13 @@ export class AgentRunner {
     agentConfig?: CustomAgentConfig,
   ): ProviderType {
     if (options?.provider) return options.provider;
-    const projectConfig = loadProjectConfig(cwd);
+    const config = loadConfig(cwd);
+    const projectConfig = config.project;
     if (projectConfig.provider) return projectConfig.provider;
     if (options?.stepProvider) return options.stepProvider;
     if (agentConfig?.provider) return agentConfig.provider;
     try {
-      const globalConfig = loadGlobalConfig();
+      const globalConfig = config.global;
       if (globalConfig.provider) return globalConfig.provider;
     } catch (error) {
       log.debug('Global config not available for provider resolution', { error });
@@ -55,8 +56,9 @@ export class AgentRunner {
     if (options?.model) return options.model;
     if (options?.stepModel) return options.stepModel;
     if (agentConfig?.model) return agentConfig.model;
+    if (!options?.cwd) return undefined;
     try {
-      const globalConfig = loadGlobalConfig();
+      const globalConfig = loadConfig(options.cwd).global;
       if (globalConfig.model) {
         const globalProvider = globalConfig.provider ?? 'claude';
         if (globalProvider === resolvedProvider) return globalConfig.model;

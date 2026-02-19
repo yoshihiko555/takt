@@ -32,7 +32,7 @@ vi.mock('../infra/config/index.js', () => ({
   listPieces: vi.fn(() => ['default']),
   listPieceEntries: vi.fn(() => []),
   isPiecePath: vi.fn(() => false),
-  loadGlobalConfig: vi.fn(() => ({})),
+  loadConfig: vi.fn(() => ({ global: {}, project: {} })),
 }));
 
 vi.mock('../infra/task/index.js', () => ({

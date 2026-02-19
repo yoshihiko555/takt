@@ -8,7 +8,7 @@
 import * as fs from 'node:fs';
 import type { TaskListItem } from '../../../infra/task/index.js';
 import { TaskRunner } from '../../../infra/task/index.js';
-import { loadPieceByIdentifier, loadGlobalConfig, getPieceDescription } from '../../../infra/config/index.js';
+import { loadPieceByIdentifier, loadConfig, getPieceDescription } from '../../../infra/config/index.js';
 import { selectPiece } from '../../pieceSelection/index.js';
 import { selectOption } from '../../../shared/prompt/index.js';
 import { info, header, blankLine, status } from '../../../shared/ui/index.js';
@@ -133,7 +133,7 @@ export async function retryFailedTask(
     return false;
   }
 
-  const globalConfig = loadGlobalConfig();
+  const { global: globalConfig } = loadConfig(projectDir);
   const pieceConfig = loadPieceByIdentifier(selectedPiece, projectDir);
 
   if (!pieceConfig) {

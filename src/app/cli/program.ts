@@ -11,7 +11,7 @@ import { resolve } from 'node:path';
 import {
   initGlobalDirs,
   initProjectDirs,
-  loadGlobalConfig,
+  loadConfig,
   isVerboseMode,
 } from '../../infra/config/index.js';
 import { setQuietMode } from '../../shared/context.js';
@@ -69,7 +69,7 @@ export async function runPreActionHook(): Promise<void> {
   const verbose = isVerboseMode(resolvedCwd);
   initDebugLogger(verbose ? { enabled: true } : undefined, resolvedCwd);
 
-  const config = loadGlobalConfig();
+  const { global: config } = loadConfig(resolvedCwd);
 
   if (verbose) {
     setVerboseConsole(true);

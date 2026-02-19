@@ -35,6 +35,8 @@ import {
   updateWorktreeSession,
   getLanguage,
   loadProjectConfig,
+  isVerboseMode,
+  invalidateGlobalConfigCache,
 } from '../infra/config/index.js';
 
 describe('getBuiltinPiece', () => {
@@ -374,6 +376,154 @@ describe('setCurrentPiece', () => {
     const piece = getCurrentPiece(testDir);
 
     expect(piece).toBe('second');
+  });
+});
+
+describe('loadProjectConfig provider_options', () => {
+  let testDir: string;
+
+  beforeEach(() => {
+    testDir = join(tmpdir(), `takt-test-${randomUUID()}`);
+    mkdirSync(testDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should normalize provider_options into providerOptions (camelCase)', () => {
+    const projectConfigDir = getProjectConfigDir(testDir);
+    mkdirSync(projectConfigDir, { recursive: true });
+    writeFileSync(join(projectConfigDir, 'config.yaml'), [
+      'piece: default',
+      'provider_options:',
+      '  codex:',
+      '    network_access: true',
+      '  claude:',
+      '    sandbox:',
+      '      allow_unsandboxed_commands: true',
+    ].join('\n'));
+
+    const config = loadProjectConfig(testDir);
+
+    expect(config.providerOptions).toEqual({
+      codex: { networkAccess: true },
+      claude: { sandbox: { allowUnsandboxedCommands: true } },
+    });
+  });
+
+  it('should apply TAKT_PROVIDER_OPTIONS_* env overrides for project config', () => {
+    const original = process.env.TAKT_PROVIDER_OPTIONS_CODEX_NETWORK_ACCESS;
+    process.env.TAKT_PROVIDER_OPTIONS_CODEX_NETWORK_ACCESS = 'false';
+
+    const config = loadProjectConfig(testDir);
+    expect(config.providerOptions).toEqual({
+      codex: { networkAccess: false },
+    });
+
+    if (original === undefined) {
+      delete process.env.TAKT_PROVIDER_OPTIONS_CODEX_NETWORK_ACCESS;
+    } else {
+      process.env.TAKT_PROVIDER_OPTIONS_CODEX_NETWORK_ACCESS = original;
+    }
+  });
+});
+
+describe('isVerboseMode', () => {
+  let testDir: string;
+  let originalTaktConfigDir: string | undefined;
+  let originalTaktVerbose: string | undefined;
+
+  beforeEach(() => {
+    testDir = join(tmpdir(), `takt-test-${randomUUID()}`);
+    mkdirSync(testDir, { recursive: true });
+    originalTaktConfigDir = process.env.TAKT_CONFIG_DIR;
+    originalTaktVerbose = process.env.TAKT_VERBOSE;
+    process.env.TAKT_CONFIG_DIR = join(testDir, 'global-takt');
+    delete process.env.TAKT_VERBOSE;
+    invalidateGlobalConfigCache();
+  });
+
+  afterEach(() => {
+    if (originalTaktConfigDir === undefined) {
+      delete process.env.TAKT_CONFIG_DIR;
+    } else {
+      process.env.TAKT_CONFIG_DIR = originalTaktConfigDir;
+    }
+    if (originalTaktVerbose === undefined) {
+      delete process.env.TAKT_VERBOSE;
+    } else {
+      process.env.TAKT_VERBOSE = originalTaktVerbose;
+    }
+
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should return project verbose when project config has verbose: true', () => {
+    const projectConfigDir = getProjectConfigDir(testDir);
+    mkdirSync(projectConfigDir, { recursive: true });
+    writeFileSync(join(projectConfigDir, 'config.yaml'), 'piece: default\nverbose: true\n');
+
+    const globalConfigDir = process.env.TAKT_CONFIG_DIR!;
+    mkdirSync(globalConfigDir, { recursive: true });
+    writeFileSync(join(globalConfigDir, 'config.yaml'), 'verbose: false\n');
+
+    expect(isVerboseMode(testDir)).toBe(true);
+  });
+
+  it('should return project verbose when project config has verbose: false', () => {
+    const projectConfigDir = getProjectConfigDir(testDir);
+    mkdirSync(projectConfigDir, { recursive: true });
+    writeFileSync(join(projectConfigDir, 'config.yaml'), 'piece: default\nverbose: false\n');
+
+    const globalConfigDir = process.env.TAKT_CONFIG_DIR!;
+    mkdirSync(globalConfigDir, { recursive: true });
+    writeFileSync(join(globalConfigDir, 'config.yaml'), 'verbose: true\n');
+
+    expect(isVerboseMode(testDir)).toBe(false);
+  });
+
+  it('should fallback to global verbose when project verbose is not set', () => {
+    const projectConfigDir = getProjectConfigDir(testDir);
+    mkdirSync(projectConfigDir, { recursive: true });
+    writeFileSync(join(projectConfigDir, 'config.yaml'), 'piece: default\n');
+
+    const globalConfigDir = process.env.TAKT_CONFIG_DIR!;
+    mkdirSync(globalConfigDir, { recursive: true });
+    writeFileSync(join(globalConfigDir, 'config.yaml'), 'verbose: true\n');
+
+    expect(isVerboseMode(testDir)).toBe(true);
+  });
+
+  it('should return false when neither project nor global verbose is set', () => {
+    expect(isVerboseMode(testDir)).toBe(false);
+  });
+
+  it('should prioritize TAKT_VERBOSE over project and global config', () => {
+    const projectConfigDir = getProjectConfigDir(testDir);
+    mkdirSync(projectConfigDir, { recursive: true });
+    writeFileSync(join(projectConfigDir, 'config.yaml'), 'piece: default\nverbose: false\n');
+
+    const globalConfigDir = process.env.TAKT_CONFIG_DIR!;
+    mkdirSync(globalConfigDir, { recursive: true });
+    writeFileSync(join(globalConfigDir, 'config.yaml'), 'verbose: false\n');
+
+    process.env.TAKT_VERBOSE = 'true';
+    expect(isVerboseMode(testDir)).toBe(true);
+  });
+
+  it('should throw on TAKT_VERBOSE=0', () => {
+    process.env.TAKT_VERBOSE = '0';
+    expect(() => isVerboseMode(testDir)).toThrow('TAKT_VERBOSE must be one of: true, false');
+  });
+
+  it('should throw on invalid TAKT_VERBOSE value', () => {
+    process.env.TAKT_VERBOSE = 'yes';
+    expect(() => isVerboseMode(testDir)).toThrow('TAKT_VERBOSE must be one of: true, false');
   });
 });
 

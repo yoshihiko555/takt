@@ -1,13 +1,13 @@
 /**
  * CLI subcommand definitions
  *
- * Registers all named subcommands (run, watch, add, list, switch, clear, eject, config, prompt, catalog).
+ * Registers all named subcommands (run, watch, add, list, switch, clear, eject, prompt, catalog).
  */
 
 import { clearPersonaSessions, getCurrentPiece } from '../../infra/config/index.js';
 import { success } from '../../shared/ui/index.js';
 import { runAllTasks, addTask, watchTasks, listTasks } from '../../features/tasks/index.js';
-import { switchPiece, switchConfig, ejectBuiltin, ejectFacet, parseFacetType, VALID_FACET_TYPES, resetCategoriesToDefault, deploySkill } from '../../features/config/index.js';
+import { switchPiece, ejectBuiltin, ejectFacet, parseFacetType, VALID_FACET_TYPES, resetCategoriesToDefault, deploySkill } from '../../features/config/index.js';
 import { previewPrompts } from '../../features/prompt/index.js';
 import { showCatalog } from '../../features/catalog/index.js';
 import { program, resolvedCwd } from './program.js';
@@ -94,14 +94,6 @@ program
     } else {
       await ejectBuiltin(typeOrName, ejectOptions);
     }
-  });
-
-program
-  .command('config')
-  .description('Configure settings (permission mode)')
-  .argument('[key]', 'Configuration key')
-  .action(async (key?: string) => {
-    await switchConfig(resolvedCwd, key);
   });
 
 const reset = program

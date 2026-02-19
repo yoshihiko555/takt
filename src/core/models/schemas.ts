@@ -405,7 +405,6 @@ export const PieceCategoryConfigSchema = z.record(z.string(), PieceCategoryConfi
 /** Global config schema */
 export const GlobalConfigSchema = z.object({
   language: LanguageSchema.optional().default(DEFAULT_LANGUAGE),
-  default_piece: z.string().optional().default('default'),
   log_level: z.enum(['debug', 'info', 'warn', 'error']).optional().default('info'),
   provider: z.enum(['claude', 'codex', 'opencode', 'mock']).optional().default('claude'),
   model: z.string().optional(),
@@ -458,6 +457,8 @@ export const GlobalConfigSchema = z.object({
   }).optional(),
   /** Number of movement previews to inject into interactive mode (0 to disable, max 10) */
   interactive_preview_movements: z.number().int().min(0).max(10).optional().default(3),
+  /** Verbose output mode */
+  verbose: z.boolean().optional(),
   /** Number of tasks to run concurrently in takt run (default: 1 = sequential, max: 10) */
   concurrency: z.number().int().min(1).max(10).optional().default(1),
   /** Polling interval in ms for picking up new tasks during takt run (default: 500, range: 100-5000) */

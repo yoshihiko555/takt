@@ -2,8 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   getProviderMock,
-  loadProjectConfigMock,
-  loadGlobalConfigMock,
+  loadConfigMock,
   loadCustomAgentsMock,
   loadAgentPromptMock,
   loadTemplateMock,
@@ -15,8 +14,7 @@ const {
 
   return {
     getProviderMock: vi.fn(() => ({ setup: providerSetup })),
-    loadProjectConfigMock: vi.fn(),
-    loadGlobalConfigMock: vi.fn(),
+    loadConfigMock: vi.fn(),
     loadCustomAgentsMock: vi.fn(),
     loadAgentPromptMock: vi.fn(),
     loadTemplateMock: vi.fn(),
@@ -30,8 +28,7 @@ vi.mock('../infra/providers/index.js', () => ({
 }));
 
 vi.mock('../infra/config/index.js', () => ({
-  loadProjectConfig: loadProjectConfigMock,
-  loadGlobalConfig: loadGlobalConfigMock,
+  loadConfig: loadConfigMock,
   loadCustomAgents: loadCustomAgentsMock,
   loadAgentPrompt: loadAgentPromptMock,
 }));
@@ -47,8 +44,7 @@ describe('option resolution order', () => {
     vi.clearAllMocks();
 
     providerCallMock.mockResolvedValue({ content: 'ok' });
-    loadProjectConfigMock.mockReturnValue({});
-    loadGlobalConfigMock.mockReturnValue({});
+    loadConfigMock.mockReturnValue({ global: {}, project: {} });
     loadCustomAgentsMock.mockReturnValue(new Map());
     loadAgentPromptMock.mockReturnValue('prompt');
     loadTemplateMock.mockReturnValue('template');
@@ -56,8 +52,10 @@ describe('option resolution order', () => {
 
   it('should resolve provider in order: CLI > Local > Piece(step) > Global', async () => {
     // Given
-    loadProjectConfigMock.mockReturnValue({ provider: 'opencode' });
-    loadGlobalConfigMock.mockReturnValue({ provider: 'mock' });
+    loadConfigMock.mockReturnValue({
+      project: { provider: 'opencode' },
+      global: { provider: 'mock' },
+    });
 
     // When: CLI provider が指定される
     await runAgent(undefined, 'task', {
@@ -79,7 +77,10 @@ describe('option resolution order', () => {
     expect(getProviderMock).toHaveBeenLastCalledWith('opencode');
 
     // When: Local なし（Piece が有効）
-    loadProjectConfigMock.mockReturnValue({});
+    loadConfigMock.mockReturnValue({
+      project: {},
+      global: { provider: 'mock' },
+    });
     await runAgent(undefined, 'task', {
       cwd: '/repo',
       stepProvider: 'claude',
@@ -97,8 +98,10 @@ describe('option resolution order', () => {
 
   it('should resolve model in order: CLI > Piece(step) > Global(matching provider)', async () => {
     // Given
-    loadProjectConfigMock.mockReturnValue({ provider: 'claude' });
-    loadGlobalConfigMock.mockReturnValue({ provider: 'claude', model: 'global-model' });
+    loadConfigMock.mockReturnValue({
+      project: { provider: 'claude' },
+      global: { provider: 'claude', model: 'global-model' },
+    });
 
     // When: CLI model あり
     await runAgent(undefined, 'task', {
@@ -137,8 +140,10 @@ describe('option resolution order', () => {
 
   it('should ignore global model when global provider does not match resolved provider', async () => {
     // Given
-    loadProjectConfigMock.mockReturnValue({ provider: 'codex' });
-    loadGlobalConfigMock.mockReturnValue({ provider: 'claude', model: 'global-model' });
+    loadConfigMock.mockReturnValue({
+      project: { provider: 'codex' },
+      global: { provider: 'claude', model: 'global-model' },
+    });
 
     // When
     await runAgent(undefined, 'task', { cwd: '/repo' });
@@ -160,16 +165,15 @@ describe('option resolution order', () => {
       },
     };
 
-    loadProjectConfigMock.mockReturnValue({
-      provider: 'claude',
-      provider_options: {
-        claude: { sandbox: { allow_unsandboxed_commands: true } },
+    loadConfigMock.mockReturnValue({
+      project: {
+        provider: 'claude',
       },
-    });
-    loadGlobalConfigMock.mockReturnValue({
-      provider: 'claude',
-      providerOptions: {
-        claude: { sandbox: { allowUnsandboxedCommands: true } },
+      global: {
+        provider: 'claude',
+        providerOptions: {
+          claude: { sandbox: { allowUnsandboxedCommands: true } },
+        },
       },
     });
 

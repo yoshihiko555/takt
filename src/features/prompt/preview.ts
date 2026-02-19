@@ -5,7 +5,7 @@
  * Useful for debugging and understanding what prompts agents will receive.
  */
 
-import { loadPieceByIdentifier, getCurrentPiece, loadGlobalConfig } from '../../infra/config/index.js';
+import { loadPieceByIdentifier, getCurrentPiece, loadConfig } from '../../infra/config/index.js';
 import { InstructionBuilder } from '../../core/piece/instruction/InstructionBuilder.js';
 import { ReportInstructionBuilder } from '../../core/piece/instruction/ReportInstructionBuilder.js';
 import { StatusJudgmentBuilder } from '../../core/piece/instruction/StatusJudgmentBuilder.js';
@@ -29,7 +29,7 @@ export async function previewPrompts(cwd: string, pieceIdentifier?: string): Pro
     return;
   }
 
-  const globalConfig = loadGlobalConfig();
+  const { global: globalConfig } = loadConfig(cwd);
   const language: Language = globalConfig.language ?? 'en';
 
   header(`Prompt Preview: ${config.name}`);

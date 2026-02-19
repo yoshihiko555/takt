@@ -69,6 +69,56 @@ describe('OptionsBuilder.buildBaseOptions', () => {
     const options = builder.buildBaseOptions(step);
     expect(options.permissionMode).toBe('edit');
   });
+
+  it('merges provider options with precedence: global < project < movement', () => {
+    const step = createMovement({
+      providerOptions: {
+        codex: { networkAccess: false },
+        claude: { sandbox: { excludedCommands: ['./gradlew'] } },
+      },
+    });
+    const builder = createBuilder(step, {
+      globalProviderOptions: {
+        codex: { networkAccess: true },
+        claude: { sandbox: { allowUnsandboxedCommands: false } },
+      },
+      projectProviderOptions: {
+        claude: { sandbox: { allowUnsandboxedCommands: true } },
+        opencode: { networkAccess: true },
+      },
+    });
+
+    const options = builder.buildBaseOptions(step);
+
+    expect(options.providerOptions).toEqual({
+      codex: { networkAccess: false },
+      opencode: { networkAccess: true },
+      claude: {
+        sandbox: {
+          allowUnsandboxedCommands: true,
+          excludedCommands: ['./gradlew'],
+        },
+      },
+    });
+  });
+
+  it('falls back to global/project provider options when movement has none', () => {
+    const step = createMovement();
+    const builder = createBuilder(step, {
+      globalProviderOptions: {
+        codex: { networkAccess: true },
+      },
+      projectProviderOptions: {
+        codex: { networkAccess: false },
+      },
+    });
+
+    const options = builder.buildBaseOptions(step);
+
+    expect(options.providerOptions).toEqual({
+      codex: { networkAccess: false },
+    });
+  });
 });
 
 describe('OptionsBuilder.buildResumeOptions', () => {

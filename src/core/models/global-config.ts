@@ -53,7 +53,6 @@ export interface NotificationSoundEventsConfig {
 /** Global configuration for takt */
 export interface GlobalConfig {
   language: Language;
-  defaultPiece: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   provider?: 'claude' | 'codex' | 'opencode' | 'mock';
   model?: string;
@@ -100,6 +99,8 @@ export interface GlobalConfig {
   notificationSoundEvents?: NotificationSoundEventsConfig;
   /** Number of movement previews to inject into interactive mode (0 to disable, max 10) */
   interactivePreviewMovements?: number;
+  /** Verbose output mode */
+  verbose?: boolean;
   /** Number of tasks to run concurrently in takt run (default: 1 = sequential) */
   concurrency: number;
   /** Polling interval in ms for picking up new tasks during takt run (default: 500, range: 100-5000) */
