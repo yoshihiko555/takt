@@ -206,6 +206,7 @@ describe('E2E: Retry mode with failure context injection', () => {
         movementPreviews: [],
       },
       run: null,
+      previousOrderContent: null,
     };
 
     const result = await runRetryMode(tmpDir, retryContext, null);
@@ -276,6 +277,7 @@ describe('E2E: Retry mode with failure context injection', () => {
         movementLogs: formatted.runMovementLogs,
         reports: formatted.runReports,
       },
+      previousOrderContent: null,
     };
 
     const result = await runRetryMode(tmpDir, retryContext, null);
@@ -331,6 +333,7 @@ describe('E2E: Retry mode with failure context injection', () => {
         movementPreviews: [],
       },
       run: null,
+      previousOrderContent: null,
     };
 
     await runRetryMode(tmpDir, retryContext, null);
@@ -366,6 +369,7 @@ describe('E2E: Retry mode with failure context injection', () => {
         movementPreviews: [],
       },
       run: null,
+      previousOrderContent: null,
     };
 
     const result = await runRetryMode(tmpDir, retryContext, null);
@@ -404,6 +408,7 @@ describe('E2E: Retry mode with failure context injection', () => {
         movementPreviews: [],
       },
       run: null,
+      previousOrderContent: null,
     };
 
     const result = await runRetryMode(tmpDir, retryContext, null);

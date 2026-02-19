@@ -24,6 +24,7 @@ function createRetryContext(overrides?: Partial<RetryContext>): RetryContext {
       movementPreviews: [],
     },
     run: null,
+    previousOrderContent: null,
     ...overrides,
   };
 }
@@ -129,6 +130,22 @@ describe('buildRetryTemplateVars', () => {
     expect(vars.hasPiecePreview).toBe(true);
     expect(vars.movementDetails).toContain('plan');
     expect(vars.movementDetails).toContain('Architect');
+  });
+
+  it('should set hasPreviousOrder=false and empty previousOrderContent when previousOrderContent is null', () => {
+    const ctx = createRetryContext({ previousOrderContent: null });
+    const vars = buildRetryTemplateVars(ctx, 'en');
+
+    expect(vars.hasPreviousOrder).toBe(false);
+    expect(vars.previousOrderContent).toBe('');
+  });
+
+  it('should set hasPreviousOrder=true and populate previousOrderContent when provided', () => {
+    const ctx = createRetryContext({ previousOrderContent: '# Order content' });
+    const vars = buildRetryTemplateVars(ctx, 'en');
+
+    expect(vars.hasPreviousOrder).toBe(true);
+    expect(vars.previousOrderContent).toBe('# Order content');
   });
 
   it('should include retryNote when present', () => {

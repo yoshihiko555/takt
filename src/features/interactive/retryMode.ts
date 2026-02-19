@@ -52,6 +52,7 @@ export interface RetryContext {
   readonly branchName: string;
   readonly pieceContext: PieceContext;
   readonly run: RetryRunInfo | null;
+  readonly previousOrderContent: string | null;
 }
 
 const RETRY_TOOLS = ['Read', 'Glob', 'Grep', 'Bash', 'WebSearch', 'WebFetch'];
@@ -66,6 +67,7 @@ export function buildRetryTemplateVars(ctx: RetryContext, lang: 'en' | 'ja', pre
     : '';
 
   const hasRun = ctx.run !== null;
+  const hasPreviousOrder = ctx.previousOrderContent !== null;
 
   return {
     taskName: ctx.failure.taskName,

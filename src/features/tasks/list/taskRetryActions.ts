@@ -166,6 +166,7 @@ export async function retryFailedTask(
     branchName,
     pieceContext,
     run: runInfo,
+    previousOrderContent,
   };
 
   const retryResult = await runRetryMode(worktreePath, retryContext, previousOrderContent);
