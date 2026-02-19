@@ -2,7 +2,7 @@
  * Task execution logic
  */
 
-import { loadPieceByIdentifier, isPiecePath, resolveConfigValues } from '../../../infra/config/index.js';
+import { loadPieceByIdentifier, isPiecePath, resolvePieceConfigValues } from '../../../infra/config/index.js';
 import { TaskRunner, type TaskInfo } from '../../../infra/task/index.js';
 import {
   header,
@@ -86,7 +86,7 @@ async function executeTaskWithResult(options: ExecuteTaskOptions): Promise<Piece
     movements: pieceConfig.movements.map((s: { name: string }) => s.name),
   });
 
-  const config = resolveConfigValues(projectCwd, [
+  const config = resolvePieceConfigValues(projectCwd, [
     'language',
     'provider',
     'model',
@@ -238,7 +238,7 @@ export async function runAllTasks(
   options?: TaskExecutionOptions,
 ): Promise<void> {
   const taskRunner = new TaskRunner(cwd);
-  const globalConfig = resolveConfigValues(
+  const globalConfig = resolvePieceConfigValues(
     cwd,
     ['notificationSound', 'notificationSoundEvents', 'concurrency', 'taskPollIntervalMs'],
   );

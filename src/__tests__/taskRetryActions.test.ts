@@ -4,7 +4,7 @@ const {
   mockExistsSync,
   mockSelectPiece,
   mockSelectOption,
-  mockResolveConfigValue,
+  mockResolvePieceConfigValue,
   mockLoadPieceByIdentifier,
   mockGetPieceDescription,
   mockRunRetryMode,
@@ -16,7 +16,7 @@ const {
   mockExistsSync: vi.fn(() => true),
   mockSelectPiece: vi.fn(),
   mockSelectOption: vi.fn(),
-  mockResolveConfigValue: vi.fn(),
+  mockResolvePieceConfigValue: vi.fn(),
   mockLoadPieceByIdentifier: vi.fn(),
   mockGetPieceDescription: vi.fn(() => ({
     name: 'default',
@@ -60,7 +60,7 @@ vi.mock('../shared/utils/index.js', async (importOriginal) => ({
 }));
 
 vi.mock('../infra/config/index.js', () => ({
-  resolveConfigValue: (...args: unknown[]) => mockResolveConfigValue(...args),
+  resolvePieceConfigValue: (...args: unknown[]) => mockResolvePieceConfigValue(...args),
   loadPieceByIdentifier: (...args: unknown[]) => mockLoadPieceByIdentifier(...args),
   getPieceDescription: (...args: unknown[]) => mockGetPieceDescription(...args),
 }));
@@ -126,7 +126,7 @@ beforeEach(() => {
   mockExistsSync.mockReturnValue(true);
 
   mockSelectPiece.mockResolvedValue('default');
-  mockResolveConfigValue.mockReturnValue(3);
+  mockResolvePieceConfigValue.mockReturnValue(3);
   mockLoadPieceByIdentifier.mockReturnValue(defaultPieceConfig);
   mockSelectOption.mockResolvedValue('plan');
   mockRunRetryMode.mockResolvedValue({ action: 'execute', task: '追加指示A' });

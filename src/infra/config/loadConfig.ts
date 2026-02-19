@@ -7,6 +7,7 @@ import { envVarNameFromPath } from './env/config-env-overrides.js';
 
 export interface LoadedConfig extends GlobalConfig {
   piece: string;
+  provider: NonNullable<GlobalConfig['provider']>;
   verbose: boolean;
   providerOptions?: MovementProviderOptions;
   providerProfiles?: ProviderPermissionProfiles;
@@ -15,12 +16,13 @@ export interface LoadedConfig extends GlobalConfig {
 export function loadConfig(projectDir: string): LoadedConfig {
   const global = loadGlobalConfig();
   const project = loadProjectConfig(projectDir);
-  const provider = project.provider ?? global.provider;
+  const provider = (project.provider ?? global.provider ?? 'claude') as NonNullable<GlobalConfig['provider']>;
 
   return {
     ...global,
     piece: project.piece ?? 'default',
     provider,
+    autoPr: project.auto_pr ?? global.autoPr,
     model: resolveModel(global, provider),
     verbose: resolveVerbose(project.verbose, global.verbose),
     providerOptions: mergeProviderOptions(global.providerOptions, project.providerOptions),

@@ -4,7 +4,7 @@
  * Registers all named subcommands (run, watch, add, list, switch, clear, eject, prompt, catalog).
  */
 
-import { clearPersonaSessions, getCurrentPiece } from '../../infra/config/index.js';
+import { clearPersonaSessions, resolveConfigValue } from '../../infra/config/index.js';
 import { success } from '../../shared/ui/index.js';
 import { runAllTasks, addTask, watchTasks, listTasks } from '../../features/tasks/index.js';
 import { switchPiece, ejectBuiltin, ejectFacet, parseFacetType, VALID_FACET_TYPES, resetCategoriesToDefault, deploySkill } from '../../features/config/index.js';
@@ -17,7 +17,7 @@ program
   .command('run')
   .description('Run all pending tasks from .takt/tasks.yaml')
   .action(async () => {
-    const piece = getCurrentPiece(resolvedCwd);
+    const piece = resolveConfigValue(resolvedCwd, 'piece');
     await runAllTasks(resolvedCwd, piece, resolveAgentOverrides(program));
   });
 

@@ -90,10 +90,14 @@ vi.mock('../infra/config/index.js', () => ({
   updatePersonaSession: vi.fn(),
   loadWorktreeSessions: vi.fn().mockReturnValue({}),
   updateWorktreeSession: vi.fn(),
-  loadGlobalConfig: vi.fn().mockReturnValue({ provider: 'claude' }),
-  loadConfig: vi.fn().mockReturnValue({
-    global: { provider: 'claude' },
-    project: {},
+  resolvePieceConfigValues: vi.fn().mockReturnValue({
+    notificationSound: true,
+    notificationSoundEvents: {},
+    provider: 'claude',
+    runtime: undefined,
+    preventSleep: false,
+    model: undefined,
+    observability: undefined,
   }),
   saveSessionState: vi.fn(),
   ensureDir: vi.fn(),

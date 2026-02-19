@@ -17,7 +17,7 @@ import {
   loadAllPiecesWithSources,
   getPieceCategories,
   buildCategorizedPieces,
-  getCurrentPiece,
+  resolveConfigValue,
   type PieceDirEntry,
   type PieceCategoryNode,
   type CategorizedPieces,
@@ -522,7 +522,7 @@ export async function selectPiece(
 ): Promise<string | null> {
   const fallbackToDefault = options?.fallbackToDefault !== false;
   const categoryConfig = getPieceCategories(cwd);
-  const currentPiece = getCurrentPiece(cwd);
+  const currentPiece = resolveConfigValue(cwd, 'piece');
 
   if (categoryConfig) {
     const allPieces = loadAllPiecesWithSources(cwd);

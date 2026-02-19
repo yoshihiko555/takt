@@ -11,7 +11,7 @@ import { parse as parseYaml } from 'yaml';
 import type { z } from 'zod';
 import { PieceConfigRawSchema, PieceMovementRawSchema } from '../../../core/models/index.js';
 import type { PieceConfig, PieceMovement, PieceRule, OutputContractEntry, OutputContractItem, LoopMonitorConfig, LoopMonitorJudge, ArpeggioMovementConfig, ArpeggioMergeMovementConfig, TeamLeaderConfig } from '../../../core/models/index.js';
-import { resolveConfigValue } from '../resolveConfigValue.js';
+import { resolvePieceConfigValue } from '../resolvePieceConfigValue.js';
 import {
   type PieceSections,
   type FacetResolutionContext,
@@ -439,7 +439,7 @@ export function loadPieceFromFile(filePath: string, projectDir: string): PieceCo
   const pieceDir = dirname(filePath);
 
   const context: FacetResolutionContext = {
-    lang: resolveConfigValue(projectDir, 'language'),
+    lang: resolvePieceConfigValue(projectDir, 'language'),
     projectDir,
   };
 

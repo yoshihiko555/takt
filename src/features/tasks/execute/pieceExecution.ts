@@ -17,7 +17,7 @@ import {
   updatePersonaSession,
   loadWorktreeSessions,
   updateWorktreeSession,
-  resolveConfigValues,
+  resolvePieceConfigValues,
   saveSessionState,
   type SessionState,
 } from '../../../infra/config/index.js';
@@ -317,7 +317,7 @@ export async function executePiece(
 
   // Load saved agent sessions only on retry; normal runs start with empty sessions
   const isWorktree = cwd !== projectCwd;
-  const globalConfig = resolveConfigValues(
+  const globalConfig = resolvePieceConfigValues(
     projectCwd,
     ['notificationSound', 'notificationSoundEvents', 'provider', 'runtime', 'preventSleep', 'model', 'observability'],
   );
@@ -326,7 +326,7 @@ export async function executePiece(
   const shouldNotifyIterationLimit = shouldNotify && notificationSoundEvents?.iterationLimit !== false;
   const shouldNotifyPieceComplete = shouldNotify && notificationSoundEvents?.pieceComplete !== false;
   const shouldNotifyPieceAbort = shouldNotify && notificationSoundEvents?.pieceAbort !== false;
-  const currentProvider = globalConfig.provider ?? 'claude';
+  const currentProvider = globalConfig.provider;
   const effectivePieceConfig: PieceConfig = {
     ...pieceConfig,
     runtime: resolveRuntimeConfig(globalConfig.runtime, pieceConfig.runtime),

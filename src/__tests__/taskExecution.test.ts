@@ -5,12 +5,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TaskInfo } from '../infra/task/index.js';
 
-const { mockResolveTaskExecution, mockExecutePiece, mockLoadPieceByIdentifier, mockResolveConfigValues, mockBuildTaskResult, mockPersistTaskResult, mockPersistTaskError, mockPostExecutionFlow } =
+const { mockResolveTaskExecution, mockExecutePiece, mockLoadPieceByIdentifier, mockResolvePieceConfigValues, mockBuildTaskResult, mockPersistTaskResult, mockPersistTaskError, mockPostExecutionFlow } =
   vi.hoisted(() => ({
     mockResolveTaskExecution: vi.fn(),
     mockExecutePiece: vi.fn(),
     mockLoadPieceByIdentifier: vi.fn(),
-    mockResolveConfigValues: vi.fn(),
+    mockResolvePieceConfigValues: vi.fn(),
     mockBuildTaskResult: vi.fn(),
     mockPersistTaskResult: vi.fn(),
     mockPersistTaskError: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock('../features/tasks/execute/postExecution.js', () => ({
 vi.mock('../infra/config/index.js', () => ({
   loadPieceByIdentifier: (...args: unknown[]) => mockLoadPieceByIdentifier(...args),
   isPiecePath: () => false,
-  resolveConfigValues: (...args: unknown[]) => mockResolveConfigValues(...args),
+  resolvePieceConfigValues: (...args: unknown[]) => mockResolvePieceConfigValues(...args),
 }));
 
 vi.mock('../shared/ui/index.js', () => ({
@@ -83,7 +83,7 @@ describe('executeAndCompleteTask', () => {
       name: 'default',
       movements: [],
     });
-    mockResolveConfigValues.mockReturnValue({
+    mockResolvePieceConfigValues.mockReturnValue({
       language: 'en',
       provider: 'claude',
       model: undefined,
