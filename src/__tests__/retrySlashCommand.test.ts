@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -153,7 +153,7 @@ describe('/retry slash command', () => {
     setupProvider([]);
 
     const retryContext = buildRetryContext({ previousOrderContent: orderContent });
-    const result = await runRetryMode(tmpDir, retryContext);
+    const result = await runRetryMode(tmpDir, retryContext, orderContent);
 
     expect(result.action).toBe('execute');
     expect(result.task).toBe(orderContent);
@@ -164,7 +164,7 @@ describe('/retry slash command', () => {
     setupProvider([]);
 
     const retryContext = buildRetryContext({ previousOrderContent: null });
-    const result = await runRetryMode(tmpDir, retryContext);
+    const result = await runRetryMode(tmpDir, retryContext, null);
 
     expect(mockInfo).toHaveBeenCalledWith('No previous order found.');
     expect(result.action).toBe('cancel');
@@ -176,7 +176,7 @@ describe('/retry slash command', () => {
     const capture = setupProvider(['I see the order content.']);
 
     const retryContext = buildRetryContext({ previousOrderContent: orderContent });
-    await runRetryMode(tmpDir, retryContext);
+    await runRetryMode(tmpDir, retryContext, orderContent);
 
     expect(capture.systemPrompts.length).toBeGreaterThan(0);
     const systemPrompt = capture.systemPrompts[0]!;
@@ -189,7 +189,7 @@ describe('/retry slash command', () => {
     const capture = setupProvider(['No order found.']);
 
     const retryContext = buildRetryContext({ previousOrderContent: null });
-    await runRetryMode(tmpDir, retryContext);
+    await runRetryMode(tmpDir, retryContext, null);
 
     expect(capture.systemPrompts.length).toBeGreaterThan(0);
     const systemPrompt = capture.systemPrompts[0]!;

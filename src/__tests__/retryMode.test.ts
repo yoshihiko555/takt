@@ -132,20 +132,20 @@ describe('buildRetryTemplateVars', () => {
     expect(vars.movementDetails).toContain('Architect');
   });
 
-  it('should set hasPreviousOrder=false and empty previousOrderContent when previousOrderContent is null', () => {
+  it('should set hasOrderContent=false and empty orderContent when previousOrderContent is null (via ctx)', () => {
     const ctx = createRetryContext({ previousOrderContent: null });
     const vars = buildRetryTemplateVars(ctx, 'en');
 
-    expect(vars.hasPreviousOrder).toBe(false);
-    expect(vars.previousOrderContent).toBe('');
+    expect(vars.hasOrderContent).toBe(false);
+    expect(vars.orderContent).toBe('');
   });
 
-  it('should set hasPreviousOrder=true and populate previousOrderContent when provided', () => {
-    const ctx = createRetryContext({ previousOrderContent: '# Order content' });
-    const vars = buildRetryTemplateVars(ctx, 'en');
+  it('should set hasOrderContent=true and populate orderContent when provided via parameter', () => {
+    const ctx = createRetryContext();
+    const vars = buildRetryTemplateVars(ctx, 'en', '# Order content');
 
-    expect(vars.hasPreviousOrder).toBe(true);
-    expect(vars.previousOrderContent).toBe('# Order content');
+    expect(vars.hasOrderContent).toBe(true);
+    expect(vars.orderContent).toBe('# Order content');
   });
 
   it('should include retryNote when present', () => {
