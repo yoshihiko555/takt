@@ -164,7 +164,7 @@ takt watch
 
 ### takt list
 
-タスクブランチの一覧表示と操作（マージ、削除など）を行います。
+タスクブランチの一覧表示と操作（マージ、削除、ルートとの同期など）を行います。
 
 ```bash
 # タスクブランチの一覧表示（マージ/削除）
@@ -176,6 +176,8 @@ takt list --non-interactive --action diff --branch takt/my-branch
 takt list --non-interactive --action delete --branch takt/my-branch --yes
 takt list --non-interactive --format json
 ```
+
+インタラクティブモードでは **Sync with root** を選択でき、ルートリポジトリの HEAD をワークツリーブランチにマージします。コンフリクト発生時は AI が自動解決を試みます。
 
 ### タスクディレクトリワークフロー（作成 / 実行 / 確認）
 
