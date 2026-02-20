@@ -29,6 +29,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **OpenCode multi-turn hang**: Removed `streamAbortController.signal` from OpenCode server startup so subsequent turns no longer hang; restored `sessionId` carry-over for multi-turn conversations
 - **Romaji conversion stack overflow**: Prevented stack overflow on long task names during romaji conversion
 
+## [0.20.1] - 2026-02-20
+
+### Fixed
+
+- Pin `@opencode-ai/sdk` to `<1.2.7` to fix broken v2 exports that caused `Cannot find module` errors on `npm install -g takt` (#329)
+
 ## [0.20.0] - 2026-02-19
 
 ### Added
