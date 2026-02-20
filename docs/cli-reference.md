@@ -14,6 +14,7 @@ This document provides a complete reference for all TAKT CLI commands and option
 | `-w, --piece <name or path>` | Piece name or path to piece YAML file |
 | `-b, --branch <name>` | Specify branch name (auto-generated if omitted) |
 | `--auto-pr` | Create PR (interactive: skip confirmation, pipeline: enable PR) |
+| `--draft-pr` | Create PR as draft |
 | `--skip-git` | Skip branch creation, commit, and push (pipeline mode, piece-only) |
 | `--repo <owner/repo>` | Specify repository (for PR creation) |
 | `--create-worktree <yes\|no>` | Skip worktree confirmation prompt |
@@ -169,12 +170,17 @@ List task branches and perform actions (merge, delete, etc.).
 # List task branches (merge/delete)
 takt list
 
+# Delete all tasks at once
+takt list --delete-all
+
 # Non-interactive mode (for CI/scripts)
 takt list --non-interactive
 takt list --non-interactive --action diff --branch takt/my-branch
 takt list --non-interactive --action delete --branch takt/my-branch --yes
 takt list --non-interactive --format json
 ```
+
+In interactive mode, `takt list` also offers a **Sync with root** action to merge the root repository's HEAD into a worktree branch, with AI-assisted conflict resolution.
 
 ### Task Directory Workflow (Create / Run / Verify)
 
