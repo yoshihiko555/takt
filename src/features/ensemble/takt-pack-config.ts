@@ -13,6 +13,7 @@
 import { existsSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
+import { TAKT_PACKAGE_MANIFEST_FILENAME } from './constants.js';
 
 export interface TaktPackConfig {
   description?: string;
@@ -52,14 +53,14 @@ export function parseTaktPackConfig(yaml: string): TaktPackConfig {
  */
 export function validateTaktPackPath(path: string): void {
   if (path.startsWith('/')) {
-    throw new Error(`takt-package.yaml: path must not be absolute, got "${path}"`);
+    throw new Error(`${TAKT_PACKAGE_MANIFEST_FILENAME}: path must not be absolute, got "${path}"`);
   }
   if (path.startsWith('~')) {
-    throw new Error(`takt-package.yaml: path must not start with "~", got "${path}"`);
+    throw new Error(`${TAKT_PACKAGE_MANIFEST_FILENAME}: path must not start with "~", got "${path}"`);
   }
   const segments = path.split('/');
   if (segments.includes('..')) {
-    throw new Error(`takt-package.yaml: path must not contain ".." segments, got "${path}"`);
+    throw new Error(`${TAKT_PACKAGE_MANIFEST_FILENAME}: path must not contain ".." segments, got "${path}"`);
   }
 }
 
@@ -72,7 +73,7 @@ export function validateTaktPackPath(path: string): void {
 export function validateMinVersion(version: string): void {
   if (!SEMVER_PATTERN.test(version)) {
     throw new Error(
-      `takt-package.yaml: takt.min_version must match X.Y.Z (no "v" prefix, no pre-release), got "${version}"`,
+      `${TAKT_PACKAGE_MANIFEST_FILENAME}: takt.min_version must match X.Y.Z (no "v" prefix, no pre-release), got "${version}"`,
     );
   }
 }
@@ -123,13 +124,15 @@ export function checkPackageHasContent(packageRoot: string): void {
  * @throws if neither candidate exists
  */
 export function resolvePackConfigPath(extractDir: string): string {
-  const taktDirPath = join(extractDir, '.takt', 'takt-package.yaml');
+  const taktDirPath = join(extractDir, '.takt', TAKT_PACKAGE_MANIFEST_FILENAME);
   if (existsSync(taktDirPath)) return taktDirPath;
 
-  const rootPath = join(extractDir, 'takt-package.yaml');
+  const rootPath = join(extractDir, TAKT_PACKAGE_MANIFEST_FILENAME);
   if (existsSync(rootPath)) return rootPath;
 
-  throw new Error(`takt-package.yaml not found in "${extractDir}": checked .takt/takt-package.yaml and takt-package.yaml`);
+  throw new Error(
+    `${TAKT_PACKAGE_MANIFEST_FILENAME} not found in "${extractDir}": checked .takt/${TAKT_PACKAGE_MANIFEST_FILENAME} and ${TAKT_PACKAGE_MANIFEST_FILENAME}`,
+  );
 }
 
 /**

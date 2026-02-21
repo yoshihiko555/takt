@@ -27,6 +27,7 @@ import { parseTarVerboseListing } from '../../features/ensemble/tar-parser.js';
 import { resolveRef } from '../../features/ensemble/github-ref-resolver.js';
 import { atomicReplace, cleanupResiduals } from '../../features/ensemble/atomic-update.js';
 import { generateLockFile, extractCommitSha } from '../../features/ensemble/lock-file.js';
+import { TAKT_PACKAGE_MANIFEST_FILENAME } from '../../features/ensemble/constants.js';
 import { summarizeFacetsByType, detectEditPieces, formatEditPieceWarnings } from '../../features/ensemble/pack-summary.js';
 import { confirm } from '../../shared/prompt/index.js';
 import { info, success } from '../../shared/ui/index.js';
@@ -176,7 +177,7 @@ export async function ensembleAddCommand(spec: string): Promise<void> {
           mkdirSync(dirname(destFile), { recursive: true });
           copyFileSync(target.absolutePath, destFile);
         }
-        copyFileSync(packConfigPath, join(packageDir, 'takt-package.yaml'));
+        copyFileSync(packConfigPath, join(packageDir, TAKT_PACKAGE_MANIFEST_FILENAME));
 
         const lock = generateLockFile({
           source: `github:${owner}/${repo}`,

@@ -9,6 +9,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseTaktPackConfig } from './takt-pack-config.js';
 import { parseLockFile } from './lock-file.js';
+import { TAKT_PACKAGE_MANIFEST_FILENAME } from './constants.js';
 import { createLogger, getErrorMessage } from '../../shared/utils/index.js';
 
 const log = createLogger('ensemble-list');
@@ -29,7 +30,7 @@ export interface PackageInfo {
  * @param scope      - e.g. "@nrslib/takt-fullstack"
  */
 export function readPackageInfo(packageDir: string, scope: string): PackageInfo {
-  const packConfigPath = join(packageDir, 'takt-package.yaml');
+  const packConfigPath = join(packageDir, TAKT_PACKAGE_MANIFEST_FILENAME);
   const lockPath = join(packageDir, '.takt-pack-lock.yaml');
 
   const configYaml = existsSync(packConfigPath)
