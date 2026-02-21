@@ -6,7 +6,7 @@
  * - path field validation (no absolute paths, no directory traversal)
  * - min_version format validation (strict semver X.Y.Z)
  * - Numeric semver comparison
- * - Package content presence check (faceted/ or pieces/ must exist)
+ * - Package content presence check (facets/ or pieces/ must exist)
  * - Realpath validation to prevent symlink-based traversal outside root
  */
 
@@ -105,15 +105,15 @@ export function isVersionCompatible(minVersion: string, currentVersion: string):
 }
 
 /**
- * Check that the package root contains at least one of faceted/ or pieces/.
+ * Check that the package root contains at least one of facets/ or pieces/.
  * Throws if neither exists (empty package).
  */
 export function checkPackageHasContent(packageRoot: string): void {
-  const hasFaceted = existsSync(join(packageRoot, 'faceted'));
+  const hasFaceted = existsSync(join(packageRoot, 'facets'));
   const hasPieces = existsSync(join(packageRoot, 'pieces'));
   if (!hasFaceted && !hasPieces) {
     throw new Error(
-      `Package at "${packageRoot}" has neither faceted/ nor pieces/ directory — empty package rejected`,
+      `Package at "${packageRoot}" has neither facets/ nor pieces/ directory — empty package rejected`,
     );
   }
 }
@@ -128,17 +128,17 @@ export function checkPackageHasContentWithContext(
   packageRoot: string,
   context: PackageContentCheckContext,
 ): void {
-  const hasFaceted = existsSync(join(packageRoot, 'faceted'));
+  const hasFacets = existsSync(join(packageRoot, 'facets'));
   const hasPieces = existsSync(join(packageRoot, 'pieces'));
-  if (hasFaceted || hasPieces) return;
+  if (hasFacets || hasPieces) return;
 
-  const checkedFaceted = join(packageRoot, 'faceted');
+  const checkedFaceted = join(packageRoot, 'facets');
   const checkedPieces = join(packageRoot, 'pieces');
   const configuredPath = context.configuredPath ?? '.';
   const manifestPath = context.manifestPath ?? '(unknown)';
   const hint = configuredPath === '.'
     ? `hint: If your package content is under ".takt/", set "path: .takt" in ${TAKT_PACKAGE_MANIFEST_FILENAME}.`
-    : `hint: Verify "path: ${configuredPath}" points to a directory containing faceted/ or pieces/.`;
+    : `hint: Verify "path: ${configuredPath}" points to a directory containing facets/ or pieces/.`;
 
   throw new Error(
     [

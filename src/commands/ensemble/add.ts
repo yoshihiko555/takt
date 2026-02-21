@@ -118,7 +118,7 @@ export async function ensembleAddCommand(spec: string): Promise<void> {
     });
 
     const targets = collectCopyTargets(packageRoot);
-    const facetFiles = targets.filter(t => t.relativePath.startsWith('faceted/'));
+    const facetFiles = targets.filter(t => t.relativePath.startsWith('facets/'));
     const pieceFiles = targets.filter(t => t.relativePath.startsWith('pieces/'));
 
     const facetSummary = summarizeFacetsByType(facetFiles.map(t => t.relativePath));
@@ -135,7 +135,7 @@ export async function ensembleAddCommand(spec: string): Promise<void> {
     const editPieces = detectEditPieces(pieceYamls);
 
     info(`\n📦 ${owner}/${repo} @${ref}`);
-    info(`   faceted: ${facetSummary}`);
+    info(`   facets:  ${facetSummary}`);
     if (pieceFiles.length > 0) {
       const pieceNames = pieceFiles.map(t =>
         t.relativePath.replace(/^pieces\//, '').replace(/\.yaml$/, ''),

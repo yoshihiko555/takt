@@ -6,7 +6,7 @@
  * - path field defaults, allowed/disallowed values
  * - takt.min_version format validation
  * - Version comparison (numeric, not lexicographic)
- * - Empty package detection (faceted/ and pieces/ presence)
+ * - Empty package detection (facets/ and pieces/ presence)
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -241,7 +241,7 @@ describe('checkPackageHasContent', () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('should throw when neither faceted/ nor pieces/ exists', () => {
+  it('should throw when neither facets/ nor pieces/ exists', () => {
     // Given: empty package root directory
     // When: content check is performed
     // Then: throws an error (empty package not allowed)
@@ -256,9 +256,9 @@ describe('checkPackageHasContent', () => {
     })).toThrow(/path: \.takt/);
   });
 
-  it('should not throw when only faceted/ exists', () => {
-    // Given: package with faceted/ only
-    mkdirSync(join(tempDir, 'faceted'), { recursive: true });
+  it('should not throw when only facets/ exists', () => {
+    // Given: package with facets/ only
+    mkdirSync(join(tempDir, 'facets'), { recursive: true });
 
     // When: content check is performed
     // Then: no error (facet-only package is valid)
@@ -274,15 +274,16 @@ describe('checkPackageHasContent', () => {
     expect(() => checkPackageHasContent(tempDir)).not.toThrow();
   });
 
-  it('should not throw when both faceted/ and pieces/ exist', () => {
+  it('should not throw when both facets/ and pieces/ exist', () => {
     // Given: package with both directories
-    mkdirSync(join(tempDir, 'faceted'), { recursive: true });
+    mkdirSync(join(tempDir, 'facets'), { recursive: true });
     mkdirSync(join(tempDir, 'pieces'), { recursive: true });
 
     // When: content check is performed
     // Then: no error
     expect(() => checkPackageHasContent(tempDir)).not.toThrow();
   });
+
 });
 
 // ---------------------------------------------------------------------------
