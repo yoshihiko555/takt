@@ -15,6 +15,9 @@ import { showCatalog } from '../../features/catalog/index.js';
 import { computeReviewMetrics, formatReviewMetrics, parseSinceDuration, purgeOldEvents } from '../../features/analytics/index.js';
 import { program, resolvedCwd } from './program.js';
 import { resolveAgentOverrides } from './helpers.js';
+import { ensembleAddCommand } from '../../commands/ensemble/add.js';
+import { ensembleRemoveCommand } from '../../commands/ensemble/remove.js';
+import { ensembleListCommand } from '../../commands/ensemble/list.js';
 
 program
   .command('run')
@@ -172,4 +175,31 @@ program
     } else {
       success(`Purged ${deleted.length} file(s): ${deleted.join(', ')}`);
     }
+  });
+
+const ensemble = program
+  .command('ensemble')
+  .description('Manage ensemble packages');
+
+ensemble
+  .command('add')
+  .description('Install an ensemble package from GitHub')
+  .argument('<spec>', 'Package spec (e.g. github:{owner}/{repo}@{ref})')
+  .action(async (spec: string) => {
+    await ensembleAddCommand(spec);
+  });
+
+ensemble
+  .command('remove')
+  .description('Remove an installed ensemble package')
+  .argument('<scope>', 'Package scope (e.g. @{owner}/{repo})')
+  .action(async (scope: string) => {
+    await ensembleRemoveCommand(scope);
+  });
+
+ensemble
+  .command('list')
+  .description('List installed ensemble packages')
+  .action(async () => {
+    await ensembleListCommand();
   });

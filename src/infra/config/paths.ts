@@ -48,9 +48,9 @@ export function getBuiltinPiecesDir(lang: Language): string {
   return join(getLanguageResourcesDir(lang), 'pieces');
 }
 
-/** Get builtin personas directory (builtins/{lang}/personas) */
+/** Get builtin personas directory (builtins/{lang}/faceted/personas) */
 export function getBuiltinPersonasDir(lang: Language): string {
-  return join(getLanguageResourcesDir(lang), 'personas');
+  return join(getLanguageResourcesDir(lang), 'faceted', 'personas');
 }
 
 /** Get project takt config directory (.takt in project) */
@@ -90,19 +90,41 @@ export function ensureDir(dirPath: string): void {
   }
 }
 
-/** Get project facet directory (.takt/{facetType} in project) */
+/** Get project facet directory (.takt/faceted/{facetType} in project) */
 export function getProjectFacetDir(projectDir: string, facetType: FacetType): string {
-  return join(getProjectConfigDir(projectDir), facetType);
+  return join(getProjectConfigDir(projectDir), 'faceted', facetType);
 }
 
-/** Get global facet directory (~/.takt/{facetType}) */
+/** Get global facet directory (~/.takt/faceted/{facetType}) */
 export function getGlobalFacetDir(facetType: FacetType): string {
-  return join(getGlobalConfigDir(), facetType);
+  return join(getGlobalConfigDir(), 'faceted', facetType);
 }
 
-/** Get builtin facet directory (builtins/{lang}/{facetType}) */
+/** Get builtin facet directory (builtins/{lang}/faceted/{facetType}) */
 export function getBuiltinFacetDir(lang: Language, facetType: FacetType): string {
-  return join(getLanguageResourcesDir(lang), facetType);
+  return join(getLanguageResourcesDir(lang), 'faceted', facetType);
+}
+
+/** Get ensemble directory (~/.takt/ensemble/) */
+export function getEnsembleDir(): string {
+  return join(getGlobalConfigDir(), 'ensemble');
+}
+
+/** Get ensemble package directory (~/.takt/ensemble/@{owner}/{repo}/) */
+export function getEnsemblePackageDir(owner: string, repo: string): string {
+  return join(getEnsembleDir(), `@${owner}`, repo);
+}
+
+/**
+ * Get ensemble facet directory.
+ *
+ * Defaults to the global ensemble dir when ensembleDir is not specified.
+ * Pass ensembleDir explicitly when resolving facets within a custom ensemble root
+ * (e.g. the package-local resolution layer).
+ */
+export function getEnsembleFacetDir(owner: string, repo: string, facetType: FacetType, ensembleDir?: string): string {
+  const base = ensembleDir ?? getEnsembleDir();
+  return join(base, `@${owner}`, repo, 'faceted', facetType);
 }
 
 /** Validate path is safe (no directory traversal) */

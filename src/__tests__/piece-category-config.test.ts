@@ -72,7 +72,7 @@ function writeYaml(path: string, content: string): void {
   writeFileSync(path, content.trim() + '\n', 'utf-8');
 }
 
-function createPieceMap(entries: { name: string; source: 'builtin' | 'user' | 'project' }[]):
+function createPieceMap(entries: { name: string; source: 'builtin' | 'user' | 'project' | 'ensemble' }[]):
   Map<string, PieceWithSource> {
   const pieces = new Map<string, PieceWithSource>();
   for (const entry of entries) {
@@ -402,7 +402,7 @@ describe('buildCategorizedPieces', () => {
       othersCategoryName: 'Others',
     };
 
-    const categorized = buildCategorizedPieces(allPieces, config);
+    const categorized = buildCategorizedPieces(allPieces, config, process.cwd());
     expect(categorized.categories).toEqual([
       { name: 'My Team', pieces: ['custom'], children: [] },
       {
@@ -440,5 +440,53 @@ describe('buildCategorizedPieces', () => {
 
     const paths = findPieceCategories('nested', categories);
     expect(paths).toEqual(['Parent / Child']);
+  });
+
+  it('should append ensemble category for @scope pieces', () => {
+    const allPieces = createPieceMap([
+      { name: 'default', source: 'builtin' },
+      { name: '@nrslib/takt-pack/expert', source: 'ensemble' },
+      { name: '@nrslib/takt-pack/reviewer', source: 'ensemble' },
+    ]);
+    const config = {
+      pieceCategories: [{ name: 'Main', pieces: ['default'], children: [] }],
+      builtinPieceCategories: [{ name: 'Main', pieces: ['default'], children: [] }],
+      userPieceCategories: [],
+      hasUserCategories: false,
+      showOthersCategory: true,
+      othersCategoryName: 'Others',
+    };
+
+    const categorized = buildCategorizedPieces(allPieces, config, process.cwd());
+
+    // ensemble category is appended
+    const ensembleCat = categorized.categories.find((c) => c.name === 'ensemble');
+    expect(ensembleCat).toBeDefined();
+    expect(ensembleCat!.children).toHaveLength(1);
+    expect(ensembleCat!.children[0]!.name).toBe('@nrslib/takt-pack');
+    expect(ensembleCat!.children[0]!.pieces).toEqual(
+      expect.arrayContaining(['@nrslib/takt-pack/expert', '@nrslib/takt-pack/reviewer']),
+    );
+
+    // @scope pieces must not appear in Others
+    const othersCat = categorized.categories.find((c) => c.name === 'Others');
+    expect(othersCat?.pieces ?? []).not.toContain('@nrslib/takt-pack/expert');
+  });
+
+  it('should not append ensemble category when no @scope pieces exist', () => {
+    const allPieces = createPieceMap([{ name: 'default', source: 'builtin' }]);
+    const config = {
+      pieceCategories: [{ name: 'Main', pieces: ['default'], children: [] }],
+      builtinPieceCategories: [{ name: 'Main', pieces: ['default'], children: [] }],
+      userPieceCategories: [],
+      hasUserCategories: false,
+      showOthersCategory: true,
+      othersCategoryName: 'Others',
+    };
+
+    const categorized = buildCategorizedPieces(allPieces, config, process.cwd());
+
+    const ensembleCat = categorized.categories.find((c) => c.name === 'ensemble');
+    expect(ensembleCat).toBeUndefined();
   });
 });
