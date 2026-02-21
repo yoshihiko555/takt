@@ -7,6 +7,7 @@ Use reports in the Report Directory as the primary source of truth. If additiona
 - Update relevant tests when modifying existing code
 - Test file placement: follow the project's conventions
 - Running tests is mandatory. After completing implementation, always run tests and verify results
+- When introducing new contract strings (file names, config key names, etc.), define them as constants in one place
 
 **Scope output contract (create at the start of implementation):**
 ```markdown
