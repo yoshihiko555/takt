@@ -19,7 +19,6 @@
 
 ### Changed
 
-- **BREAKING: "ensemble" を "repertoire" にリネーム**: 全 CLI コマンド、ディレクトリ、設定キー、API を変更 — `takt ensemble` → `takt repertoire`、`~/.takt/ensemble/` → `~/.takt/repertoire/`。マイグレーション: `~/.takt/ensemble/` ディレクトリを `~/.takt/repertoire/` にリネームしてください
 - **BREAKING: ファセットディレクトリ構造の変更**: 全レイヤーでファセットディレクトリが `facets/` サブディレクトリ配下に移動 — `builtins/{lang}/{facetType}/` → `builtins/{lang}/facets/{facetType}/`、`~/.takt/{facetType}/` → `~/.takt/facets/{facetType}/`、`.takt/{facetType}/` → `.takt/facets/{facetType}/`。マイグレーション: カスタムファセットファイルを新しい `facets/` サブディレクトリに移動してください
 - 契約文字列のハードコード散在防止ルールをコーディングポリシーとアーキテクチャレビューインストラクションに追加
 

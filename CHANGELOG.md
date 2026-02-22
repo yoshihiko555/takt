@@ -19,7 +19,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- **BREAKING: "ensemble" renamed to "repertoire"**: All CLI commands, directories, config keys, and APIs renamed — `takt ensemble` → `takt repertoire`, `~/.takt/ensemble/` → `~/.takt/repertoire/`. Migration: rename your `~/.takt/ensemble/` directory to `~/.takt/repertoire/`
 - **BREAKING: Facets directory restructured**: Facet directories moved under a `facets/` subdirectory at all levels — `builtins/{lang}/{facetType}/` → `builtins/{lang}/facets/{facetType}/`, `~/.takt/{facetType}/` → `~/.takt/facets/{facetType}/`, `.takt/{facetType}/` → `.takt/facets/{facetType}/`. Migration: move your custom facet files into the new `facets/` subdirectory
 - Contract string hardcoding prevention rule added to coding policy and architecture review instruction
 
