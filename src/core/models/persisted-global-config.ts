@@ -133,6 +133,7 @@ export interface PersistedGlobalConfig {
 export interface ProjectConfig {
   piece?: string;
   provider?: 'claude' | 'codex' | 'opencode' | 'mock';
+  model?: string;
   providerOptions?: MovementProviderOptions;
   /** Provider-specific permission profiles */
   providerProfiles?: ProviderPermissionProfiles;
