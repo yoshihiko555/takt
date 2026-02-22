@@ -1,10 +1,10 @@
 /**
- * @scope reference resolution utilities for TAKT ensemble packages.
+ * @scope reference resolution utilities for TAKT repertoire packages.
  *
  * Provides:
  * - isScopeRef(): detect @{owner}/{repo}/{facet-name} format
  * - parseScopeRef(): parse and normalize components
- * - resolveScopeRef(): build file path in ensemble directory
+ * - resolveScopeRef(): build file path in repertoire directory
  * - validateScopeOwner/Repo/FacetName(): name constraint validation
  */
 
@@ -51,22 +51,22 @@ export function parseScopeRef(ref: string): ScopeRef {
 }
 
 /**
- * Resolve a scope reference to a file path in the ensemble directory.
+ * Resolve a scope reference to a file path in the repertoire directory.
  *
- * Path: {ensembleDir}/@{owner}/{repo}/facets/{facetType}/{name}.md
+ * Path: {repertoireDir}/@{owner}/{repo}/facets/{facetType}/{name}.md
  *
- * @param scopeRef    - parsed scope reference
- * @param facetType   - e.g. "personas", "policies", "knowledge"
- * @param ensembleDir - root ensemble directory (e.g. ~/.takt/ensemble)
+ * @param scopeRef      - parsed scope reference
+ * @param facetType     - e.g. "personas", "policies", "knowledge"
+ * @param repertoireDir - root repertoire directory (e.g. ~/.takt/repertoire)
  * @returns Absolute path to the facet file.
  */
 export function resolveScopeRef(
   scopeRef: ScopeRef,
   facetType: string,
-  ensembleDir: string,
+  repertoireDir: string,
 ): string {
   return join(
-    ensembleDir,
+    repertoireDir,
     `@${scopeRef.owner}`,
     scopeRef.repo,
     'facets',

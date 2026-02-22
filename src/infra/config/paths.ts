@@ -12,6 +12,7 @@ import type { Language } from '../../core/models/index.js';
 import { getLanguageResourcesDir } from '../resources/index.js';
 
 import type { FacetKind } from '../../faceted-prompting/index.js';
+import { REPERTOIRE_DIR_NAME } from '../../features/repertoire/constants.js';
 
 /** Facet types used in layer resolution */
 export type { FacetKind as FacetType } from '../../faceted-prompting/index.js';
@@ -105,25 +106,25 @@ export function getBuiltinFacetDir(lang: Language, facetType: FacetType): string
   return join(getLanguageResourcesDir(lang), 'facets', facetType);
 }
 
-/** Get ensemble directory (~/.takt/ensemble/) */
-export function getEnsembleDir(): string {
-  return join(getGlobalConfigDir(), 'ensemble');
+/** Get repertoire directory (~/.takt/repertoire/) */
+export function getRepertoireDir(): string {
+  return join(getGlobalConfigDir(), REPERTOIRE_DIR_NAME);
 }
 
-/** Get ensemble package directory (~/.takt/ensemble/@{owner}/{repo}/) */
-export function getEnsemblePackageDir(owner: string, repo: string): string {
-  return join(getEnsembleDir(), `@${owner}`, repo);
+/** Get repertoire package directory (~/.takt/repertoire/@{owner}/{repo}/) */
+export function getRepertoirePackageDir(owner: string, repo: string): string {
+  return join(getRepertoireDir(), `@${owner}`, repo);
 }
 
 /**
- * Get ensemble facet directory.
+ * Get repertoire facet directory.
  *
- * Defaults to the global ensemble dir when ensembleDir is not specified.
- * Pass ensembleDir explicitly when resolving facets within a custom ensemble root
+ * Defaults to the global repertoire dir when repertoireDir is not specified.
+ * Pass repertoireDir explicitly when resolving facets within a custom repertoire root
  * (e.g. the package-local resolution layer).
  */
-export function getEnsembleFacetDir(owner: string, repo: string, facetType: FacetType, ensembleDir?: string): string {
-  const base = ensembleDir ?? getEnsembleDir();
+export function getRepertoireFacetDir(owner: string, repo: string, facetType: FacetType, repertoireDir?: string): string {
+  const base = repertoireDir ?? getRepertoireDir();
   return join(base, `@${owner}`, repo, 'facets', facetType);
 }
 

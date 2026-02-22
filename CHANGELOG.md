@@ -30,7 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Internal
 
-- Comprehensive ensemble test suite: atomic-update, ensemble-paths, file-filter, github-ref-resolver, github-spec, list, lock-file, pack-summary, package-facet-resolution, remove-reference-check, remove, takt-pack-config, tar-parser, takt-pack-schema
+- Comprehensive ensemble test suite: atomic-update, ensemble-paths, file-filter, github-ref-resolver, github-spec, list, lock-file, pack-summary, package-facet-resolution, remove-reference-check, remove, takt-ensemble-config, tar-parser, takt-ensemble-schema
 - Added `src/faceted-prompting/scope.ts` for @scope reference parsing, validation, and resolution
 - Added scope-ref tests for the faceted-prompting module
 - Added `inputWait.ts` for shared input-wait state to suppress worker pool log noise

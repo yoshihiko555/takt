@@ -124,13 +124,13 @@ describe('E2E: Piece selection branch coverage', () => {
     expect(result.stdout).toContain('Piece completed');
   }, 240_000);
 
-  it('should execute when --piece is an ensemble @scope name (resolver hit branch)', () => {
-    const pkgRoot = join(isolatedEnv.taktDir, 'ensemble', '@nrslib', 'takt-packages');
+  it('should execute when --piece is a repertoire @scope name (resolver hit branch)', () => {
+    const pkgRoot = join(isolatedEnv.taktDir, 'repertoire', '@nrslib', 'takt-ensembles');
     writeAgent(pkgRoot);
     writeMinimalPiece(join(pkgRoot, 'pieces', 'critical-thinking.yaml'));
 
     const result = runTaskWithPiece({
-      piece: '@nrslib/takt-packages/critical-thinking',
+      piece: '@nrslib/takt-ensembles/critical-thinking',
       cwd: testRepo.path,
       env: isolatedEnv.env,
     });
@@ -142,13 +142,13 @@ describe('E2E: Piece selection branch coverage', () => {
 
   it('should fail fast with message when --piece is unknown (resolver miss branch)', () => {
     const result = runTaskWithPiece({
-      piece: '@nrslib/takt-packages/not-found',
+      piece: '@nrslib/takt-ensembles/not-found',
       cwd: testRepo.path,
       env: isolatedEnv.env,
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Piece not found: @nrslib/takt-packages/not-found');
+    expect(result.stdout).toContain('Piece not found: @nrslib/takt-ensembles/not-found');
     expect(result.stdout).toContain('Cancelled');
   }, 240_000);
 

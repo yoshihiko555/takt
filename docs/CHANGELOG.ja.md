@@ -10,10 +10,10 @@
 
 ### Added
 
-- **Ensemble パッケージシステム** (`takt ensemble add/remove/list`): GitHub から外部 TAKT パッケージをインポート・管理 — `takt ensemble add github:{owner}/{repo}@{ref}` でパッケージを `~/.takt/ensemble/` にダウンロード。アトミックなインストール、バージョン互換チェック、ロックファイル生成、確認前のパッケージ内容サマリ表示に対応
-- **@scope 参照**: piece YAML のファセット参照で `@{owner}/{repo}/{facet-name}` 構文をサポート — インストール済み ensemble パッケージのファセットを直接参照可能（例: `persona: @nrslib/takt-fullstack/expert-coder`）
-- **4層ファセット解決**: 3層（project → user → builtin）から4層（package-local → project → user → builtin）に拡張 — ensemble パッケージのピースは自パッケージ内のファセットを最優先で解決
-- **ピース選択に ensemble カテゴリ追加**: インストール済みの ensemble パッケージがピース選択 UI の「ensemble」カテゴリにサブカテゴリとして自動表示
+- **Repertoire パッケージシステム** (`takt repertoire add/remove/list`): GitHub から外部 TAKT パッケージをインポート・管理 — `takt repertoire add github:{owner}/{repo}@{ref}` でパッケージを `~/.takt/repertoire/` にダウンロード。アトミックなインストール、バージョン互換チェック、ロックファイル生成、確認前のパッケージ内容サマリ表示に対応
+- **@scope 参照**: piece YAML のファセット参照で `@{owner}/{repo}/{facet-name}` 構文をサポート — インストール済み repertoire パッケージのファセットを直接参照可能（例: `persona: @nrslib/takt-fullstack/expert-coder`）
+- **4層ファセット解決**: 3層（project → user → builtin）から4層（package-local → project → user → builtin）に拡張 — repertoire パッケージのピースは自パッケージ内のファセットを最優先で解決
+- **ピース選択に repertoire カテゴリ追加**: インストール済みの repertoire パッケージがピース選択 UI の「repertoire」カテゴリにサブカテゴリとして自動表示
 - **implement/fix インストラクションにビルドゲート追加**: `implement` と `fix` のビルトインインストラクションでテスト実行前にビルド（型チェック）の実行を必須化
 ### Changed
 
@@ -22,15 +22,15 @@
 
 ### Fixed
 
-- オーバーライドピースの検証が ensemble スコープを含むリゾルバー経由で実行されるよう修正
+- オーバーライドピースの検証が repertoire スコープを含むリゾルバー経由で実行されるよう修正
 - `takt export-cc` が新しい `builtins/{lang}/facets/` ディレクトリ構造からファセットを読み込むよう修正
-- `confirm()` プロンプトがパイプ経由の stdin に対応（例: `echo "y" | takt ensemble add ...`）
+- `confirm()` プロンプトがパイプ経由の stdin に対応（例: `echo "y" | takt repertoire add ...`）
 - イテレーション入力待ち中の `poll_tick` デバッグログ連続出力を抑制
 - ピースリゾルバーの `stat()` 呼び出しでアクセス不能エントリ時にクラッシュせずエラーハンドリング
 
 ### Internal
 
-- Ensemble テストスイート: atomic-update, ensemble-paths, file-filter, github-ref-resolver, github-spec, list, lock-file, pack-summary, package-facet-resolution, remove-reference-check, remove, takt-pack-config, tar-parser, takt-pack-schema
+- Repertoire テストスイート: atomic-update, repertoire-paths, file-filter, github-ref-resolver, github-spec, list, lock-file, pack-summary, package-facet-resolution, remove-reference-check, remove, takt-repertoire-config, tar-parser, takt-repertoire-schema
 - `src/faceted-prompting/scope.ts` を追加（@scope 参照のパース・バリデーション・解決）
 - faceted-prompting モジュールの scope-ref テストを追加
 - `inputWait.ts` を追加（ワーカープールのログノイズ抑制のための入力待ち状態共有）

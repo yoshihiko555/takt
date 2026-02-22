@@ -11,7 +11,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Language } from '../../../core/models/index.js';
 import type { FacetType } from '../paths.js';
-import { getProjectFacetDir, getGlobalFacetDir, getBuiltinFacetDir, getEnsembleFacetDir } from '../paths.js';
+import { getProjectFacetDir, getGlobalFacetDir, getBuiltinFacetDir, getRepertoireFacetDir } from '../paths.js';
 
 import {
   resolveFacetPath as resolveFacetPathGeneric,
@@ -38,39 +38,39 @@ export interface FacetResolutionContext {
   lang: Language;
   /** pieceDir of the piece being parsed — used for package-local layer detection. */
   pieceDir?: string;
-  /** ensemble directory root — used together with pieceDir to detect package pieces. */
-  ensembleDir?: string;
+  /** repertoire directory root — used together with pieceDir to detect package pieces. */
+  repertoireDir?: string;
 }
 
 /**
- * Determine whether a piece is inside an ensemble package.
+ * Determine whether a piece is inside a repertoire package.
  *
- * @param pieceDir  - absolute path to the piece directory
- * @param ensembleDir - absolute path to the ensemble root (~/.takt/ensemble)
+ * @param pieceDir      - absolute path to the piece directory
+ * @param repertoireDir - absolute path to the repertoire root (~/.takt/repertoire)
  */
-export function isPackagePiece(pieceDir: string, ensembleDir: string): boolean {
+export function isPackagePiece(pieceDir: string, repertoireDir: string): boolean {
   const resolvedPiece = resolve(pieceDir);
-  const resolvedEnsemble = resolve(ensembleDir);
-  return resolvedPiece.startsWith(resolvedEnsemble + '/');
+  const resolvedRepertoire = resolve(repertoireDir);
+  return resolvedPiece.startsWith(resolvedRepertoire + '/');
 }
 
 /**
  * Extract { owner, repo } from a package piece directory path.
  *
- * Directory structure: {ensembleDir}/@{owner}/{repo}/pieces/
+ * Directory structure: {repertoireDir}/@{owner}/{repo}/pieces/
  *
  * @returns { owner, repo } if pieceDir is a package piece, undefined otherwise.
  */
 export function getPackageFromPieceDir(
   pieceDir: string,
-  ensembleDir: string,
+  repertoireDir: string,
 ): { owner: string; repo: string } | undefined {
-  if (!isPackagePiece(pieceDir, ensembleDir)) {
+  if (!isPackagePiece(pieceDir, repertoireDir)) {
     return undefined;
   }
-  const resolvedEnsemble = resolve(ensembleDir);
+  const resolvedRepertoire = resolve(repertoireDir);
   const resolvedPiece = resolve(pieceDir);
-  const relative = resolvedPiece.slice(resolvedEnsemble.length + 1);
+  const relative = resolvedPiece.slice(resolvedRepertoire.length + 1);
   const parts = relative.split('/');
   if (parts.length < 2) return undefined;
   const ownerWithAt = parts[0]!;
@@ -84,7 +84,7 @@ export function getPackageFromPieceDir(
  * Build candidate directories with optional package-local layer (4-layer for package pieces).
  *
  * Resolution order for package pieces:
- *   1. package-local: {ensembleDir}/@{owner}/{repo}/facets/{type}
+ *   1. package-local: {repertoireDir}/@{owner}/{repo}/facets/{type}
  *   2. project:       {projectDir}/.takt/facets/{type}
  *   3. user:          ~/.takt/facets/{type}
  *   4. builtin:       builtins/{lang}/facets/{type}
@@ -97,10 +97,10 @@ export function buildCandidateDirsWithPackage(
 ): string[] {
   const dirs: string[] = [];
 
-  if (context.pieceDir && context.ensembleDir) {
-    const pkg = getPackageFromPieceDir(context.pieceDir, context.ensembleDir);
+  if (context.pieceDir && context.repertoireDir) {
+    const pkg = getPackageFromPieceDir(context.pieceDir, context.repertoireDir);
     if (pkg) {
-      dirs.push(getEnsembleFacetDir(pkg.owner, pkg.repo, facetType, context.ensembleDir));
+      dirs.push(getRepertoireFacetDir(pkg.owner, pkg.repo, facetType, context.repertoireDir));
     }
   }
 
@@ -116,7 +116,7 @@ export function buildCandidateDirsWithPackage(
 /**
  * Resolve a facet name to its file path via 4-layer lookup (package-local → project → user → builtin).
  *
- * Handles @{owner}/{repo}/{facet-name} scope references directly when ensembleDir is provided.
+ * Handles @{owner}/{repo}/{facet-name} scope references directly when repertoireDir is provided.
  *
  * @returns Absolute file path if found, undefined otherwise.
  */
@@ -125,9 +125,9 @@ export function resolveFacetPath(
   facetType: FacetType,
   context: FacetResolutionContext,
 ): string | undefined {
-  if (isScopeRef(name) && context.ensembleDir) {
+  if (isScopeRef(name) && context.repertoireDir) {
     const scopeRef = parseScopeRef(name);
-    const filePath = resolveScopeRef(scopeRef, facetType, context.ensembleDir);
+    const filePath = resolveScopeRef(scopeRef, facetType, context.repertoireDir);
     return existsSync(filePath) ? filePath : undefined;
   }
   return resolveFacetPathGeneric(name, buildCandidateDirsWithPackage(facetType, context));
@@ -136,7 +136,7 @@ export function resolveFacetPath(
 /**
  * Resolve a facet name to its file content via 4-layer lookup.
  *
- * Handles @{owner}/{repo}/{facet-name} scope references when ensembleDir is provided.
+ * Handles @{owner}/{repo}/{facet-name} scope references when repertoireDir is provided.
  *
  * @returns File content if found, undefined otherwise.
  */
@@ -165,9 +165,9 @@ export function resolveRefToContent(
   facetType?: FacetType,
   context?: FacetResolutionContext,
 ): string | undefined {
-  if (facetType && context && isScopeRef(ref) && context.ensembleDir) {
+  if (facetType && context && isScopeRef(ref) && context.repertoireDir) {
     const scopeRef = parseScopeRef(ref);
-    const filePath = resolveScopeRef(scopeRef, facetType, context.ensembleDir);
+    const filePath = resolveScopeRef(scopeRef, facetType, context.repertoireDir);
     return existsSync(filePath) ? readFileSync(filePath, 'utf-8') : undefined;
   }
   const candidateDirs = facetType && context
@@ -201,9 +201,9 @@ export function resolvePersona(
   pieceDir: string,
   context?: FacetResolutionContext,
 ): { personaSpec?: string; personaPath?: string } {
-  if (rawPersona && isScopeRef(rawPersona) && context?.ensembleDir) {
+  if (rawPersona && isScopeRef(rawPersona) && context?.repertoireDir) {
     const scopeRef = parseScopeRef(rawPersona);
-    const personaPath = resolveScopeRef(scopeRef, 'personas', context.ensembleDir);
+    const personaPath = resolveScopeRef(scopeRef, 'personas', context.repertoireDir);
     return { personaSpec: rawPersona, personaPath: existsSync(personaPath) ? personaPath : undefined };
   }
   const candidateDirs = context

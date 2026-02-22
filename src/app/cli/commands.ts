@@ -15,9 +15,9 @@ import { showCatalog } from '../../features/catalog/index.js';
 import { computeReviewMetrics, formatReviewMetrics, parseSinceDuration, purgeOldEvents } from '../../features/analytics/index.js';
 import { program, resolvedCwd } from './program.js';
 import { resolveAgentOverrides } from './helpers.js';
-import { ensembleAddCommand } from '../../commands/ensemble/add.js';
-import { ensembleRemoveCommand } from '../../commands/ensemble/remove.js';
-import { ensembleListCommand } from '../../commands/ensemble/list.js';
+import { repertoireAddCommand } from '../../commands/repertoire/add.js';
+import { repertoireRemoveCommand } from '../../commands/repertoire/remove.js';
+import { repertoireListCommand } from '../../commands/repertoire/list.js';
 
 program
   .command('run')
@@ -177,29 +177,29 @@ program
     }
   });
 
-const ensemble = program
-  .command('ensemble')
-  .description('Manage ensemble packages');
+const repertoire = program
+  .command('repertoire')
+  .description('Manage repertoire packages');
 
-ensemble
+repertoire
   .command('add')
-  .description('Install an ensemble package from GitHub')
+  .description('Install a repertoire package from GitHub')
   .argument('<spec>', 'Package spec (e.g. github:{owner}/{repo}@{ref})')
   .action(async (spec: string) => {
-    await ensembleAddCommand(spec);
+    await repertoireAddCommand(spec);
   });
 
-ensemble
+repertoire
   .command('remove')
-  .description('Remove an installed ensemble package')
+  .description('Remove an installed repertoire package')
   .argument('<scope>', 'Package scope (e.g. @{owner}/{repo})')
   .action(async (scope: string) => {
-    await ensembleRemoveCommand(scope);
+    await repertoireRemoveCommand(scope);
   });
 
-ensemble
+repertoire
   .command('list')
-  .description('List installed ensemble packages')
+  .description('List installed repertoire packages')
   .action(async () => {
-    await ensembleListCommand();
+    await repertoireListCommand();
   });

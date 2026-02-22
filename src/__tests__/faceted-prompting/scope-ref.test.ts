@@ -4,7 +4,7 @@
  * Covers:
  * - isScopeRef(): detects @{owner}/{repo}/{facet-name} format
  * - parseScopeRef(): parses components from scope reference
- * - resolveScopeRef(): resolves to ~/.takt/ensemble/@{owner}/{repo}/facets/{facet-type}/{facet-name}.md
+ * - resolveScopeRef(): resolves to ~/.takt/repertoire/@{owner}/{repo}/facets/{facet-type}/{facet-name}.md
  * - facet-type mapping from field context (persona→personas, policy→policies, etc.)
  * - Name constraint validation (owner, repo, facet-name patterns)
  * - Case normalization (uppercase → lowercase)
@@ -124,89 +124,89 @@ describe('parseScopeRef', () => {
 // ---------------------------------------------------------------------------
 
 describe('resolveScopeRef', () => {
-  let tempEnsembleDir: string;
+  let tempRepertoireDir: string;
 
   beforeEach(() => {
-    tempEnsembleDir = mkdtempSync(join(tmpdir(), 'takt-ensemble-'));
+    tempRepertoireDir = mkdtempSync(join(tmpdir(), 'takt-repertoire-'));
   });
 
   afterEach(() => {
-    rmSync(tempEnsembleDir, { recursive: true, force: true });
+    rmSync(tempRepertoireDir, { recursive: true, force: true });
   });
 
   it('should resolve persona scope ref to facets/personas/{name}.md', () => {
-    // Given: ensemble directory with the package's persona file
-    const facetDir = join(tempEnsembleDir, '@nrslib', 'takt-fullstack', 'facets', 'personas');
+    // Given: repertoire directory with the package's persona file
+    const facetDir = join(tempRepertoireDir, '@nrslib', 'takt-fullstack', 'facets', 'personas');
     mkdirSync(facetDir, { recursive: true });
     writeFileSync(join(facetDir, 'expert-coder.md'), 'Expert coder persona');
 
     const scopeRef: ScopeRef = { owner: 'nrslib', repo: 'takt-fullstack', name: 'expert-coder' };
 
     // When: scope ref is resolved with facetType 'personas'
-    const result = resolveScopeRef(scopeRef, 'personas', tempEnsembleDir);
+    const result = resolveScopeRef(scopeRef, 'personas', tempRepertoireDir);
 
     // Then: resolved to the correct file path
-    expect(result).toBe(join(tempEnsembleDir, '@nrslib', 'takt-fullstack', 'facets', 'personas', 'expert-coder.md'));
+    expect(result).toBe(join(tempRepertoireDir, '@nrslib', 'takt-fullstack', 'facets', 'personas', 'expert-coder.md'));
   });
 
   it('should resolve policy scope ref to facets/policies/{name}.md', () => {
-    // Given: ensemble directory with policy file
-    const facetDir = join(tempEnsembleDir, '@nrslib', 'takt-fullstack', 'facets', 'policies');
+    // Given: repertoire directory with policy file
+    const facetDir = join(tempRepertoireDir, '@nrslib', 'takt-fullstack', 'facets', 'policies');
     mkdirSync(facetDir, { recursive: true });
     writeFileSync(join(facetDir, 'owasp-checklist.md'), 'OWASP content');
 
     const scopeRef: ScopeRef = { owner: 'nrslib', repo: 'takt-fullstack', name: 'owasp-checklist' };
 
     // When: scope ref is resolved with facetType 'policies'
-    const result = resolveScopeRef(scopeRef, 'policies', tempEnsembleDir);
+    const result = resolveScopeRef(scopeRef, 'policies', tempRepertoireDir);
 
     // Then: resolved to correct path
-    expect(result).toBe(join(tempEnsembleDir, '@nrslib', 'takt-fullstack', 'facets', 'policies', 'owasp-checklist.md'));
+    expect(result).toBe(join(tempRepertoireDir, '@nrslib', 'takt-fullstack', 'facets', 'policies', 'owasp-checklist.md'));
   });
 
   it('should resolve knowledge scope ref to facets/knowledge/{name}.md', () => {
-    // Given: ensemble directory with knowledge file
-    const facetDir = join(tempEnsembleDir, '@nrslib', 'takt-security-facets', 'facets', 'knowledge');
+    // Given: repertoire directory with knowledge file
+    const facetDir = join(tempRepertoireDir, '@nrslib', 'takt-security-facets', 'facets', 'knowledge');
     mkdirSync(facetDir, { recursive: true });
     writeFileSync(join(facetDir, 'vulnerability-patterns.md'), 'Vuln patterns');
 
     const scopeRef: ScopeRef = { owner: 'nrslib', repo: 'takt-security-facets', name: 'vulnerability-patterns' };
 
     // When: scope ref is resolved with facetType 'knowledge'
-    const result = resolveScopeRef(scopeRef, 'knowledge', tempEnsembleDir);
+    const result = resolveScopeRef(scopeRef, 'knowledge', tempRepertoireDir);
 
     // Then: resolved to correct path
-    expect(result).toBe(join(tempEnsembleDir, '@nrslib', 'takt-security-facets', 'facets', 'knowledge', 'vulnerability-patterns.md'));
+    expect(result).toBe(join(tempRepertoireDir, '@nrslib', 'takt-security-facets', 'facets', 'knowledge', 'vulnerability-patterns.md'));
   });
 
   it('should resolve instructions scope ref to facets/instructions/{name}.md', () => {
     // Given: instruction file
-    const facetDir = join(tempEnsembleDir, '@acme', 'takt-backend', 'facets', 'instructions');
+    const facetDir = join(tempRepertoireDir, '@acme', 'takt-backend', 'facets', 'instructions');
     mkdirSync(facetDir, { recursive: true });
     writeFileSync(join(facetDir, 'review-checklist.md'), 'Review steps');
 
     const scopeRef: ScopeRef = { owner: 'acme', repo: 'takt-backend', name: 'review-checklist' };
 
     // When: scope ref is resolved with facetType 'instructions'
-    const result = resolveScopeRef(scopeRef, 'instructions', tempEnsembleDir);
+    const result = resolveScopeRef(scopeRef, 'instructions', tempRepertoireDir);
 
     // Then: correct path
-    expect(result).toBe(join(tempEnsembleDir, '@acme', 'takt-backend', 'facets', 'instructions', 'review-checklist.md'));
+    expect(result).toBe(join(tempRepertoireDir, '@acme', 'takt-backend', 'facets', 'instructions', 'review-checklist.md'));
   });
 
   it('should resolve output-contracts scope ref to facets/output-contracts/{name}.md', () => {
     // Given: output contract file
-    const facetDir = join(tempEnsembleDir, '@acme', 'takt-backend', 'facets', 'output-contracts');
+    const facetDir = join(tempRepertoireDir, '@acme', 'takt-backend', 'facets', 'output-contracts');
     mkdirSync(facetDir, { recursive: true });
     writeFileSync(join(facetDir, 'review-report.md'), 'Report contract');
 
     const scopeRef: ScopeRef = { owner: 'acme', repo: 'takt-backend', name: 'review-report' };
 
     // When: scope ref is resolved with facetType 'output-contracts'
-    const result = resolveScopeRef(scopeRef, 'output-contracts', tempEnsembleDir);
+    const result = resolveScopeRef(scopeRef, 'output-contracts', tempRepertoireDir);
 
     // Then: correct path
-    expect(result).toBe(join(tempEnsembleDir, '@acme', 'takt-backend', 'facets', 'output-contracts', 'review-report.md'));
+    expect(result).toBe(join(tempRepertoireDir, '@acme', 'takt-backend', 'facets', 'output-contracts', 'review-report.md'));
   });
 });
 

@@ -9,7 +9,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve, isAbsolute } from 'node:path';
 import { homedir } from 'node:os';
 import type { PieceConfig, PieceMovement, InteractiveMode } from '../../../core/models/index.js';
-import { getGlobalPiecesDir, getBuiltinPiecesDir, getProjectConfigDir, getEnsembleDir } from '../paths.js';
+import { getGlobalPiecesDir, getBuiltinPiecesDir, getProjectConfigDir, getRepertoireDir } from '../paths.js';
 import { isScopeRef, parseScopeRef } from '../../../faceted-prompting/index.js';
 import { resolvePieceConfigValues } from '../resolvePieceConfigValue.js';
 import { createLogger, getErrorMessage } from '../../../shared/utils/index.js';
@@ -17,7 +17,7 @@ import { loadPieceFromFile } from './pieceParser.js';
 
 const log = createLogger('piece-resolver');
 
-export type PieceSource = 'builtin' | 'user' | 'project' | 'ensemble';
+export type PieceSource = 'builtin' | 'user' | 'project' | 'repertoire';
 
 export interface PieceWithSource {
   config: PieceConfig;
@@ -144,7 +144,7 @@ export function loadPieceByIdentifier(
   projectCwd: string,
 ): PieceConfig | null {
   if (isScopeRef(identifier)) {
-    return loadEnsemblePieceByRef(identifier, projectCwd);
+    return loadRepertoirePieceByRef(identifier, projectCwd);
   }
   if (isPiecePath(identifier)) {
     return loadPieceFromPath(identifier, projectCwd, projectCwd);
@@ -376,14 +376,14 @@ function* iteratePieceDir(
 }
 
 /**
- * Iterate piece YAML files in all ensemble packages.
+ * Iterate piece YAML files in all repertoire packages.
  * Qualified name format: @{owner}/{repo}/{piece-name}
  */
-function* iterateEnsemblePieces(ensembleDir: string): Generator<PieceDirEntry> {
-  if (!existsSync(ensembleDir)) return;
-  for (const ownerEntry of readdirSync(ensembleDir)) {
+function* iterateRepertoirePieces(repertoireDir: string): Generator<PieceDirEntry> {
+  if (!existsSync(repertoireDir)) return;
+  for (const ownerEntry of readdirSync(repertoireDir)) {
     if (!ownerEntry.startsWith('@')) continue;
-    const ownerPath = join(ensembleDir, ownerEntry);
+    const ownerPath = join(repertoireDir, ownerEntry);
     try { if (!statSync(ownerPath).isDirectory()) continue; } catch (e) { log.debug(`stat failed for owner dir ${ownerPath}: ${getErrorMessage(e)}`); continue; }
     const owner = ownerEntry.slice(1);
     for (const repoEntry of readdirSync(ownerPath)) {
@@ -396,7 +396,7 @@ function* iterateEnsemblePieces(ensembleDir: string): Generator<PieceDirEntry> {
         const piecePath = join(piecesDir, pieceFile);
         try { if (!statSync(piecePath).isFile()) continue; } catch (e) { log.debug(`stat failed for piece file ${piecePath}: ${getErrorMessage(e)}`); continue; }
         const pieceName = pieceFile.replace(/\.ya?ml$/, '');
-        yield { name: `@${owner}/${repoEntry}/${pieceName}`, path: piecePath, source: 'ensemble' };
+        yield { name: `@${owner}/${repoEntry}/${pieceName}`, path: piecePath, source: 'repertoire' };
       }
     }
   }
@@ -404,12 +404,12 @@ function* iterateEnsemblePieces(ensembleDir: string): Generator<PieceDirEntry> {
 
 /**
  * Load a piece by @scope reference (@{owner}/{repo}/{piece-name}).
- * Resolves to ~/.takt/ensemble/@{owner}/{repo}/pieces/{piece-name}.yaml
+ * Resolves to ~/.takt/repertoire/@{owner}/{repo}/pieces/{piece-name}.yaml
  */
-function loadEnsemblePieceByRef(identifier: string, projectCwd: string): PieceConfig | null {
+function loadRepertoirePieceByRef(identifier: string, projectCwd: string): PieceConfig | null {
   const scopeRef = parseScopeRef(identifier);
-  const ensembleDir = getEnsembleDir();
-  const piecesDir = join(ensembleDir, `@${scopeRef.owner}`, scopeRef.repo, 'pieces');
+  const repertoireDir = getRepertoireDir();
+  const piecesDir = join(repertoireDir, `@${scopeRef.owner}`, scopeRef.repo, 'pieces');
   const filePath = resolvePieceFile(piecesDir, scopeRef.name);
   if (!filePath) return null;
   return loadPieceFromFile(filePath, projectCwd);
@@ -450,12 +450,12 @@ export function loadAllPiecesWithSources(cwd: string): Map<string, PieceWithSour
     }
   }
 
-  const ensembleDir = getEnsembleDir();
-  for (const entry of iterateEnsemblePieces(ensembleDir)) {
+  const repertoireDir = getRepertoireDir();
+  for (const entry of iterateRepertoirePieces(repertoireDir)) {
     try {
       pieces.set(entry.name, { config: loadPieceFromFile(entry.path, cwd), source: entry.source });
     } catch (err) {
-      log.debug('Skipping invalid ensemble piece file', { path: entry.path, error: getErrorMessage(err) });
+      log.debug('Skipping invalid repertoire piece file', { path: entry.path, error: getErrorMessage(err) });
     }
   }
 

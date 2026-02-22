@@ -12,7 +12,7 @@ import type { z } from 'zod';
 import { PieceConfigRawSchema, PieceMovementRawSchema } from '../../../core/models/index.js';
 import type { PieceConfig, PieceMovement, PieceRule, OutputContractEntry, OutputContractItem, LoopMonitorConfig, LoopMonitorJudge, ArpeggioMovementConfig, ArpeggioMergeMovementConfig, TeamLeaderConfig } from '../../../core/models/index.js';
 import { resolvePieceConfigValue } from '../resolvePieceConfigValue.js';
-import { getEnsembleDir } from '../paths.js';
+import { getRepertoireDir } from '../paths.js';
 import {
   type PieceSections,
   type FacetResolutionContext,
@@ -443,7 +443,7 @@ export function loadPieceFromFile(filePath: string, projectDir: string): PieceCo
     lang: resolvePieceConfigValue(projectDir, 'language'),
     projectDir,
     pieceDir,
-    ensembleDir: getEnsembleDir(),
+    repertoireDir: getRepertoireDir(),
   };
 
   return normalizePieceConfig(raw, pieceDir, context);

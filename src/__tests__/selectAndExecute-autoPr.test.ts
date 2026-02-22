@@ -183,12 +183,12 @@ describe('resolveAutoPr default in selectAndExecuteTask', () => {
     expect(mockSelectPiece).toHaveBeenCalledWith('/project');
   });
 
-  it('should accept ensemble scoped piece override when it exists', async () => {
-    mockLoadPieceByIdentifier.mockReturnValueOnce({ name: '@nrslib/takt-packages/critical-thinking' } as never);
+  it('should accept repertoire scoped piece override when it exists', async () => {
+    mockLoadPieceByIdentifier.mockReturnValueOnce({ name: '@nrslib/takt-ensembles/critical-thinking' } as never);
 
-    const selected = await determinePiece('/project', '@nrslib/takt-packages/critical-thinking');
+    const selected = await determinePiece('/project', '@nrslib/takt-ensembles/critical-thinking');
 
-    expect(selected).toBe('@nrslib/takt-packages/critical-thinking');
+    expect(selected).toBe('@nrslib/takt-ensembles/critical-thinking');
   });
 
   it('should fail task record when executeTask throws', async () => {

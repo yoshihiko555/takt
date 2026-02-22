@@ -97,7 +97,7 @@ export async function confirm(message: string, defaultYes = true): Promise<boole
   const { useTty, forceTouchTty } = resolveTtyPolicy();
   assertTtyIfForced(forceTouchTty);
   if (!useTty) {
-    // Support piped stdin (e.g. echo "y" | takt ensemble add ...)
+    // Support piped stdin (e.g. echo "y" | takt repertoire add ...)
     if (!process.stdin.isTTY && process.stdin.readable && !process.stdin.destroyed) {
       return readConfirmFromPipe(defaultYes);
     }

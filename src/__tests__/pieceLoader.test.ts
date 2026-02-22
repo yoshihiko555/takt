@@ -189,7 +189,7 @@ movements:
 
 });
 
-describe('loadPieceByIdentifier with @scope ref (ensemble)', () => {
+describe('loadPieceByIdentifier with @scope ref (repertoire)', () => {
   let tempDir: string;
   let configDir: string;
   const originalTaktConfigDir = process.env.TAKT_CONFIG_DIR;
@@ -210,14 +210,14 @@ describe('loadPieceByIdentifier with @scope ref (ensemble)', () => {
     rmSync(configDir, { recursive: true, force: true });
   });
 
-  it('should load piece by @scope ref (ensemble)', () => {
-    // Given: ensemble package with a piece file
-    const piecesDir = join(configDir, 'ensemble', '@nrslib', 'takt-pack', 'pieces');
+  it('should load piece by @scope ref (repertoire)', () => {
+    // Given: repertoire package with a piece file
+    const piecesDir = join(configDir, 'repertoire', '@nrslib', 'takt-ensemble', 'pieces');
     mkdirSync(piecesDir, { recursive: true });
     writeFileSync(join(piecesDir, 'expert.yaml'), SAMPLE_PIECE);
 
     // When: piece is loaded via @scope ref
-    const piece = loadPieceByIdentifier('@nrslib/takt-pack/expert', tempDir);
+    const piece = loadPieceByIdentifier('@nrslib/takt-ensemble/expert', tempDir);
 
     // Then: the piece is resolved correctly
     expect(piece).not.toBeNull();
@@ -225,19 +225,19 @@ describe('loadPieceByIdentifier with @scope ref (ensemble)', () => {
   });
 
   it('should return null for non-existent @scope piece', () => {
-    // Given: ensemble dir exists but the requested piece does not
-    const piecesDir = join(configDir, 'ensemble', '@nrslib', 'takt-pack', 'pieces');
+    // Given: repertoire dir exists but the requested piece does not
+    const piecesDir = join(configDir, 'repertoire', '@nrslib', 'takt-ensemble', 'pieces');
     mkdirSync(piecesDir, { recursive: true });
 
     // When: a non-existent piece is requested
-    const piece = loadPieceByIdentifier('@nrslib/takt-pack/no-such-piece', tempDir);
+    const piece = loadPieceByIdentifier('@nrslib/takt-ensemble/no-such-piece', tempDir);
 
     // Then: null is returned
     expect(piece).toBeNull();
   });
 });
 
-describe('loadAllPiecesWithSources with ensemble pieces', () => {
+describe('loadAllPiecesWithSources with repertoire pieces', () => {
   let tempDir: string;
   let configDir: string;
   const originalTaktConfigDir = process.env.TAKT_CONFIG_DIR;
@@ -258,28 +258,28 @@ describe('loadAllPiecesWithSources with ensemble pieces', () => {
     rmSync(configDir, { recursive: true, force: true });
   });
 
-  it('should include ensemble pieces with @scope qualified names', () => {
-    // Given: ensemble package with a piece file
-    const piecesDir = join(configDir, 'ensemble', '@nrslib', 'takt-pack', 'pieces');
+  it('should include repertoire pieces with @scope qualified names', () => {
+    // Given: repertoire package with a piece file
+    const piecesDir = join(configDir, 'repertoire', '@nrslib', 'takt-ensemble', 'pieces');
     mkdirSync(piecesDir, { recursive: true });
     writeFileSync(join(piecesDir, 'expert.yaml'), SAMPLE_PIECE);
 
     // When: all pieces are loaded
     const pieces = loadAllPiecesWithSources(tempDir);
 
-    // Then: the ensemble piece is included with 'ensemble' source
-    expect(pieces.has('@nrslib/takt-pack/expert')).toBe(true);
-    expect(pieces.get('@nrslib/takt-pack/expert')!.source).toBe('ensemble');
+    // Then: the repertoire piece is included with 'repertoire' source
+    expect(pieces.has('@nrslib/takt-ensemble/expert')).toBe(true);
+    expect(pieces.get('@nrslib/takt-ensemble/expert')!.source).toBe('repertoire');
   });
 
-  it('should not throw when ensemble dir does not exist', () => {
-    // Given: no ensemble dir created (configDir/ensemble does not exist)
+  it('should not throw when repertoire dir does not exist', () => {
+    // Given: no repertoire dir created (configDir/repertoire does not exist)
 
     // When: all pieces are loaded
     const pieces = loadAllPiecesWithSources(tempDir);
 
     // Then: no @scope pieces are present and no error thrown
-    const ensemblePieces = Array.from(pieces.keys()).filter((k) => k.startsWith('@'));
-    expect(ensemblePieces).toHaveLength(0);
+    const repertoirePieces = Array.from(pieces.keys()).filter((k) => k.startsWith('@'));
+    expect(repertoirePieces).toHaveLength(0);
   });
 });

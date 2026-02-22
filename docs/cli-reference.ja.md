@@ -300,25 +300,25 @@ takt metrics review
 takt metrics review --since 7d
 ```
 
-### takt ensemble
+### takt repertoire
 
-Ensemble パッケージ（GitHub 上の外部 TAKT パッケージ）を管理します。
+Repertoire パッケージ（GitHub 上の外部 TAKT パッケージ）を管理します。
 
 ```bash
 # GitHub からパッケージをインストール
-takt ensemble add github:{owner}/{repo}@{ref}
+takt repertoire add github:{owner}/{repo}@{ref}
 
 # デフォルトブランチからインストール
-takt ensemble add github:{owner}/{repo}
+takt repertoire add github:{owner}/{repo}
 
 # インストール済みパッケージを一覧表示
-takt ensemble list
+takt repertoire list
 
 # パッケージを削除
-takt ensemble remove @{owner}/{repo}
+takt repertoire remove @{owner}/{repo}
 ```
 
-インストールされたパッケージは `~/.takt/ensemble/` に保存され、ピース選択やファセット解決で利用可能になります。
+インストールされたパッケージは `~/.takt/repertoire/` に保存され、ピース選択やファセット解決で利用可能になります。
 
 ### takt purge
 

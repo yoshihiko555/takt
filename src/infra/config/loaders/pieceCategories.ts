@@ -326,11 +326,11 @@ function buildCategoryTree(
 }
 
 /**
- * Append an "ensemble" category containing all @scope pieces.
+ * Append a "repertoire" category containing all @scope pieces.
  * Creates one subcategory per @owner/repo package.
- * Marks ensemble piece names as categorized (prevents them from appearing in "Others").
+ * Marks repertoire piece names as categorized (prevents them from appearing in "Others").
  */
-function appendEnsembleCategory(
+function appendRepertoireCategory(
   categories: PieceCategoryNode[],
   allPieces: Map<string, PieceWithSource>,
   categorized: Set<string>,
@@ -352,11 +352,11 @@ function appendEnsembleCategory(
     categorized.add(pieceName);
   }
   if (packagePieces.size === 0) return categories;
-  const ensembleChildren: PieceCategoryNode[] = [];
+  const repertoireChildren: PieceCategoryNode[] = [];
   for (const [packageKey, pieces] of packagePieces.entries()) {
-    ensembleChildren.push({ name: packageKey, pieces, children: [] });
+    repertoireChildren.push({ name: packageKey, pieces, children: [] });
   }
-  return [...categories, { name: 'ensemble', pieces: [], children: ensembleChildren }];
+  return [...categories, { name: 'repertoire', pieces: [], children: repertoireChildren }];
 }
 
 function appendOthersCategory(
@@ -415,7 +415,7 @@ export function buildCategorizedPieces(
 
   const categorized = new Set<string>();
   const categories = buildCategoryTree(config.pieceCategories, allPieces, categorized);
-  const categoriesWithEnsemble = appendEnsembleCategory(categories, allPieces, categorized);
+  const categoriesWithEnsemble = appendRepertoireCategory(categories, allPieces, categorized);
 
   const finalCategories = config.showOthersCategory
     ? appendOthersCategory(categoriesWithEnsemble, allPieces, categorized, config.othersCategoryName)
