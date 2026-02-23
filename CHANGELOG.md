@@ -6,6 +6,49 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.23.0] - 2026-02-23
+
+### Added
+
+- `default-test-first-mini` builtin piece for test-first development workflow
+- `auto_fetch` global config: opt-in remote fetch before cloning to keep clones up-to-date (`default: false`)
+- `base_branch` config (global/project): specify the base branch for clone creation (defaults to remote default branch)
+- `model` project config: override model at the project level (`.takt/config.yaml`)
+- `concurrency` project config: set parallel task count per project for `takt run`
+- `--create-worktree` support in pipeline mode for worktree-based execution
+- `skipTaskList` option: interactive "Execute" action skips adding to `tasks.yaml`
+- `takt list` now displays GitHub Issue numbers alongside task names
+- Retry failed tasks now offers to reuse the previous piece before prompting piece selection
+- Pipeline mode Slack notifications: sends run summary with task details, duration, branch, and PR URL
+- CI workflow: lint, test, and e2e:mock checks run automatically on PRs (#364)
+
+### Changed
+
+- Provider/model resolution unified via `resolveProviderModelCandidates()` — single resolution function used in both `AgentRunner` and `resolveMovementProviderModel`
+- Pipeline execution refactored into thin orchestrator (`execute.ts`) + step implementations (`steps.ts`)
+- Clone directory default changed from `takt-worktree` (singular) to `takt-worktrees` (plural) with auto-migration of legacy directory
+- PR titles now include issue number prefix (e.g., `[#6] Fix the bug`)
+- Task status now reflects PR creation failure — previously only piece execution success was tracked
+- `auto-tag.yml` tags PR head SHA instead of merge commit for correct hotfix code publishing
+- Session reader falls back to JSONL file scanning when `sessions-index.json` is missing or invalid
+- `ProjectLocalConfig` type normalized to camelCase (`auto_pr`→`autoPr`, `draft_pr`→`draftPr`) — YAML snake_case preserved
+- `getLocalLayerValue` simplified from switch-case to dynamic property lookup
+
+### Fixed
+
+- `repertoire add` pipe stdin: multiple `confirm()` calls failed when reading from piped stdin due to readline destroying buffered lines (#334)
+- Movement provider override precedence in `AgentRunner`: step provider was incorrectly overridden by global config
+- Project-level `model` config was silently ignored — `getLocalLayerValue` was missing the `model` case
+- PR creation failure now properly propagated as task failure with error message (#345)
+- Claude session resume candidates now fall back to JSONL file scanning when `sessions-index.json` is unavailable
+
+### Internal
+
+- CI: PR checks for lint, test, e2e:mock (`ci.yml`)
+- Expanded e2e test coverage for repertoire (#364)
+- New test suites: clone, config, postExecution, session-reader, selectAndExecute-skipTaskList, taskStatusLabel, pipelineExecution
+- Refactored: project config case normalization (#358), clone manager (#359), pipeline steps extraction, confirm pipe reader singleton, provider resolution (#362)
+
 ## [0.22.0] - 2026-02-22
 
 ### Added

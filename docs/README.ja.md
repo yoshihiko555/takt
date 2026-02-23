@@ -140,6 +140,7 @@ movements:
 | Piece | 用途 |
 |-------|------|
 | `default-mini` | ちょっとした修正向けです。計画 → 実装 → 並列レビュー → 修正の軽量構成です。 |
+| `default-test-first-mini` | テストファースト開発向けです。テストを先に書き、それを通す実装を行います。 |
 | `frontend-mini` | フロントエンド向けの mini 構成です。 |
 | `backend-mini` | バックエンド向けの mini 構成です。 |
 | `expert-mini` | エキスパート向けの mini 構成です。 |

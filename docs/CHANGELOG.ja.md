@@ -6,6 +6,49 @@
 
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) に基づいています。
 
+## [0.23.0] - 2026-02-23
+
+### Added
+
+- `default-test-first-mini` ビルトインピースを追加（テストファースト開発ワークフロー）
+- `auto_fetch` グローバル設定: クローン作成前にリモートを fetch してクローンを最新に保つオプション（`default: false`）
+- `base_branch` 設定（グローバル/プロジェクト）: クローン作成のベースブランチを指定（デフォルトはリモートのデフォルトブランチ）
+- `model` プロジェクト設定: プロジェクトレベルでモデルを上書き（`.takt/config.yaml`）
+- `concurrency` プロジェクト設定: プロジェクトごとに `takt run` の並列タスク数を設定
+- パイプラインモードで `--create-worktree` をサポート（worktree ベースの実行）
+- `skipTaskList` オプション: 対話モードの「実行する」アクションで `tasks.yaml` への追加をスキップ
+- `takt list` でタスク名の横に GitHub Issue 番号を表示
+- 失敗タスクのリトライ時、ピース選択の前に前回使用したピースの再利用を提案
+- パイプラインモードの Slack 通知: タスク詳細、実行時間、ブランチ、PR URL を含むサマリを送信
+- CI ワークフロー: PR に対して lint、test、e2e:mock チェックを自動実行 (#364)
+
+### Changed
+
+- Provider/Model 解決を `resolveProviderModelCandidates()` に一元化 — `AgentRunner` と `resolveMovementProviderModel` で同一の解決関数を使用
+- パイプライン実行を薄いオーケストレーター (`execute.ts`) + ステップ実装 (`steps.ts`) にリファクタリング
+- クローンディレクトリのデフォルト名を `takt-worktree`（単数）から `takt-worktrees`（複数）に変更（レガシーディレクトリの自動マイグレーション付き）
+- PR タイトルに Issue 番号プレフィックスを追加（例: `[#6] Fix the bug`）
+- タスクステータスが PR 作成失敗を反映するよう改善 — 以前はピース実行の成功のみを追跡
+- `auto-tag.yml` がマージコミットではなく PR head SHA にタグを付与（ホットフィックスの正しいコード publish のため）
+- セッションリーダーが `sessions-index.json` が欠損・不正な場合に JSONL ファイルスキャンにフォールバック
+- `ProjectLocalConfig` 型をキャメルケースに正規化（`auto_pr`→`autoPr`、`draft_pr`→`draftPr`）— YAML のスネークケースは維持
+- `getLocalLayerValue` を switch-case から動的プロパティルックアップに簡素化
+
+### Fixed
+
+- `repertoire add` のパイプ stdin: readline がバッファ済み行を破棄するため複数の `confirm()` 呼び出しが失敗する問題を修正 (#334)
+- `AgentRunner` での movement provider 上書き優先順位: step provider がグローバル設定に誤って上書きされていた問題を修正
+- プロジェクトレベルの `model` 設定が無視されていた問題 — `getLocalLayerValue` に `model` ケースが欠落していた
+- PR 作成失敗がタスク失敗として適切に伝搬されるよう修正（エラーメッセージ付き）(#345)
+- Claude セッション resume 候補が `sessions-index.json` 利用不可時に JSONL ファイルスキャンにフォールバック
+
+### Internal
+
+- CI: PR チェック用に lint、test、e2e:mock を追加（`ci.yml`）
+- repertoire の e2e テストカバレッジを拡充 (#364)
+- 新規テストスイート: clone、config、postExecution、session-reader、selectAndExecute-skipTaskList、taskStatusLabel、pipelineExecution
+- リファクタリング: プロジェクト設定のケース正規化 (#358)、クローンマネージャー (#359)、パイプラインステップ抽出、confirm パイプリーダーシングルトン、provider 解決 (#362)
+
 ## [0.22.0] - 2026-02-22
 
 ### Added

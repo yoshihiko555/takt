@@ -128,6 +128,7 @@ Rules determine the next movement. `COMPLETE` ends the piece successfully, `ABOR
 | Piece | Use Case |
 |-------|----------|
 | `default-mini` | Quick fixes. Lightweight plan → implement → parallel review → fix loop. |
+| `default-test-first-mini` | Test-first development. Write tests first, then implement to pass them. |
 | `frontend-mini` | Frontend-focused mini configuration. |
 | `backend-mini` | Backend-focused mini configuration. |
 | `expert-mini` | Expert-level mini configuration. |
