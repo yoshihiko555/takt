@@ -153,7 +153,7 @@ movements:
 | `takt list` | タスクブランチを管理します（マージ、リトライ、追加指示、削除） |
 | `takt #N` | GitHub Issue をタスクとして実行します |
 | `takt switch` | 使う piece を切り替えます |
-| `takt eject` | ビルトインの piece/persona をコピーしてカスタマイズできます |
+| `takt eject` | ビルトインの piece/facet をコピーしてカスタマイズできます |
 | `takt repertoire add` | GitHub から repertoire パッケージをインストールします |
 
 全コマンド・オプションは [CLI Reference](./cli-reference.ja.md) を参照してください。
@@ -171,7 +171,9 @@ language: ja        # en or ja
 API Key を直接使う場合は、CLI のインストールは不要です。
 
 ```bash
-export TAKT_ANTHROPIC_API_KEY=sk-ant-...
+export TAKT_ANTHROPIC_API_KEY=sk-ant-...   # Anthropic (Claude)
+export TAKT_OPENAI_API_KEY=sk-...          # OpenAI (Codex)
+export TAKT_OPENCODE_API_KEY=...           # OpenCode
 ```
 
 全設定項目・プロバイダープロファイル・モデル解決の詳細は [Configuration Guide](./configuration.ja.md) を参照してください。
@@ -242,8 +244,8 @@ const config = loadPiece('default');
 if (!config) throw new Error('Piece not found');
 
 const engine = new PieceEngine(config, process.cwd(), 'My task');
-engine.on('step:complete', (step, response) => {
-  console.log(`${step.name}: ${response.status}`);
+engine.on('movement:complete', (movement, response) => {
+  console.log(`${movement.name}: ${response.status}`);
 });
 
 await engine.run();
@@ -262,6 +264,7 @@ await engine.run();
 | [Repertoire Packages](./repertoire.ja.md) | パッケージのインストール・共有 |
 | [Task Management](./task-management.ja.md) | タスクの追加・実行・隔離 |
 | [CI/CD Integration](./ci-cd.ja.md) | GitHub Actions・パイプラインモード |
+| [Provider Sandbox](./provider-sandbox.md) | プロバイダーのサンドボックス設定 |
 | [Changelog](../CHANGELOG.md) ([日本語](./CHANGELOG.ja.md)) | バージョン履歴 |
 | [Security Policy](../SECURITY.md) | 脆弱性の報告 |
 

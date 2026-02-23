@@ -142,7 +142,7 @@ See the [Builtin Catalog](./docs/builtin-catalog.md) for all pieces and personas
 | `takt list` | Manage task branches (merge, retry, instruct, delete) |
 | `takt #N` | Execute GitHub Issue as task |
 | `takt switch` | Switch active piece |
-| `takt eject` | Copy builtin pieces/personas for customization |
+| `takt eject` | Copy builtin pieces/facets for customization |
 | `takt repertoire add` | Install a repertoire package from GitHub |
 
 See the [CLI Reference](./docs/cli-reference.md) for all commands and options.
@@ -160,7 +160,9 @@ language: en        # en or ja
 Or use API keys directly (no CLI installation required):
 
 ```bash
-export TAKT_ANTHROPIC_API_KEY=sk-ant-...
+export TAKT_ANTHROPIC_API_KEY=sk-ant-...   # Anthropic (Claude)
+export TAKT_OPENAI_API_KEY=sk-...          # OpenAI (Codex)
+export TAKT_OPENCODE_API_KEY=...           # OpenCode
 ```
 
 See the [Configuration Guide](./docs/configuration.md) for all options, provider profiles, and model resolution.
@@ -231,8 +233,8 @@ const config = loadPiece('default');
 if (!config) throw new Error('Piece not found');
 
 const engine = new PieceEngine(config, process.cwd(), 'My task');
-engine.on('step:complete', (step, response) => {
-  console.log(`${step.name}: ${response.status}`);
+engine.on('movement:complete', (movement, response) => {
+  console.log(`${movement.name}: ${response.status}`);
 });
 
 await engine.run();
@@ -251,6 +253,7 @@ await engine.run();
 | [Repertoire Packages](./docs/repertoire.md) | Installing and sharing packages |
 | [Task Management](./docs/task-management.md) | Task queuing, execution, isolation |
 | [CI/CD Integration](./docs/ci-cd.md) | GitHub Actions and pipeline mode |
+| [Provider Sandbox](./docs/provider-sandbox.md) | Sandbox configuration for providers |
 | [Changelog](./CHANGELOG.md) ([日本語](./docs/CHANGELOG.ja.md)) | Version history |
 | [Security Policy](./SECURITY.md) | Vulnerability reporting |
 
