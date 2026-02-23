@@ -29,9 +29,9 @@ export class AgentRunner {
     agentConfig?: CustomAgentConfig,
   ): ProviderType {
     if (options?.provider) return options.provider;
+    if (options?.stepProvider) return options.stepProvider;
     const config = resolveConfigValues(cwd, ['provider']);
     if (config.provider) return config.provider;
-    if (options?.stepProvider) return options.stepProvider;
     if (agentConfig?.provider) return agentConfig.provider;
     return 'claude';
   }
