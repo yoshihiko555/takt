@@ -20,6 +20,8 @@ export interface ProjectLocalConfig {
   baseBranch?: string;
   /** Verbose output mode */
   verbose?: boolean;
+  /** Number of tasks to run concurrently in takt run (1-10) */
+  concurrency?: number;
   /** Project-level analytics overrides */
   analytics?: AnalyticsConfig;
   /** Provider-specific options (overrides global, overridden by piece/movement) */

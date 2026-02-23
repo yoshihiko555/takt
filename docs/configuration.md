@@ -123,6 +123,7 @@ piece: default                # Current piece for this project
 provider: claude              # Override provider for this project
 auto_pr: true                 # Auto-create PR after worktree execution
 verbose: false                # Verbose output mode
+concurrency: 2                # Parallel task count for takt run in this project (1-10)
 
 # Provider-specific options (overrides global, overridden by piece/movement)
 # provider_options:
@@ -145,6 +146,7 @@ verbose: false                # Verbose output mode
 | `provider` | `"claude"` \| `"codex"` \| `"opencode"` \| `"mock"` | - | Override provider |
 | `auto_pr` | boolean | - | Auto-create PR after worktree execution |
 | `verbose` | boolean | - | Verbose output mode |
+| `concurrency` | number (1-10) | `1` (from global) | Parallel task count for `takt run` |
 | `provider_options` | object | - | Provider-specific options |
 | `provider_profiles` | object | - | Provider-specific permission profiles |
 

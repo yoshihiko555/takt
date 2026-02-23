@@ -53,12 +53,14 @@ describe('config env overrides', () => {
 
   it('should apply project env overrides from generated env names', () => {
     process.env.TAKT_VERBOSE = 'true';
+    process.env.TAKT_CONCURRENCY = '3';
     process.env.TAKT_ANALYTICS_EVENTS_PATH = '/tmp/project-analytics';
 
     const raw: Record<string, unknown> = {};
     applyProjectConfigEnvOverrides(raw);
 
     expect(raw.verbose).toBe(true);
+    expect(raw.concurrency).toBe(3);
     expect(raw.analytics).toEqual({
       events_path: '/tmp/project-analytics',
     });

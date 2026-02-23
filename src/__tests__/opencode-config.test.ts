@@ -36,6 +36,11 @@ describe('Schemas accept opencode provider', () => {
     expect(result.provider).toBe('opencode');
   });
 
+  it('should accept concurrency in ProjectConfigSchema', () => {
+    const result = ProjectConfigSchema.parse({ concurrency: 3 });
+    expect(result.concurrency).toBe(3);
+  });
+
   it('should accept opencode in CustomAgentConfigSchema', () => {
     const result = CustomAgentConfigSchema.parse({
       name: 'test',

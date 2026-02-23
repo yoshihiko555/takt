@@ -1246,6 +1246,14 @@ describe('saveProjectConfig snake_case denormalization', () => {
     expect((saved as Record<string, unknown>).base_branch).toBeUndefined();
   });
 
+  it('should persist concurrency and reload correctly', () => {
+    saveProjectConfig(testDir, { piece: 'default', concurrency: 3 });
+
+    const saved = loadProjectConfig(testDir);
+
+    expect(saved.concurrency).toBe(3);
+  });
+
   it('should not write camelCase keys to YAML file', () => {
     saveProjectConfig(testDir, { piece: 'default', autoPr: true, draftPr: false, baseBranch: 'develop' });
 
@@ -1261,7 +1269,7 @@ describe('saveProjectConfig snake_case denormalization', () => {
   });
 });
 
-describe('resolveConfigValue autoPr/draftPr/baseBranch from project config', () => {
+describe('resolveConfigValue autoPr/draftPr/baseBranch/concurrency from project config', () => {
   let testDir: string;
   let originalTaktConfigDir: string | undefined;
 
@@ -1308,5 +1316,13 @@ describe('resolveConfigValue autoPr/draftPr/baseBranch from project config', () 
     writeFileSync(join(projectConfigDir, 'config.yaml'), 'base_branch: main\n');
 
     expect(resolveConfigValue(testDir, 'baseBranch')).toBe('main');
+  });
+
+  it('should resolve concurrency from project config', () => {
+    const projectConfigDir = getProjectConfigDir(testDir);
+    mkdirSync(projectConfigDir, { recursive: true });
+    writeFileSync(join(projectConfigDir, 'config.yaml'), 'concurrency: 3\n');
+
+    expect(resolveConfigValue(testDir, 'concurrency')).toBe(3);
   });
 });

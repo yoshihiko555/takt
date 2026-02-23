@@ -137,6 +137,8 @@ export interface ProjectConfig {
   providerOptions?: MovementProviderOptions;
   /** Provider-specific permission profiles */
   providerProfiles?: ProviderPermissionProfiles;
+  /** Number of tasks to run concurrently in takt run (1-10) */
+  concurrency?: number;
   /** Base branch to clone from (overrides global baseBranch) */
   baseBranch?: string;
 }

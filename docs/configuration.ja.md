@@ -123,6 +123,7 @@ piece: default                # このプロジェクトの現在の piece
 provider: claude              # このプロジェクトの provider 上書き
 auto_pr: true                 # worktree 実行後に PR を自動作成
 verbose: false                # 詳細出力モード
+concurrency: 2                # このプロジェクトでの takt run 並列タスク数（1-10）
 
 # provider 固有オプション（グローバルを上書き、piece/movement で上書き可能）
 # provider_options:
@@ -145,6 +146,7 @@ verbose: false                # 詳細出力モード
 | `provider` | `"claude"` \| `"codex"` \| `"opencode"` \| `"mock"` | - | provider 上書き |
 | `auto_pr` | boolean | - | worktree 実行後に PR を自動作成 |
 | `verbose` | boolean | - | 詳細出力モード |
+| `concurrency` | number (1-10) | `1`（global 設定由来） | `takt run` の並列タスク数 |
 | `provider_options` | object | - | provider 固有オプション |
 | `provider_profiles` | object | - | provider 固有のパーミッションプロファイル |
 
