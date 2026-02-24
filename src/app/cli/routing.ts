@@ -125,6 +125,7 @@ export async function executeDefaultAction(task?: string): Promise<void> {
   // Resolve --task option to task text (direct execution, no interactive mode)
   const taskFromOption = opts.task as string | undefined;
   if (taskFromOption) {
+    selectOptions.skipTaskList = true;
     await selectAndExecuteTask(resolvedCwd, taskFromOption, selectOptions, agentOverrides);
     return;
   }
