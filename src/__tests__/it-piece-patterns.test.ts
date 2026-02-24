@@ -165,12 +165,13 @@ describe('Piece Patterns IT: default piece (parallel reviewers)', () => {
 
     setMockScenario([
       { persona: 'planner', status: 'done', content: 'Requirements are clear and implementable' },
-      { persona: 'architect-planner', status: 'done', content: 'Design complete' },
+      { persona: 'coder', status: 'done', content: 'Tests written successfully' },
       { persona: 'coder', status: 'done', content: 'Implementation complete' },
       { persona: 'ai-antipattern-reviewer', status: 'done', content: 'No AI-specific issues' },
-      // Parallel reviewers: both approved
+      // Parallel reviewers: all approved
       { persona: 'architecture-reviewer', status: 'done', content: 'approved' },
       { persona: 'qa-reviewer', status: 'done', content: 'approved' },
+      { persona: 'testing-reviewer', status: 'done', content: 'approved' },
       // Supervisor
       { persona: 'supervisor', status: 'done', content: 'All checks passed' },
     ]);
@@ -186,19 +187,19 @@ describe('Piece Patterns IT: default piece (parallel reviewers)', () => {
 
     setMockScenario([
       { persona: 'planner', status: 'done', content: 'Requirements are clear and implementable' },
-      { persona: 'architect-planner', status: 'done', content: 'Design complete' },
+      { persona: 'coder', status: 'done', content: 'Tests written successfully' },
       { persona: 'coder', status: 'done', content: 'Implementation complete' },
       { persona: 'ai-antipattern-reviewer', status: 'done', content: 'No AI-specific issues' },
-      // Parallel: arch approved, qa needs_fix
+      // Parallel: arch approved, qa needs_fix, testing approved
       { persona: 'architecture-reviewer', status: 'done', content: 'approved' },
       { persona: 'qa-reviewer', status: 'done', content: 'needs_fix' },
+      { persona: 'testing-reviewer', status: 'done', content: 'approved' },
       // Fix step
       { persona: 'coder', status: 'done', content: 'Fix complete' },
-      // AI review after fix
-      { persona: 'ai-antipattern-reviewer', status: 'done', content: 'No AI-specific issues' },
-      // Re-review: both approved
+      // Re-review: all approved
       { persona: 'architecture-reviewer', status: 'done', content: 'approved' },
       { persona: 'qa-reviewer', status: 'done', content: 'approved' },
+      { persona: 'testing-reviewer', status: 'done', content: 'approved' },
       // Supervisor
       { persona: 'supervisor', status: 'done', content: 'All checks passed' },
     ]);

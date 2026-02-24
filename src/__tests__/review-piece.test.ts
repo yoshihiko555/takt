@@ -122,7 +122,7 @@ describe('review piece (EN)', () => {
   it('should have gather movement with output_contracts for review target', () => {
     const gather = raw.movements.find((s: { name: string }) => s.name === 'gather');
     expect(gather.output_contracts).toBeDefined();
-    expect(gather.output_contracts.report[0].name).toBe('00-review-target.md');
+    expect(gather.output_contracts.report[0].name).toBe('review-target.md');
   });
 });
 

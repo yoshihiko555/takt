@@ -97,6 +97,11 @@ Only plan work that is explicitly stated in the task order. Do not include impli
 "Change statuses to 5 values" means "rewrite enum values," NOT "delete flows that seem unnecessary."
 Do not over-interpret the task order. Plan only what is written.
 
+**Reference material intent:**
+- When the task order specifies external implementations as reference material, determine WHY that reference was specified
+- "Fix/improve by referencing X" includes evaluating whether to adopt the reference's design approach
+- When narrowing scope beyond the reference material's implied intent, explicitly document the rationale in the plan report
+
 **Bug fix propagation check:**
 - After identifying the root cause pattern, grep for the same pattern in related files
 - If the same bug exists in other files, include them in scope

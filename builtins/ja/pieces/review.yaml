@@ -23,7 +23,7 @@ movements:
     instruction: gather-review
     output_contracts:
       report:
-        - name: 00-review-target.md
+        - name: review-target.md
           format: review-gather
     rules:
       - condition: レビュー対象の情報収集完了
@@ -52,7 +52,7 @@ movements:
         instruction: review-arch
         output_contracts:
           report:
-            - name: 01-architecture-review.md
+            - name: architecture-review.md
               format: architecture-review
         rules:
           - condition: approved
@@ -73,7 +73,7 @@ movements:
         instruction: review-security
         output_contracts:
           report:
-            - name: 02-security-review.md
+            - name: security-review.md
               format: security-review
         rules:
           - condition: approved
@@ -95,7 +95,7 @@ movements:
         instruction: review-qa
         output_contracts:
           report:
-            - name: 03-qa-review.md
+            - name: qa-review.md
               format: qa-review
         rules:
           - condition: approved
@@ -117,7 +117,7 @@ movements:
         instruction: review-test
         output_contracts:
           report:
-            - name: 04-testing-review.md
+            - name: testing-review.md
               format: testing-review
         rules:
           - condition: approved
@@ -137,7 +137,7 @@ movements:
         instruction: review-requirements
         output_contracts:
           report:
-            - name: 05-requirements-review.md
+            - name: requirements-review.md
               format: requirements-review
         rules:
           - condition: approved
