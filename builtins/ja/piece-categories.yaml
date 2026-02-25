@@ -31,6 +31,9 @@ piece_categories:
       - expert-mini
       - expert-cqrs
       - expert-cqrs-mini
+  🏗️ インフラストラクチャ:
+    pieces:
+      - terraform
   🛠️ リファクタリング:
     pieces:
       - structural-reform
