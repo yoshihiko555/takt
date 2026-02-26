@@ -6,7 +6,6 @@ import { describe, it, expect } from 'vitest';
 import {
   GlobalConfigSchema,
   ProjectConfigSchema,
-  CustomAgentConfigSchema,
   PieceMovementRawSchema,
   ParallelSubMovementRawSchema,
 } from '../core/models/index.js';
@@ -62,15 +61,6 @@ describe('Schemas accept opencode provider', () => {
 
   it('should reject non-all string in ProjectConfigSchema submodules', () => {
     expect(() => ProjectConfigSchema.parse({ submodules: 'libs' })).toThrow();
-  });
-
-  it('should accept opencode in CustomAgentConfigSchema', () => {
-    const result = CustomAgentConfigSchema.parse({
-      name: 'test',
-      prompt: 'You are a test agent',
-      provider: 'opencode',
-    });
-    expect(result.provider).toBe('opencode');
   });
 
   it('should accept opencode in PieceMovementRawSchema', () => {

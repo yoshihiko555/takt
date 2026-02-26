@@ -130,7 +130,31 @@ export class LineTimeSliceBuffer {
   }
 
   private isBoundary(ch: string): boolean {
-    return /\s|[,.!?;:、。！？；：（）\[\]{}]/u.test(ch);
+    const boundaryChars = new Set([
+      ' ',
+      '\n',
+      '\t',
+      ',',
+      '.',
+      '!',
+      '?',
+      ';',
+      ':',
+      '、',
+      '。',
+      '！',
+      '？',
+      '；',
+      '：',
+      '（',
+      '）',
+      '[',
+      ']',
+      '{',
+      '}',
+    ]);
+
+    return boundaryChars.has(ch);
   }
 
   private clearTimer(key: string): void {

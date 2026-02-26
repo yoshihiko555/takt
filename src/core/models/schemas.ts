@@ -380,8 +380,6 @@ export const CustomAgentConfigSchema = z.object({
   allowed_tools: z.array(z.string()).optional(),
   claude_agent: z.string().optional(),
   claude_skill: z.string().optional(),
-  provider: z.enum(['claude', 'codex', 'opencode', 'mock']).optional(),
-  model: z.string().optional(),
 }).refine(
   (data) => data.prompt_file || data.prompt || data.claude_agent || data.claude_skill,
   { message: 'Agent must have prompt_file, prompt, claude_agent, or claude_skill' }
