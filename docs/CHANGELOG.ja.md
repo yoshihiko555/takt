@@ -30,7 +30,7 @@
 
 ### Changed
 
-- BREAKING: カスタムエージェント定義（`.takt/agents.yaml`）から `provider` / `model` フィールドを削除。エージェントのプロバイダー・モデルはピース側の解決ロジック（CLI → persona_providers → ステップ → ローカル → グローバル）に統一 (#390)
+- BREAKING: カスタムエージェント定義（`~/.takt/personas/*.md`）の `provider` / `model` を解釈しない方針とし、エージェントのプロバイダー・モデルはピース側の解決ロジック（CLI → persona_providers → ステップ → ローカル → グローバル）に統一 (#390)
 - エージェントの provider/model 解決ロジックを `resolveAgentProviderModel` に一元化し、ムーブメント解決と同じ優先順位チェーンを使用するよう変更 (#386)
 - `movement:start` イベントが `providerInfo` を含むよう変更し、表示側でのプロバイダー再解決を不要に (#390)
 - `takt list` の「Sync with root」を「Merge from root」にリネーム (#394)
